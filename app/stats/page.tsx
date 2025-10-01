@@ -18,7 +18,7 @@ import {
   Zap,
   Star,
   Brain,
-  Shield,
+  // Shield を削除
   Sparkles as SparklesIcon
 } from 'lucide-react'
 
@@ -78,11 +78,11 @@ const PlayStyleDiagnosis = ({ sessions, stats }: { sessions: GameSession[], stat
   const analyzePlayStyle = (): PlayStyleResult => {
     const totalSessions = sessions.length
     const winRate = stats.winRate
-    const avgProfit = stats.avgProfit
+    // const avgProfit = stats.avgProfit // 未使用なのでコメントアウト
     const volatility = stats.volatility
     const roi = stats.roi
-    const maxWinStreak = stats.maxWinStreak
-    const maxLossStreak = stats.maxLossStreak
+    // const maxWinStreak = stats.maxWinStreak // 未使用なのでコメントアウト
+    // const maxLossStreak = stats.maxLossStreak // 未使用なのでコメントアウト
     
     // バイイン対収支の比率から攻撃性を推定
     const avgBuyIn = sessions.reduce((sum, s) => sum + s.buy_in, 0) / totalSessions
