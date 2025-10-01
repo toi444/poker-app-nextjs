@@ -1,22 +1,21 @@
+'use client'
+
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
+
 export default function Home() {
+  const router = useRouter()
+  
+  useEffect(() => {
+    // ログインページへ自動リダイレクト
+    router.push('/login')
+  }, [router])
+  
   return (
-    <main className="min-h-screen bg-gray-950 text-white">
-      <div className="container mx-auto px-4 py-16">
-        <h1 className="text-4xl font-bold text-center mb-2">
-          🃏 We Are Pretty Cure! 🃏
-        </h1>
-        <p className="text-center text-gray-400 mb-8">
-          Poker Management System
-        </p>
-        <div className="max-w-md mx-auto space-y-4">
-          <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-semibold">
-            ログイン
-          </button>
-          <button className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg font-semibold">
-            新規登録
-          </button>
-        </div>
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-white mb-4">読み込み中...</h1>
       </div>
-    </main>
+    </div>
   )
 }
