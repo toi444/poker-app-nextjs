@@ -1,0 +1,230 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
+
+export default function ProfilePage() {
+  const [user, setUser] = useState<any>(null)
+  const [username, setUsername] = useState('')
+  const [avatarUrl, setAvatarUrl] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [message, setMessage] = useState('')
+  const router = useRouter()
+
+  useEffect(() => {
+    loadProfile()
+  }, [])
+
+  const loadProfile = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      router.push('/login')
+      return
+    }
+    
+    setUser(user)
+    
+    const { data } = await supabase
+      .from('profiles')
+      .select('username, avatar_url')
+      .eq('id', user.id)
+      .single()
+    
+    if (data) {
+      setUsername(data.username || '')
+      setAvatarUrl(data.avatar_url || '')
+    }
+  }
+
+  const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      setUploading(true)
+      
+      if (!event.target.files || event.target.files.length === 0) {
+        return
+      }
+
+      const file = event.target.files[0]
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`
+      const filePath = `avatars/${fileName}`
+
+      // Supabaseストレージにアップロード
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file)
+
+      if (uploadError) {
+        throw uploadError
+      }
+
+      // 公開URLを取得
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath)
+
+      setAvatarUrl(publicUrl)
+    } catch (error) {
+      setMessage('画像アップロードエラー')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const updateProfile = async () => {
+    if (!user || !username.trim()) return
+    
+    setLoading(true)
+    setMessage('')
+    
+    const { error } = await supabase
+      .from('profiles')
+      .update({ 
+        username,
+        avatar_url: avatarUrl
+      })
+      .eq('id', user.id)
+    
+    if (error) {
+      setMessage('エラーが発生しました')
+    } else {
+      setMessage('保存しました')
+      setTimeout(() => router.push('/dashboard'), 1000)
+    }
+    
+    setLoading(false)
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+      {/* ヘッダー */}
+      <div className="bg-black/20 backdrop-blur-md border-b border-white/10">
+        <div className="px-6 py-4">
+          <div className="flex items-center">
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="mr-4 p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+            >
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <h1 className="text-xl font-bold text-white">プロフィール設定</h1>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-6 py-6 max-w-md mx-auto">
+        <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 p-6">
+          {/* アバター */}
+          <div className="mb-6 text-center">
+            <div className="relative inline-block">
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt="Avatar"
+                  className="w-32 h-32 rounded-full object-cover border-4 border-purple-400/50"
+                />
+              ) : (
+                <div className="w-32 h-32 rounded-full bg-gradient-to-br from-purple-400 to-blue-400 p-1">
+                  <div className="w-full h-full rounded-full bg-gray-900 flex items-center justify-center">
+                    <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                </div>
+              )}
+              
+              <label className="absolute bottom-0 right-0 bg-purple-600 rounded-full p-3 cursor-pointer hover:bg-purple-700 transition-colors shadow-lg">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={uploadAvatar}
+                  className="hidden"
+                  disabled={uploading}
+                />
+              </label>
+            </div>
+            {uploading && (
+              <p className="mt-3 text-sm text-purple-300 animate-pulse">
+                アップロード中...
+              </p>
+            )}
+          </div>
+
+          {/* メールアドレス */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-purple-300 mb-2">
+              メールアドレス
+            </label>
+            <div className="px-4 py-3 bg-black/30 rounded-xl text-gray-300 border border-white/10">
+              {user?.email}
+            </div>
+          </div>
+          
+          {/* ユーザー名 */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-purple-300 mb-2">
+              ユーザー名
+            </label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full px-4 py-3 bg-black/30 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+              placeholder="表示名を入力"
+            />
+          </div>
+          
+          {/* メッセージ */}
+          {message && (
+            <div className={`mb-6 p-4 rounded-xl backdrop-blur-md ${
+              message.includes('エラー') 
+                ? 'bg-red-500/20 text-red-300 border border-red-500/50' 
+                : 'bg-green-500/20 text-green-300 border border-green-500/50'
+            }`}>
+              {message}
+            </div>
+          )}
+          
+          {/* 保存ボタン */}
+          <button
+            onClick={updateProfile}
+            disabled={loading || !username.trim() || uploading}
+            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 rounded-xl font-semibold hover:shadow-lg hover:shadow-purple-500/30 transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          >
+            {loading ? (
+              <span className="flex items-center justify-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                保存中...
+              </span>
+            ) : '保存する'}
+          </button>
+        </div>
+
+        {/* サインアウトボタン */}
+        <button
+          onClick={async () => {
+            await supabase.auth.signOut()
+            router.push('/login')
+          }}
+          className="mt-6 w-full bg-red-600/20 hover:bg-red-600/30 border border-red-500/50 rounded-xl py-3 flex items-center justify-center space-x-2 transition-colors"
+        >
+          <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          <span className="text-red-400 font-medium">サインアウト</span>
+        </button>
+      </div>
+    </div>
+  )
+}
