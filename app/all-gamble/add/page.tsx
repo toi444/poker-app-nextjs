@@ -76,7 +76,7 @@ const categories = [
     id: 'other', 
     icon: '💰', 
     name: 'その他',
-    subtitle: 'ルーレット・麻雀等',
+    subtitle: '麻雀・宝くじ等',
     gradient: 'from-gray-500 to-slate-600',
     shadowColor: 'shadow-gray-500/25'
   }
