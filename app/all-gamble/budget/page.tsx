@@ -27,77 +27,109 @@ export default function BudgetPage() {
   const [existingBudget, setExistingBudget] = useState<Budget | null>(null)
 
   useEffect(() => {
-    fetchCurrentBudget()
-  }, [periodType])
+    let mounted = true
 
-  const fetchCurrentBudget = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/login')
-        return
+    const fetchCurrentBudget = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user || !mounted) {
+          return
+        }
+
+        const { start, end } = getPeriodDates()
+
+        const { data, error } = await supabase
+          .from('gamble_budgets')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('period_type', periodType)
+          .eq('period_start', start)
+          .eq('period_end', end)
+          .maybeSingle()
+
+        if (!mounted) return
+
+        if (data) {
+          setExistingBudget(data)
+          setBudgetAmount(data.budget_amount.toString())
+          setTargetProfit(data.target_profit?.toString() || '')
+        } else {
+          setExistingBudget(null)
+          setBudgetAmount('')
+          setTargetProfit('')
+        }
+      } catch (error) {
+        console.error('Fetch error:', error)
+      } finally {
+        if (mounted) {
+          setLoading(false)
+        }
       }
-
-      const { start, end } = getPeriodDates()
-
-      const { data, error } = await supabase
-        .from('gamble_budgets')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('period_type', periodType)
-        .gte('period_end', start)
-        .single()
-
-      if (data) {
-        setExistingBudget(data)
-        setBudgetAmount(data.budget_amount.toString())
-        setTargetProfit(data.target_profit?.toString() || '')
-      } else {
-        setExistingBudget(null)
-        setBudgetAmount('')
-        setTargetProfit('')
-      }
-    } catch (error) {
-      console.error('Fetch error:', error)
-    } finally {
-      setLoading(false)
     }
-  }
+
+    fetchCurrentBudget()
+
+    return () => {
+      mounted = false
+    }
+  }, [periodType])
 
   const getPeriodDates = () => {
     const today = new Date()
-    let start = new Date()
-    let end = new Date()
+    const year = today.getFullYear()
+    const month = today.getMonth() + 1
+    const day = today.getDate()
+
+    let startYear = year
+    let startMonth = month
+    let startDay = day
+    let endYear = year
+    let endMonth = month
+    let endDay = day
 
     if (periodType === 'daily') {
-      start = today
-      end = today
+      // そのまま
     } else if (periodType === 'weekly') {
       const dayOfWeek = today.getDay()
-      start = new Date(today.getTime() - dayOfWeek * 24 * 60 * 60 * 1000)
-      end = new Date(start.getTime() + 6 * 24 * 60 * 60 * 1000)
+      const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1
+      const weekStart = new Date(today.getTime() - daysFromMonday * 24 * 60 * 60 * 1000)
+      const weekEnd = new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000)
+      
+      startYear = weekStart.getFullYear()
+      startMonth = weekStart.getMonth() + 1
+      startDay = weekStart.getDate()
+      endYear = weekEnd.getFullYear()
+      endMonth = weekEnd.getMonth() + 1
+      endDay = weekEnd.getDate()
     } else if (periodType === 'monthly') {
-      start = new Date(today.getFullYear(), today.getMonth(), 1)
-      end = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+      startDay = 1
+      const lastDay = new Date(year, month, 0)
+      endDay = lastDay.getDate()
+    }
+
+    const formatDate = (y: number, m: number, d: number) => {
+      return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
     }
 
     return {
-      start: start.toISOString().split('T')[0],
-      end: end.toISOString().split('T')[0]
+      start: formatDate(startYear, startMonth, startDay),
+      end: formatDate(endYear, endMonth, endDay)
     }
   }
 
   const getPeriodLabel = () => {
     const { start, end } = getPeriodDates()
-    const startDate = new Date(start)
-    const endDate = new Date(end)
-
+    
     if (periodType === 'daily') {
-      return startDate.toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' })
+      const [year, month, day] = start.split('-')
+      return `${parseInt(month)}月${parseInt(day)}日`
     } else if (periodType === 'weekly') {
-      return `${startDate.getMonth() + 1}/${startDate.getDate()} - ${endDate.getMonth() + 1}/${endDate.getDate()}`
+      const [y1, m1, d1] = start.split('-')
+      const [y2, m2, d2] = end.split('-')
+      return `${parseInt(m1)}/${parseInt(d1)} - ${parseInt(m2)}/${parseInt(d2)}`
     } else {
-      return `${startDate.getFullYear()}年${startDate.getMonth() + 1}月`
+      const [year, month] = start.split('-')
+      return `${year}年${parseInt(month)}月`
     }
   }
 

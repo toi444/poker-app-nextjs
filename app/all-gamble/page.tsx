@@ -137,7 +137,7 @@ export default function AllGamblePage() {
           color: cat.color,
           feeling: r.feeling
         }
-      }).sort((a, b) => b.date.localeCompare(a.date)) // 新しい日付順
+      }).sort((a, b) => b.date.localeCompare(a.date))
 
       setRecordItems(items)
     } else {
@@ -154,18 +154,25 @@ export default function AllGamblePage() {
   const fetchBudget = async () => {
     if (!user) return
 
-    const today = new Date()
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
-    
-    const { data } = await supabase
-      .from('gamble_budgets')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('period_type', 'monthly')
-      .gte('period_end', startOfMonth.toISOString().split('T')[0])
-      .single()
+    try {
+      const today = new Date()
+      const todayStr = today.toISOString().split('T')[0]
+      
+      const { data, error } = await supabase
+        .from('gamble_budgets')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('period_type', 'monthly')
+        .lte('period_start', todayStr)
+        .gte('period_end', todayStr)
+        .maybeSingle()
 
-    setBudget(data)
+      if (error) throw error
+      setBudget(data)
+    } catch (error) {
+      console.error('Budget fetch error:', error)
+      setBudget(null)
+    }
   }
 
   const getPeriodDates = () => {
@@ -235,6 +242,25 @@ export default function AllGamblePage() {
     return emojiMap[feeling] || '😐'
   }
 
+  // 選択期間が予算期間と重なっているかチェック（B案）
+  const shouldShowBudget = () => {
+    if (!budget) return false
+    
+    // 累計は予算表示しない
+    if (period === 'total') return false
+    
+    // 現在選択中の期間の開始日・終了日を取得
+    const { startDate, endDate } = getPeriodDates()
+    
+    // 予算の期間
+    const budgetStart = budget.period_start
+    const budgetEnd = budget.period_end
+    
+    // 選択期間が予算期間と重なっているかチェック
+    // 条件: 選択期間の開始が予算終了以前 かつ 選択期間の終了が予算開始以降
+    return startDate <= budgetEnd && endDate >= budgetStart
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center">
@@ -288,7 +314,7 @@ export default function AllGamblePage() {
         
         {/* 予算・目標カード */}
         <div className="mb-6">
-          {budget ? (
+          {shouldShowBudget() ? (
             <div className="bg-gradient-to-br from-orange-500 to-red-600 rounded-3xl p-6 shadow-2xl text-white">
               <div className="flex justify-between items-start mb-4">
                 <div>
@@ -316,12 +342,12 @@ export default function AllGamblePage() {
                   <div className="mt-2">
                     <div className="flex justify-between text-xs mb-1 opacity-90">
                       <span>使用: {budget.actual_spent?.toLocaleString() || 0}円</span>
-                      <span>{((budget.actual_spent / budget.budget_amount) * 100).toFixed(0)}%</span>
+                      <span>{budget.actual_spent ? ((budget.actual_spent / budget.budget_amount) * 100).toFixed(0) : 0}%</span>
                     </div>
                     <div className="w-full bg-white/20 rounded-full h-1.5 overflow-hidden">
                       <div 
                         className="h-full bg-white rounded-full transition-all"
-                        style={{ width: `${Math.min((budget.actual_spent / budget.budget_amount) * 100, 100)}%` }}
+                        style={{ width: `${budget.actual_spent ? Math.min((budget.actual_spent / budget.budget_amount) * 100, 100) : 0}%` }}
                       />
                     </div>
                   </div>
@@ -339,7 +365,7 @@ export default function AllGamblePage() {
                       <div className="w-full bg-white/20 rounded-full h-1.5 overflow-hidden">
                         <div 
                           className="h-full bg-yellow-300 rounded-full transition-all"
-                          style={{ width: `${Math.min((periodStats.profit / budget.target_profit) * 100, 100)}%` }}
+                          style={{ width: `${Math.min(Math.max((periodStats.profit / budget.target_profit) * 100, 0), 100)}%` }}
                         />
                       </div>
                     </div>
@@ -427,7 +453,7 @@ export default function AllGamblePage() {
           </div>
         </div>
 
-        {/* 記録一覧（日付×種目別） */}
+        {/* 記録一覧 */}
         <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-5 shadow-lg mb-6">
           <h3 className="font-black text-gray-900 mb-4 flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-orange-600" />
