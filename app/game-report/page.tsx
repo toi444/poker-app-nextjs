@@ -165,7 +165,7 @@ export default function GameReportPage() {
       }
 
       const playHours = calculatePlayHours(startTime, endTime)
-      const playedAt = `${date}T${startTime}:00`
+      const playedAt = `${date}T${startTime}:00+09:00`
 
       // ゲームセッションを保存
       const { data: sessionData, error: sessionError } = await supabase
