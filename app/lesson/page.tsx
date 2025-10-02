@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
 import { 
   ArrowLeft, 
   BookOpen, 
@@ -15,7 +16,9 @@ import {
   Check,
   X,
   RotateCcw,
-  Sparkles
+  Sparkles,
+  Square, 
+  CheckSquare
 } from 'lucide-react'
 
 // ハンドレンジデータ
@@ -106,7 +109,7 @@ const handRanges = {
   }
 }
 
-// ポーカー用語データベース（150語以上）
+// ポーカー用語データベース（234語）
 const pokerTerms = {
   "基本アクション": {
     "オールイン": "手持ちのチップを全て賭けること。All-in。",
@@ -117,26 +120,43 @@ const pokerTerms = {
     "ベット": "最初に賭け金を出すこと。Bet。",
     "リレイズ": "レイズに対して更にレイズすること。Re-raise。",
     "ミニレイズ": "最小限のレイズ。前のベットの2倍。",
+    "リンプ": "プリフロップでBBと同額でコールすること。弱いプレイとされる。",
+    "コールドコール": "レイズに対して初めてコールすること。",
+    "フラットコール": "レイズできる状況でコールすること。",
+    "マック": "Muck。負けを認めて手札を見せずに捨てること。",
   },
   "ポジション": {
     "UTG": "Under The Gun。BBの左隣で最初にアクションする最も不利なポジション。",
     "UTG+1": "UTGの左隣。アーリーポジション。",
+    "UTG+2": "UTG+1の左隣。アーリーポジション後半。",
     "MP": "Middle Position。中間のポジション。",
     "MP2": "ミドルポジションの後半。",
+    "MP3": "ミドルポジション最後尾。ハイジャックの前。",
+    "HJ": "Hijack。ハイジャック。COの右隣。",
     "CO": "Cut Off。ボタンの右隣のポジション。",
     "BTN": "Button。ディーラーボタン。最後にアクションできる最も有利なポジション。",
     "SB": "Small Blind。強制ベットを払う位置。BTNの左隣。",
     "BB": "Big Blind。SBの2倍の強制ベットを払う位置。",
     "EP": "Early Position。アーリーポジション。序盤に行動。",
     "LP": "Late Position。レイトポジション。終盤に行動。",
+    "IP": "In Position。相手より後にアクションできる有利なポジション。",
+    "OOP": "Out Of Position。相手より先にアクションする不利なポジション。",
   },
   "戦略・戦術": {
     "GTO": "Game Theory Optimal。ゲーム理論的最適戦略。",
     "エクスプロイト": "相手の弱点を突いて利益を最大化する戦略。",
     "ブラフ": "弱い手で強い手を装って賭けること。",
     "セミブラフ": "現時点で弱いが改善可能性がある手でのブラフ。",
+    "ピュアブラフ": "ほぼ逆転する可能性のないハンドでするブラフ。エアーブラフとも。",
     "バリューベット": "強い手で相手からチップを引き出すための賭け。",
     "シンバリュー": "薄いバリューベット。微妙な強さでのベット。",
+    "ポラライズドベット": "ナッツか完全なブラフという両極端なレンジでのベット。",
+    "ポラライズドレンジ": "強い手とブラフの両極端で構成されるレンジ。中間の手がない。",
+    "マージドレンジ": "Merged Range。強い手から中程度の手まで幅広く含むレンジ。",
+    "リニアレンジ": "Linear Range。上から順に強い手で構成されるレンジ。",
+    "コンデンスドレンジ": "Condensed Range。中程度の強さに集中したレンジ。",
+    "キャップドレンジ": "Capped Range。最強の手を含まないレンジ。",
+    "アンキャップドレンジ": "Uncapped Range。ナッツを含む可能性があるレンジ。",
     "ポットオッズ": "ポットサイズとコール額の比率。期待値計算に使用。",
     "インプライドオッズ": "将来的に獲得できる可能性のあるチップを含めた期待値。",
     "リバースインプライドオッズ": "将来的に失う可能性のあるチップを考慮した期待値。",
@@ -148,46 +168,96 @@ const pokerTerms = {
     "トリプルバレル": "フロップ、ターン、リバー全てでベットすること。",
     "チェックレイズ": "チェックした後、相手のベットに対してレイズすること。",
     "ドンクベット": "前のラウンドでアグレッサーでない人が先にベットすること。",
+    "リードベット": "Lead Bet。OOPから主導権を取るために先にベットすること。",
     "ブロックベット": "相手の大きなベットを防ぐための小さなベット。",
     "プローブベット": "情報収集のためのベット。",
     "フロート": "ポジションを利用して後のストリートで奪う戦略。",
     "スクイーズ": "複数のコーラーがいる時に大きくレイズすること。",
-    "アイソレート": "特定の弱いプレイヤーと1対1になるようにレイズすること。",
+    "リスクイーズ": "Re-squeeze。スクイーズに対してさらに大きくレイズすること。",
+    "アイソレイズ": "Isolation Raise。特定の弱いプレイヤーと1対1になるようにレイズすること。",
+    "アイソレーション": "弱いプレイヤーを隔離して1対1に持ち込む戦略。",
     "ストップアンドゴー": "プリフロップでコールし、フロップで先にオールインする戦略。",
+    "リンプリレイズ": "リンプした後、レイズに対して再レイズすること。トラップ戦略。",
+    "スチール": "Steal。ブラインドを奪うためのレイズ。",
+    "リスチール": "Re-steal。スチールを狙ったレイズに対して再レイズすること。",
+    "オーバーベット": "ポットサイズより大きなベット。プレッシャーをかける。",
+    "アンダーベット": "ポットサイズより小さなベット。情報を得たりコントロールする。",
+    "ポットコントロール": "ポットサイズを小さく保つ戦略。リスク管理。",
+    "スロープレイ": "強い手で弱く見せかけるプレイ。トラップ戦略。",
+    "ファストプレイ": "強い手で積極的にベットするプレイ。",
   },
   "ハンド・役": {
     "ナッツ": "その状況で最強の手。",
     "セカンドナッツ": "2番目に強い手。",
-    "ナッツフラッシュ": "最強のフラッシュ。",
+    "サードナッツ": "3番目に強い手。",
+    "ナッツフラッシュ": "最強のフラッシュ。Aハイフラッシュ。",
     "セット": "ポケットペアがボードの1枚と合わせてスリーカードになること。",
     "トリップス": "ボードのペアと手札の1枚でスリーカードになること。",
     "クワッズ": "フォーカード。同じ数字4枚。",
     "ボート": "フルハウスの別名。",
     "ブロードウェイ": "A-K-Q-J-Tのストレート。",
-    "ホイール": "A-2-3-4-5のストレート。",
+    "ホイール": "A-2-3-4-5のストレート。最も弱いストレート。",
+    "バイシクル": "Bicycleホイールの別名。A-2-3-4-5。",
+    "トップペア": "自分の手札とボードの最高位カードでできるペア。",
+    "ミドルペア": "自分の手札とボードの中位カードでできるペア。",
+    "ボトムペア": "自分の手札とボードの最低位カードでできるペア。",
+    "ポケットペア": "手札の2枚が同じランクのペア。",
+    "オーバーペア": "ボードのどのカードよりも高いポケットペア。",
+    "アンダーペア": "ボードに自分のポケットペアより高いカードがある状態。",
+    "トップキッカー": "最高位のキッカー。通常はエース。",
+    "キッカー": "Kicker。役が同じ時に勝敗を決める補助カード。",
+    "マージナルハンド": "Marginal Hand。中程度の強さの微妙な手。",
+    "モンスターハンド": "Monster Hand。非常に強い手。",
+    "ドミネイト": "Dominate。相手の手を圧倒している状態。",
+    "コネクター": "連続した数字のカード。例：89、JT。",
+    "スーテッドコネクター": "同じスートで連続した数字。例：8♠9♠。",
+    "ワンギャッパー": "1つ飛ばしの数字。例：79、QT。",
+    "ツーギャッパー": "2つ飛ばしの数字。例：68、Q9。",
+  },
+  "ドロー・アウツ": {
     "フラッシュドロー": "あと1枚で同じスートが5枚揃う状態。",
     "ストレートドロー": "あと1枚でストレートが完成する状態。",
-    "OESD": "Open Ended Straight Draw。両端が開いているストレートドロー。",
-    "ガットショット": "内側の1枚でストレートが完成するドロー。インサイドストレートドロー。",
+    "OESD": "Open Ended Straight Draw。両端が開いているストレートドロー。8アウツ。",
+    "ガットショット": "内側の1枚でストレートが完成するドロー。インサイドストレートドロー。4アウツ。",
+    "ダブルベリーバスター": "Double Belly Buster。ガットショットが2つある状態。8アウツ。",
+    "ダブルガットショット": "ダブルベリーバスターの別名。",
     "バックドアドロー": "ターンとリバー両方で特定のカードが必要なドロー。",
-    "コンボドロー": "複数のドローを持っている状態。",
-    "ラップ": "オマハで多くのストレートアウツを持つドロー。",
+    "バックドアフラッシュドロー": "ターンとリバーで2枚連続して同じスートが必要。",
+    "バックドアストレートドロー": "ターンとリバーで2枚連続してストレートが必要。",
+    "ランナーランナー": "Runner Runner。ターンとリバーで2回連続して欲しいカードを引くこと。",
+    "コンボドロー": "複数のドローを持っている状態。例：フラッシュ+ストレート。",
     "モンスタードロー": "非常に強力なドロー。15アウツ以上。",
+    "ナッツドロー": "完成すればナッツになるドロー。",
+    "ラップ": "Wrap。オマハで多くのストレートアウツを持つドロー。",
+    "オーバーカード": "Over Card。ボードのどのカードよりも高い手札のカード。",
+    "ツーオーバー": "Two Overs。ボードより高いカード2枚を持つ状態。",
+    "アウツ": "Outs。役を完成させるために必要な残りのカード。",
+    "クリーンアウツ": "確実に勝てるアウツ。",
+    "ダーティアウツ": "引いても勝てない可能性があるアウツ。",
+    "ボトムエンド": "ストレートの最低位側。例：A234でのA。",
+    "トップエンド": "ストレートの最高位側。例：TJQKでのK。",
   },
   "ゲーム進行": {
     "プリフロップ": "最初の2枚が配られた後、フロップが開く前の段階。",
     "フロップ": "共通カード3枚が開かれる段階。",
-    "ターン": "4枚目の共通カードが開かれる段階。",
-    "リバー": "5枚目（最後）の共通カードが開かれる段階。",
+    "ターン": "4枚目の共通カードが開かれる段階。4thストリート。",
+    "リバー": "5枚目（最後）の共通カードが開かれる段階。5thストリート。",
     "ショーダウン": "最後まで残ったプレイヤーが手札を公開すること。",
     "ストリート": "各ベッティングラウンドの総称。",
-    "ドライボード": "ドローの可能性が少ないボード。",
-    "ウェットボード": "ドローの可能性が多いボード。",
+    "ボード": "Board。テーブル上の共通カード。コミュニティカード。",
+    "テクスチャ": "Texture。ボードの特徴や性質。",
+    "ドライボード": "ドローの可能性が少ないボード。例：K72レインボー。",
+    "ウェットボード": "ドローの可能性が多いボード。例：QJTツートーン。",
+    "スタティックボード": "Static Board。ターン・リバーで状況が変わりにくいボード。",
+    "ダイナミックボード": "Dynamic Board。ターン・リバーで状況が大きく変わるボード。",
     "レインボー": "3枚とも異なるスートのフロップ。",
-    "トーン": "2枚が同じスートのフロップ。",
+    "ツートーン": "2枚が同じスートのフロップ。",
     "モノトーン": "3枚とも同じスートのフロップ。",
     "ペアボード": "ボードにペアがある状態。",
+    "トリップスボード": "ボードに同じランク3枚がある状態。",
     "ダブルペアボード": "ボードに2つのペアがある状態。",
+    "コーディネート": "Coordinated。ボードがストレートやフラッシュになりやすい状態。",
+    "ディスコネクト": "Disconnected。ボードがバラバラでドローしにくい状態。",
   },
   "プレイスタイル": {
     "タイト": "参加率が低く、強い手だけでプレイするスタイル。",
@@ -196,67 +266,88 @@ const pokerTerms = {
     "パッシブ": "消極的でコールが多いスタイル。",
     "TAG": "Tight Aggressive。タイトで攻撃的なプレイスタイル。",
     "LAG": "Loose Aggressive。ルースで攻撃的なプレイスタイル。",
-    "ニット": "Nit。極端にタイトなプレイヤー。",
+    "ニット": "Nit。極端にタイトなプレイヤー。ロックとも。",
     "マニアック": "極端にルースアグレッシブなプレイヤー。",
     "フィッシュ": "Fish。弱いプレイヤーの蔑称。カモ。",
+    "ドンキー": "Donkey。フィッシュと同義。下手なプレイヤー。",
     "シャーク": "Shark。強いプレイヤー。フィッシュを狩る側。",
     "ホエール": "Whale。大金を賭ける弱いプレイヤー。最高のカモ。",
-    "レグ": "Reg。Regular。常連プレイヤー。",
+    "レグ": "Reg。Regular。常連プレイヤー。実力者が多い。",
     "グラインダー": "Grinder。堅実に利益を積み重ねるプレイヤー。",
     "ステーション": "Calling Station。コールばかりするプレイヤー。",
-    "ロック": "Rock。超タイトなプレイヤー。",
+    "ロック": "Rock。超タイトなプレイヤー。ニットと同義。",
+    "タンク": "Tank。長考する人。時間をかけて考えること。",
+    "オーバープレイ": "Over Play。手の強さに対して過剰に攻撃的にプレイすること。",
+    "アンダープレイ": "Under Play。強い手を控えめにプレイすること。",
   },
   "アクション詳細": {
-    "リンプ": "プリフロップでBBと同額でコールすること。弱いプレイとされる。",
-    "リンプレイズ": "リンプした後、レイズに対して再レイズすること。",
     "オープンレイズ": "最初のレイズをすること。",
-    "コールドコール": "レイズに対して初めてコールすること。",
-    "フラットコール": "レイズできる状況でコールすること。",
-    "スローロール": "明らかに勝っているのにゆっくり手を見せる失礼な行為。",
-    "スローフプレイ": "強い手で弱く見せかけるプレイ。",
-    "ファストプレイ": "強い手で積極的にベットするプレイ。",
+    "リンプオーバー": "Limp Over。既にリンパーがいる状態でリンプすること。",
+    "オーバーリンプ": "Over Limp。リンプオーバーと同義。",
     "チェックバック": "ベットできる状況でチェックすること。",
     "チェックコール": "チェックして相手のベットにコール。",
+    "チェックレイズオールイン": "チェックした後、相手のベットに対してオールインすること。",
+    "ベットフォールド": "Bet Fold。ベットしたが相手のレイズには降りる戦略。",
+    "ベットコール": "Bet Call。ベットして相手のレイズにもコールする。",
     "バリューカット": "リバーで薄いバリューを取ること。",
-    "ソウルリード": "根拠の薄い読み。直感。",
+    "マージナルレイズ": "微妙な強さでのレイズ。",
+    "ソウルリード": "Soul Read。根拠の薄い読み。直感。",
+    "スナップコール": "Snap Call。即座にコール。強い手を示唆。",
+    "スナップフォールド": "即座にフォールド。",
+    "ホールドアンドホープ": "Hold and Hope。弱い手で降りずに祈る状態。",
   },
   "メンタル・心理": {
     "ティルト": "感情的になって正常な判断ができない状態。",
-    "モンキーティルト": "完全に理性を失った状態。",
+    "モンキーティルト": "完全に理性を失った状態。激しいティルト。",
+    "スチームティルト": "Steam Tilt。怒りで感情的になっている状態。",
     "レベリング": "相手の思考を読みすぎて逆に間違える。",
+    "リバースレベリング": "あえて単純な思考で相手を欺く。",
     "FPS": "Fancy Play Syndrome。不必要に複雑なプレイをする症候群。",
     "結果論": "Results Oriented。結果だけで判断する間違った思考。",
-    "ランガッド": "Run Good。幸運が続くこと。",
-    "ランバッド": "Run Bad。不運が続くこと。",
+    "ランガッド": "Run Good。幸運が続くこと。ヒーター。",
+    "ランバッド": "Run Bad。不運が続くこと。ダウンスイング。",
+    "ヒーター": "Heater。勝ちが続く幸運な期間。",
+    "クーラー": "Cooler。両者が強い手同士で避けられない大きな損失。",
     "バリアンス": "Variance。分散。短期的な運の振れ。",
     "ダウンスイング": "負けが続く期間。",
     "アップスイング": "勝ちが続く期間。",
     "バッドビート": "大本命だったのに逆転負けすること。",
     "サックアウト": "Suck Out。格下のハンドが逆転勝ちすること。",
+    "リバーラット": "River Rat。リバーで奇跡的に逆転する人。",
     "テル": "Tell。相手の手の強さを示す無意識の動作。",
     "タイミングテル": "ベットまでの時間で手の強さを推測。",
     "サイジングテル": "ベット額から手の強さを推測。",
+    "リバーステル": "Reverse Tell。わざと誤った情報を与える演技。",
+    "エゴ": "Ego。プライドが邪魔して正しい判断ができない状態。",
   },
   "トーナメント用語": {
     "MTT": "Multi Table Tournament。複数テーブルトーナメント。",
     "SNG": "Sit and Go。人数が揃ったら始まるトーナメント。",
+    "STT": "Single Table Tournament。1テーブルのトーナメント。",
     "サテライト": "より大きな大会への出場権を争う予選。",
     "バブル": "入賞まであと1人の状況。",
     "バブルファクター": "ICMプレッシャーによる影響。",
+    "バブルボーイ": "Bubble Boy。入賞直前で敗退したプレイヤー。",
     "ITM": "In The Money。入賞圏内。",
-    "FT": "Final Table。ファイナルテーブル。",
+    "FT": "Final Table。ファイナルテーブル。最終卓。",
     "HU": "Heads Up。1対1の勝負。",
     "チップEV": "Chip EV。チップ期待値。",
     "ICM": "Independent Chip Model。トーナメントでのチップ価値計算モデル。",
+    "ICMプレッシャー": "ICM計算により生じる判断の難しさ。",
     "バウンティ": "特定のプレイヤーを飛ばすともらえる賞金。",
+    "PKO": "Progressive Knockout。賞金が累積するバウンティ形式。",
     "リバイ": "チップがなくなった時に追加で買い足すこと。",
     "アドオン": "特定のタイミングでチップを追加購入すること。",
     "ターボ": "ブラインドレベルが速く上がるトーナメント。",
     "ハイパーターボ": "超高速でブラインドが上がるトーナメント。",
     "ディープスタック": "初期チップが多いトーナメント。",
+    "フリーズアウト": "Freezeout。リバイやアドオンがないトーナメント。",
+    "レイトレジストレーション": "Late Registration。遅れて参加すること。",
   },
   "数学・統計": {
     "EV": "Expected Value。期待値。",
+    "cEV": "Chip EV。チップ期待値。",
+    "$EV": "賞金期待値。ICMを考慮した期待値。",
     "SPR": "Stack to Pot Ratio。スタックとポットの比率。",
     "MDF": "Minimum Defense Frequency。最小防御頻度。",
     "PFR": "Pre-Flop Raise。プリフロップレイズ率。",
@@ -264,13 +355,19 @@ const pokerTerms = {
     "AF": "Aggression Factor。アグレッション係数。",
     "WTSD": "Went To ShowDown。ショーダウン率。",
     "W$SD": "Won at ShowDown。ショーダウン勝率。",
+    "WSD": "Won at ShowDown。W$SDと同義。",
     "ROI": "Return On Investment。投資収益率。",
-    "BB/100": "100ハンドあたりのビッグブラインド獲得数。",
+    "BB/100": "100ハンドあたりのビッグブラインド獲得数。勝率指標。",
+    "M値": "M-ratio。アンティ込みでブラインドを何周払えるか。",
+    "Q値": "Q-ratio。テーブル平均スタックに対する自分のスタック比率。",
     "レーキ": "カジノやポーカールームが取る手数料。",
     "レーキバック": "支払ったレーキの一部が戻ってくること。",
+    "エクイティ": "Equity。現時点での勝率・取り分。",
+    "フォールドエクイティ": "Fold Equity。相手がフォールドする確率による利益。",
+    "ポットエクイティ": "Pot Equity。ショーダウンで勝つ確率。",
     "レッドライン": "ショーダウンなしでの収支。",
     "ブルーライン": "ショーダウンでの収支。",
-    "グリーンライン": "総収支。",
+    "グリーンライン": "総収支。レッドライン+ブルーライン。",
   },
 }
 
@@ -486,7 +583,7 @@ const HandVsHandCalculator = () => {
             ))}
           </select>
           <div className="mt-3 text-center">
-            <div className="text-3xl font-black">
+            <div className="text-3xl font-black text-gray-900">
               {myHand.length === 2 && myHand[0] === myHand[1] ? 
                 `${myHand[0]}♠ ${myHand[1]}♥` :
                 myHand.endsWith('s') ? 
@@ -517,7 +614,7 @@ const HandVsHandCalculator = () => {
             ))}
           </select>
           <div className="mt-3 text-center">
-            <div className="text-3xl font-black">
+            <div className="text-3xl font-black text-gray-900">
               {oppHand.length === 2 && oppHand[0] === oppHand[1] ? 
                 `${oppHand[0]}♦ ${oppHand[1]}♣` :
                 oppHand.endsWith('s') ? 
@@ -667,6 +764,7 @@ const HandRangeMatrix = ({ position, style }: { position: string; style: string 
 
 export default function LessonPage() {
   const router = useRouter() 
+  const [user, setUser] = useState<any>(null)
   const [selectedPosition, setSelectedPosition] = useState('BTN')
   const [selectedStyle, setSelectedStyle] = useState('スタンダード')
   const [learnedTerms, setLearnedTerms] = useState<Set<string>>(new Set())
@@ -675,6 +773,70 @@ export default function LessonPage() {
   const [potSize, setPotSize] = useState(10000)
   const [callAmount, setCallAmount] = useState(3000)
   const [activeTab, setActiveTab] = useState('range')
+
+  // ユーザー取得と学習済み用語の読み込み
+  useEffect(() => {
+    const init = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setUser(user)
+        await fetchLearnedTerms(user.id)
+      }
+    }
+    init()
+  }, [])
+
+  // 学習済み用語をSupabaseから取得
+  const fetchLearnedTerms = async (userId: string) => {
+    const { data } = await supabase
+      .from('learned_terms')
+      .select('term_name')
+      .eq('user_id', userId)
+    
+    if (data) {
+      setLearnedTerms(new Set(data.map(item => item.term_name)))
+    }
+  }
+
+  // 用語のチェック/アンチェックを切り替え
+  const toggleLearnedTerm = async (term: string) => {
+    if (!user) return
+
+    const newTerms = new Set(learnedTerms)
+    
+    if (newTerms.has(term)) {
+      // 削除
+      newTerms.delete(term)
+      await supabase
+        .from('learned_terms')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('term_name', term)
+    } else {
+      // 追加
+      newTerms.add(term)
+      await supabase
+        .from('learned_terms')
+        .insert({
+          user_id: user.id,
+          term_name: term
+        })
+    }
+    
+    setLearnedTerms(newTerms)
+  }
+
+  // 全リセット
+  const resetLearnedTerms = async () => {
+    if (!user) return
+    
+    await supabase
+      .from('learned_terms')
+      .delete()
+      .eq('user_id', user.id)
+    
+    setLearnedTerms(new Set())
+  }
 
   // アウツ計算
   const turnProb = (currentOuts / 47) * 100
@@ -921,7 +1083,10 @@ export default function LessonPage() {
                     <input
                       type="number"
                       value={potSize}
-                      onChange={(e) => setPotSize(Math.max(0, Number(e.target.value)))}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/^0+/, '') || '0'
+                        setPotSize(Math.max(0, Number(val)))
+                      }}
                       className="w-full p-2 border-2 border-orange-200 rounded-lg text-sm font-bold text-gray-900 bg-white"
                       step="1000"
                       min="0"
@@ -932,7 +1097,10 @@ export default function LessonPage() {
                     <input
                       type="number"
                       value={callAmount}
-                      onChange={(e) => setCallAmount(Math.max(0, Number(e.target.value)))}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/^0+/, '') || '0'
+                        setCallAmount(Math.max(0, Number(val)))
+                      }}
                       className="w-full p-2 border-2 border-orange-200 rounded-lg text-sm font-bold text-gray-900 bg-white"
                       step="1000"
                       min="0"
@@ -1059,20 +1227,12 @@ export default function LessonPage() {
                                 <p className="text-xs text-gray-700 mt-1 font-medium">{description}</p>
                               </div>
                               <button
-                                onClick={() => {
-                                  const newTerms = new Set(learnedTerms)
-                                  if (newTerms.has(term)) {
-                                    newTerms.delete(term)
-                                  } else {
-                                    newTerms.add(term)
-                                  }
-                                  setLearnedTerms(newTerms)
-                                }}
-                                className="p-1"
+                                onClick={() => toggleLearnedTerm(term)}
+                                className="p-1 transition-transform hover:scale-110"
                               >
                                 {learnedTerms.has(term) ? 
-                                  <Check className="w-5 h-5 text-green-600" /> : 
-                                  <X className="w-5 h-5 text-gray-400" />
+                                  <CheckSquare className="w-5 h-5 text-green-600" /> : 
+                                  <Square className="w-5 h-5 text-gray-400 hover:text-gray-600" />
                                 }
                               </button>
                             </div>
@@ -1087,7 +1247,7 @@ export default function LessonPage() {
               {/* リセットボタン */}
               {learnedTerms.size > 0 && (
                 <button
-                  onClick={() => setLearnedTerms(new Set())}
+                  onClick={resetLearnedTerms}
                   className="mt-4 w-full py-2 px-4 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:from-gray-200 hover:to-gray-300 transition-all border border-gray-300"
                 >
                   <RotateCcw className="w-4 h-4" />

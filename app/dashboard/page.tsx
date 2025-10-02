@@ -115,7 +115,6 @@ export default function DashboardPage() {
         const wins = data.filter(s => s.profit > 0).length
         const winRate = (wins / data.length * 100)
         
-        // 連勝・連敗計算
         let currentStreak = 0
         let streakType = null
         for (const session of data) {
@@ -166,12 +165,12 @@ export default function DashboardPage() {
     router.push('/login')
   }
 
-  const menuItems = [
+  const mainMenuItems = [
     { 
       icon: TrendingUp,
       title: 'Game Report', 
       subtitle: '収支を記録',
-      description: '今日の成績を登録',
+      description: 'Pretty Cure!成績',
       href: '/game-report',
       gradient: 'from-violet-500 via-purple-500 to-indigo-600',
       shadowColor: 'shadow-purple-500/25',
@@ -219,14 +218,14 @@ export default function DashboardPage() {
       accentIcon: Award
     },
     { 
-      icon: User,
-      title: 'Profile', 
-      subtitle: 'プロフィール',
-      description: '設定を変更',
-      href: '/profile',
-      gradient: 'from-indigo-500 via-violet-500 to-purple-600',
-      shadowColor: 'shadow-indigo-500/25',
-      accentIcon: Star
+      icon: Trophy,
+      title: 'All Gamble', 
+      subtitle: '総合収支管理',
+      description: '全ギャンブル記録',
+      href: '/all-gamble',
+      gradient: 'from-amber-500 via-orange-500 to-red-600',
+      shadowColor: 'shadow-orange-500/25',
+      accentIcon: Coins
     }
   ]
 
@@ -242,7 +241,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
-      {/* ヘッダー - グラスモーフィズム */}
+      {/* ヘッダー */}
       <div className="bg-white/70 backdrop-blur-xl border-b border-white/20 sticky top-0 z-50">
         <div className="container max-w-md mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -256,7 +255,6 @@ export default function DashboardPage() {
               <Sparkles className="w-5 h-5 text-yellow-500 animate-pulse" />
             </div>
             
-            {/* プロフィールボタン - ニューモーフィズム */}
             <button
               onClick={() => router.push('/profile')}
               className="group relative bg-white/80 backdrop-blur-sm rounded-2xl p-2 pr-3 shadow-lg hover:shadow-xl transition-all transform hover:scale-105 active:scale-95"
@@ -287,7 +285,7 @@ export default function DashboardPage() {
 
       {/* メインコンテンツ */}
       <div className="container max-w-md mx-auto px-4 py-6 pb-24">
-        {/* 時刻とステータス - フローティングカード */}
+        {/* 時刻とステータス */}
         <div className="mb-6">
           <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl p-6 border border-white/50">
             <div className="flex items-center justify-between mb-4">
@@ -306,17 +304,13 @@ export default function DashboardPage() {
               <div className="text-right">
                 <div className="flex items-center gap-2 justify-end mb-1">
                   {recentStats.streak > 0 ? (
-                    <>
-                      <div className="px-2 py-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xs font-bold rounded-full">
-                        {recentStats.streak}連勝中🔥
-                      </div>
-                    </>
+                    <div className="px-2 py-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xs font-bold rounded-full">
+                      {recentStats.streak}連勝中🔥
+                    </div>
                   ) : recentStats.streak < 0 ? (
-                    <>
-                      <div className="px-2 py-1 bg-gradient-to-r from-red-500 to-pink-600 text-white text-xs font-bold rounded-full">
-                        {Math.abs(recentStats.streak)}連敗中
-                      </div>
-                    </>
+                    <div className="px-2 py-1 bg-gradient-to-r from-red-500 to-pink-600 text-white text-xs font-bold rounded-full">
+                      {Math.abs(recentStats.streak)}連敗中
+                    </div>
                   ) : null}
                 </div>
                 <p className="text-sm font-medium text-gray-600">
@@ -328,7 +322,6 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* プログレスバー風の勝率表示 */}
             <div className="bg-gray-100 rounded-full h-2 overflow-hidden">
               <div 
                 className="h-full bg-gradient-to-r from-violet-500 to-indigo-600 transition-all"
@@ -341,7 +334,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ジャックポット - 3Dエフェクト */}
+        {/* ジャックポット */}
         <div className="mb-6">
           <div className="relative group">
             <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-600 rounded-3xl blur-xl opacity-70 group-hover:opacity-100 transition-opacity animate-pulse" />
@@ -370,7 +363,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* P-BANK通知 - さりげなく表示 */}
+        {/* P-BANK通知 */}
         {pbankNotifications.count > 0 && (
           <div className="mb-4">
             <button
@@ -396,7 +389,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* 管理者パネル - 特別デザイン */}
+        {/* 管理者パネル */}
         {user?.role === 'admin' && (
           <div className="mb-6">
             <button
@@ -422,57 +415,83 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* メインメニュー - ベントグリッド */}
+        {/* メインメニュー */}
         <div className="grid grid-cols-2 gap-4">
-          {menuItems.map((item, index) => {
+          {mainMenuItems.map((item, index) => {
             const Icon = item.icon
             const AccentIcon = item.accentIcon
+            const isAllGamble = item.href === '/all-gamble'
+            
             return (
               <button
                 key={index}
                 onClick={() => router.push(item.href)}
                 className="group relative"
               >
-                {/* 背景のグロー効果 */}
                 <div className={`absolute inset-0 bg-gradient-to-br ${item.gradient} rounded-2xl blur-lg opacity-0 group-hover:opacity-30 transition-opacity`} />
                 
-                {/* カード本体 */}
-                <div className="relative bg-white/90 backdrop-blur-sm rounded-2xl p-5 shadow-lg hover:shadow-2xl transition-all transform hover:scale-105 active:scale-95 border border-white/50">
-                  {/* バッジ */}
+                <div className={`relative backdrop-blur-sm rounded-2xl p-5 shadow-lg hover:shadow-2xl transition-all transform hover:scale-105 active:scale-95 ${
+                  isAllGamble 
+                    ? 'bg-gradient-to-br from-purple-100 via-violet-100 to-indigo-100 border-2 border-purple-400'
+                    : 'bg-white/90 border border-white/50'
+                }`}>
+                  
                   {item.badge && (
                     <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-bold animate-pulse z-10">
                       {item.badge}
                     </div>
-                  )}
-                  
-                  {/* アイコン */}
-                  <div className={`bg-gradient-to-br ${item.gradient} w-14 h-14 rounded-2xl flex items-center justify-center mb-3 mx-auto ${item.shadowColor} shadow-lg transform group-hover:rotate-6 transition-transform`}>
-                    <Icon className="w-7 h-7 text-white" />
+          )}
+          
+          <div className={`bg-gradient-to-br ${item.gradient} w-14 h-14 rounded-2xl flex items-center justify-center mb-3 mx-auto ${item.shadowColor} shadow-lg transform group-hover:rotate-6 transition-transform`}>
+            <Icon className="w-7 h-7 text-white" />
+          </div>
+          
+          <h3 className="font-black text-gray-900 text-sm mb-0.5">
+            {item.title}
+          </h3>
+          <p className="text-xs font-semibold text-gray-600">
+            {item.subtitle}
+          </p>
+          <p className="text-xs text-gray-500 mt-1">
+            {item.description}
+          </p>
+          
+          <div className="absolute bottom-2 right-2 opacity-10 group-hover:opacity-20 transition-opacity">
+            <AccentIcon className="w-8 h-8 text-gray-900" />
+          </div>
+        </div>
+      </button>
+    )
+  })}
+</div>
+
+        {/* プロフィールカード（横長） */}
+        <div className="mt-4">
+          <button
+            onClick={() => router.push('/profile')}
+            className="w-full group relative"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 rounded-2xl blur-lg opacity-0 group-hover:opacity-30 transition-opacity" />
+            
+            <div className="relative bg-white/90 backdrop-blur-sm rounded-2xl p-4 shadow-lg hover:shadow-2xl transition-all transform hover:scale-[1.02] active:scale-95 border border-white/50">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 w-12 h-12 rounded-xl flex items-center justify-center shadow-indigo-500/25 shadow-lg">
+                    <User className="w-6 h-6 text-white" />
                   </div>
-                  
-                  {/* テキスト */}
-                  <h3 className="font-black text-gray-900 text-sm mb-0.5">
-                    {item.title}
-                  </h3>
-                  <p className="text-xs font-semibold text-gray-600">
-                    {item.subtitle}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {item.description}
-                  </p>
-                  
-                  {/* アクセントアイコン */}
-                  <div className="absolute bottom-2 right-2 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <AccentIcon className="w-8 h-8 text-gray-900" />
+                  <div className="text-left">
+                    <h3 className="font-black text-gray-900 text-sm">Profile</h3>
+                    <p className="text-xs font-semibold text-gray-600">プロフィール・設定</p>
                   </div>
                 </div>
-              </button>
-            )
-          })}
+                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-violet-600 transition-colors" />
+              </div>
+            </div>
+          </button>
         </div>
       </div>
 
-      {/* ボトムナビゲーション - フローティング */}
+      {/* ボトムナビゲーション */}
       <div className="fixed bottom-4 left-4 right-4 max-w-md mx-auto">
         <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/50 px-2 py-2">
           <div className="flex items-center justify-around">

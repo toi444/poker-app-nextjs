@@ -65,41 +65,68 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex">
       {/* 左側 - グラデーション背景 */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 p-12 flex-col justify-between">
-        <div>
-          <h1 className="text-white text-5xl font-bold mb-4">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 p-12 flex-col justify-between relative overflow-hidden">
+        {/* 背景装飾 */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-400/10 rounded-full blur-3xl" />
+        
+        <div className="relative z-10">
+          <div className="inline-block mb-6">
+            <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl flex items-center justify-center shadow-xl transform rotate-12">
+              <span className="text-3xl transform -rotate-12">🎰</span>
+            </div>
+          </div>
+          <h1 className="text-white text-6xl font-black mb-4 leading-tight">
             We Are<br />Pretty Cure!
           </h1>
-          <p className="text-white/80 text-lg">
+          <p className="text-white/90 text-xl font-medium">
             Poker Management System
           </p>
+          <div className="mt-6 flex items-center space-x-2">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+            <span className="text-white/80 text-sm">システム稼働中</span>
+          </div>
         </div>
         
-        <div className="space-y-6">
-          <div className="bg-white/10 backdrop-blur rounded-2xl p-6 border border-white/20">
-            <div className="flex items-center space-x-4 mb-4">
-              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+        <div className="space-y-4 relative z-10">
+          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 transform hover:scale-105">
+            <div className="flex items-center space-x-4">
+              <div className="w-14 h-14 bg-gradient-to-br from-green-400 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg">
+                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                 </svg>
               </div>
               <div>
-                <p className="text-white font-semibold">収支管理</p>
-                <p className="text-white/60 text-sm">ゲーム結果を簡単記録</p>
+                <p className="text-white font-bold text-lg">収支管理</p>
+                <p className="text-white/70 text-sm">ゲーム結果を簡単記録</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white/10 backdrop-blur rounded-2xl p-6 border border-white/20">
+          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 transform hover:scale-105">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <div className="w-14 h-14 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
+                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
               <div>
-                <p className="text-white font-semibold">P-BANK</p>
-                <p className="text-white/60 text-sm">融資システム搭載</p>
+                <p className="text-white font-bold text-lg">P-BANK</p>
+                <p className="text-white/70 text-sm">月利10%の融資システム</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 transform hover:scale-105">
+            <div className="flex items-center space-x-4">
+              <div className="w-14 h-14 bg-gradient-to-br from-pink-400 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
+                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-white font-bold text-lg">統計分析</p>
+                <p className="text-white/70 text-sm">AIプレイスタイル診断</p>
               </div>
             </div>
           </div>
@@ -107,39 +134,48 @@ export default function LoginPage() {
       </div>
 
       {/* 右側 - ログインフォーム */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-gray-50">
-        <div className="w-full max-w-md">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-gradient-to-br from-purple-50 via-white to-blue-50 relative overflow-hidden">
+        {/* 背景装飾 */}
+        <div className="absolute top-0 left-0 w-72 h-72 bg-violet-200/30 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-0 w-72 h-72 bg-blue-200/30 rounded-full blur-3xl" />
+        
+        <div className="w-full max-w-md relative z-10">
           {/* モバイル用ロゴ */}
           <div className="lg:hidden mb-8 text-center">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
+            <div className="inline-block mb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-violet-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-xl">
+                <span className="text-3xl">🎰</span>
+              </div>
+            </div>
+            <h1 className="text-4xl font-black bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
               We Are Pretty Cure!
             </h1>
-            <p className="text-gray-600 mt-2">Poker Management System</p>
+            <p className="text-gray-700 mt-2 font-medium">Poker Management System</p>
           </div>
 
-          <div className="bg-white rounded-3xl shadow-xl p-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-white/50">
+            <h2 className="text-3xl font-black text-gray-900 mb-2">
               {isSignUp ? 'アカウント作成' : 'ログイン'}
             </h2>
-            <p className="text-gray-600 mb-8">
+            <p className="text-gray-700 mb-8 font-medium">
               {isSignUp ? '新規アカウントを作成します' : 'アカウントにログインします'}
             </p>
 
             {error && (
-              <div className={`p-4 rounded-xl mb-6 ${
+              <div className={`p-4 rounded-2xl mb-6 font-semibold border-2 ${
                 error.includes('確認メール') 
-                  ? 'bg-green-50 text-green-800 border border-green-200' 
+                  ? 'bg-green-50 text-green-800 border-green-300' 
                   : error.includes('利用停止中')
-                  ? 'bg-yellow-50 text-yellow-800 border border-yellow-200'
-                  : 'bg-red-50 text-red-800 border border-red-200'
+                  ? 'bg-yellow-50 text-yellow-800 border-yellow-300'
+                  : 'bg-red-50 text-red-800 border-red-300'
               }`}>
                 {error}
               </div>
             )}
 
-            <form onSubmit={handleAuth} className="space-y-5">
+            <form onSubmit={handleAuth} className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-bold text-gray-800 mb-2">
                   メールアドレス
                 </label>
                 <input
@@ -147,13 +183,19 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl 
+                    focus:ring-4 focus:ring-violet-500/20 focus:border-violet-500 
+                    transition-all duration-200 
+                    text-gray-900 font-medium text-base
+                    placeholder:text-gray-500
+                    hover:border-gray-300
+                    bg-white/50"
                   placeholder="your@email.com"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-bold text-gray-800 mb-2">
                   パスワード
                 </label>
                 <input
@@ -161,7 +203,13 @@ export default function LoginPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl 
+                    focus:ring-4 focus:ring-violet-500/20 focus:border-violet-500 
+                    transition-all duration-200 
+                    text-gray-900 font-medium text-base
+                    placeholder:text-gray-500
+                    hover:border-gray-300
+                    bg-white/50"
                   placeholder="••••••••"
                 />
               </div>
@@ -169,7 +217,13 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white py-3 rounded-xl font-semibold hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white py-4 rounded-xl 
+                  font-bold text-lg
+                  hover:shadow-2xl hover:scale-105 
+                  active:scale-95
+                  transform transition-all duration-200 
+                  disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
+                  shadow-lg"
               >
                 {loading ? (
                   <span className="flex items-center justify-center">
@@ -185,23 +239,23 @@ export default function LoginPage() {
               </button>
             </form>
 
-            <div className="mt-6 text-center">
-              <span className="text-gray-600">
+            <div className="mt-8 text-center">
+              <span className="text-gray-700 font-medium">
                 {isSignUp ? 'すでにアカウントをお持ちですか？' : 'アカウントをお持ちでない方は'}
               </span>
               <button
                 type="button"
                 onClick={() => setIsSignUp(!isSignUp)}
-                className="ml-2 text-violet-600 hover:text-violet-700 font-semibold"
+                className="ml-2 text-violet-600 hover:text-violet-700 font-bold hover:underline transition-all"
               >
                 {isSignUp ? 'ログイン' : '新規登録'}
               </button>
             </div>
           </div>
 
-          {/* ソーシャルログイン（将来実装用） */}
-          <div className="mt-8 text-center text-gray-500">
-            <p className="text-sm">© 2024 We Are Pretty Cure!</p>
+          {/* フッター */}
+          <div className="mt-8 text-center">
+            <p className="text-gray-600 text-sm font-medium">© 2024 We Are Pretty Cure! Poker Management System</p>
           </div>
         </div>
       </div>
