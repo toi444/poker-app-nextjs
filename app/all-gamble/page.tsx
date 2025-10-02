@@ -17,12 +17,14 @@ interface PeriodStats {
 }
 
 interface RecordItem {
+  id: string
   date: string
   category: string
   icon: string
   name: string
   profit: number
   color: string
+  feeling?: string
 }
 
 export default function AllGamblePage() {
@@ -65,7 +67,7 @@ export default function AllGamblePage() {
     // 1. gamble_recordsを取得
     const { data: gambleData } = await supabase
       .from('gamble_records')
-      .select('category, profit, played_date')
+      .select('id, category, profit, played_date, feeling')
       .eq('user_id', user.id)
       .gte('played_date', startDate)
       .lte('played_date', endDate)
@@ -73,7 +75,7 @@ export default function AllGamblePage() {
     // 2. game_sessionsを取得（Pretty Cure!）
     const { data: gameData } = await supabase
       .from('game_sessions')
-      .select('profit, played_at')
+      .select('id, profit, played_at')
       .eq('user_id', user.id)
 
     // 3. Pretty Cure!データを日付でフィルタリング＆変換
@@ -84,9 +86,11 @@ export default function AllGamblePage() {
         const dateStr = jstDate.toISOString().split('T')[0]
         
         return {
+          id: g.id,
           category: 'pretty_cure',
           profit: g.profit,
-          played_date: dateStr
+          played_date: dateStr,
+          feeling: undefined
         }
       })
       .filter(g => g.played_date >= startDate && g.played_date <= endDate) || []
@@ -124,12 +128,14 @@ export default function AllGamblePage() {
       const items: RecordItem[] = allData.map(r => {
         const cat = categoryMap[r.category] || categoryMap['other']
         return {
+          id: r.id,
           date: r.played_date,
           category: r.category,
           icon: cat.icon,
           name: cat.name,
           profit: r.profit,
-          color: cat.color
+          color: cat.color,
+          feeling: r.feeling
         }
       }).sort((a, b) => b.date.localeCompare(a.date)) // 新しい日付順
 
@@ -172,8 +178,7 @@ export default function AllGamblePage() {
         startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
         break
       case 'week':
-        // 今週の月曜日を起点にする
-        const dayOfWeek = now.getDay() // 0=日曜, 1=月曜...
+        const dayOfWeek = now.getDay()
         const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1
         startDate = new Date(now.getTime() - daysFromMonday * 24 * 60 * 60 * 1000)
         startDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate())
@@ -188,7 +193,6 @@ export default function AllGamblePage() {
         startDate = now
     }
 
-    // YYYY-MM-DD形式で返す
     const formatDate = (date: Date) => {
       const y = date.getFullYear()
       const m = String(date.getMonth() + 1).padStart(2, '0')
@@ -211,7 +215,6 @@ export default function AllGamblePage() {
     }
   }
 
-  // 日付をフォーマット（2025-10-02 → 10/2（水））
   const formatDisplayDate = (dateStr: string) => {
     const date = new Date(dateStr)
     const month = date.getMonth() + 1
@@ -219,6 +222,17 @@ export default function AllGamblePage() {
     const weekdays = ['日', '月', '火', '水', '木', '金', '土']
     const weekday = weekdays[date.getDay()]
     return `${month}/${day}（${weekday}）`
+  }
+
+  const getFeelingEmoji = (feeling: string) => {
+    const emojiMap: { [key: string]: string } = {
+      'excellent': '😄',
+      'good': '🙂',
+      'normal': '😐',
+      'bad': '😞',
+      'terrible': '😡'
+    }
+    return emojiMap[feeling] || '😐'
   }
 
   if (loading) {
@@ -425,13 +439,20 @@ export default function AllGamblePage() {
           ) : (
             <div className="space-y-2">
               {recordItems.map((item, index) => (
-                <div key={index} className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                <button
+                  key={index}
+                  onClick={() => router.push(`/all-gamble/detail/${item.category}/${item.id}`)}
+                  className="w-full bg-gray-50 rounded-xl p-3 border border-gray-100 hover:bg-gray-100 hover:border-gray-300 transition-all active:scale-98 text-left"
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <span className="text-2xl">{item.icon}</span>
                       <div>
                         <p className="text-xs text-gray-600">{formatDisplayDate(item.date)}</p>
                         <p className="font-bold text-gray-900 text-sm">{item.name}</p>
+                        {item.feeling && (
+                          <p className="text-sm mt-1">{getFeelingEmoji(item.feeling)}</p>
+                        )}
                       </div>
                     </div>
                     <div className="text-right">
@@ -441,7 +462,7 @@ export default function AllGamblePage() {
                       <p className="text-xs text-gray-500">円</p>
                     </div>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           )}
