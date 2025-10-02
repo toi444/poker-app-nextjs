@@ -10,12 +10,14 @@ export default function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const router = useRouter()
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
+    setSuccess('')
     
     try {
       if (isSignUp) {
@@ -24,7 +26,8 @@ export default function LoginPage() {
           password,
         })
         if (error) throw error
-        setError('確認メールを送信しました')
+        
+        setSuccess('アカウントを作成しました！')
       } else {
         // ログイン処理
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -89,34 +92,7 @@ export default function LoginPage() {
         </div>
         
         <div className="space-y-4 relative z-10">
-          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 transform hover:scale-105">
-            <div className="flex items-center space-x-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-green-400 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg">
-                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-white font-bold text-lg">収支管理</p>
-                <p className="text-white/70 text-sm">ゲーム結果を簡単記録</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 transform hover:scale-105">
-            <div className="flex items-center space-x-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
-                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-white font-bold text-lg">P-BANK</p>
-                <p className="text-white/70 text-sm">月利10%の融資システム</p>
-              </div>
-            </div>
-          </div>
-
+          {/* 1つ目：統計分析 */}
           <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 transform hover:scale-105">
             <div className="flex items-center space-x-4">
               <div className="w-14 h-14 bg-gradient-to-br from-pink-400 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
@@ -127,6 +103,36 @@ export default function LoginPage() {
               <div>
                 <p className="text-white font-bold text-lg">統計分析</p>
                 <p className="text-white/70 text-sm">AIプレイスタイル診断</p>
+              </div>
+            </div>
+          </div>
+          
+          {/* 2つ目：ポーカーレッスン */}
+          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 transform hover:scale-105">
+            <div className="flex items-center space-x-4">
+              <div className="w-14 h-14 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-xl flex items-center justify-center shadow-lg">
+                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-white font-bold text-lg">ポーカーレッスン</p>
+                <p className="text-white/70 text-sm">戦略とテクニックを学ぶ</p>
+              </div>
+            </div>
+          </div>
+
+          {/* 3つ目：収支管理 */}
+          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 transform hover:scale-105">
+            <div className="flex items-center space-x-4">
+              <div className="w-14 h-14 bg-gradient-to-br from-green-400 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg">
+                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-white font-bold text-lg">収支管理</p>
+                <p className="text-white/70 text-sm">ゲーム結果を簡単記録</p>
               </div>
             </div>
           </div>
@@ -161,11 +167,29 @@ export default function LoginPage() {
               {isSignUp ? '新規アカウントを作成します' : 'アカウントにログインします'}
             </p>
 
+            {/* 成功メッセージ表示 */}
+            {success && (
+              <div className="p-4 rounded-2xl mb-6 border-2 bg-green-50 border-green-300">
+                <p className="text-green-800 font-semibold mb-3">{success}</p>
+                <div className="bg-white rounded-xl p-4 text-sm space-y-2.5">
+                  <p className="text-gray-800 font-semibold">確認メールが届かなくても大丈夫です</p>
+                  <p className="text-gray-700">
+                    メール確認なしで<strong>すぐにログイン</strong>していただけます。
+                    上記のログインフォームからログインしてください。
+                  </p>
+                  <div className="border-t pt-2 mt-2">
+                    <p className="text-gray-600 text-xs">
+                      メールが届く場合もあります。念のため<strong>スパムフォルダ</strong>もご確認ください。
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* エラーメッセージ表示 */}
             {error && (
               <div className={`p-4 rounded-2xl mb-6 font-semibold border-2 ${
-                error.includes('確認メール') 
-                  ? 'bg-green-50 text-green-800 border-green-300' 
-                  : error.includes('利用停止中')
+                error.includes('利用停止中')
                   ? 'bg-yellow-50 text-yellow-800 border-yellow-300'
                   : 'bg-red-50 text-red-800 border-red-300'
               }`}>
@@ -239,13 +263,31 @@ export default function LoginPage() {
               </button>
             </form>
 
+            {/* 新規登録時の補足説明 */}
+            {isSignUp && (
+              <div className="mt-6 bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
+                <p className="text-blue-800 font-semibold text-sm mb-2">
+                  アカウント作成後について
+                </p>
+                <ul className="text-blue-700 text-xs space-y-1.5 ml-4">
+                  <li>• 確認メールの受信を待たずに<strong>すぐログイン可能</strong>です</li>
+                  <li>• 作成したメールアドレスとパスワードでログインしてください</li>
+                  <li>• スパムフォルダも念のためご確認ください</li>
+                </ul>
+              </div>
+            )}
+
             <div className="mt-8 text-center">
               <span className="text-gray-700 font-medium">
                 {isSignUp ? 'すでにアカウントをお持ちですか？' : 'アカウントをお持ちでない方は'}
               </span>
               <button
                 type="button"
-                onClick={() => setIsSignUp(!isSignUp)}
+                onClick={() => {
+                  setIsSignUp(!isSignUp)
+                  setError('')
+                  setSuccess('')
+                }}
                 className="ml-2 text-violet-600 hover:text-violet-700 font-bold hover:underline transition-all"
               >
                 {isSignUp ? 'ログイン' : '新規登録'}
