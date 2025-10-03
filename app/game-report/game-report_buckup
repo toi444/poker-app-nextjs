@@ -375,7 +375,7 @@ export default function GameReportPage() {
             <div className="w-8 h-8 bg-gradient-to-br from-violet-500 to-indigo-600 rounded-lg flex items-center justify-center">
               <Save className="w-4 h-4 text-white" />
             </div>
-            ※一括登録できる管理者が不在の場合や、過去の未登録データの入力はこちら
+            成績記録※一括登録できる管理者が不在の場合や、過去の未登録データを入力してください
           </h2>
           
           {/* JP説明 */}

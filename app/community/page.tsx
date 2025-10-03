@@ -34,7 +34,7 @@ interface Profile {
   username: string
   email: string
   active: boolean
-  avatar_url?: string  // アバターURL追加
+  avatar_url?: string
 }
 
 interface GameSession {
@@ -132,18 +132,15 @@ export default function CommunityPage() {
         .select('*')
         .order('created_at', { ascending: false })
       
-      console.log('Winners data:', winnersData)
-      console.log('Winners error:', winnersError)
-      
       if (winnersError) {
         console.error('Error fetching winners:', winnersError)
       } else if (winnersData && winnersData.length > 0) {
-        // 各勝者のプロフィール情報を個別に取得（アバター追加）
+        // 各勝者のプロフィール情報を個別に取得
         const winnersWithProfiles = await Promise.all(
           winnersData.map(async (winner) => {
             const { data: profileData } = await supabase
               .from('profiles')
-              .select('username, active, avatar_url')  // avatar_url追加
+              .select('username, active, avatar_url')
               .eq('id', winner.user_id)
               .single()
             
@@ -159,24 +156,26 @@ export default function CommunityPage() {
           winner => winner.profiles && winner.profiles.active !== false
         )
         
-        console.log('Active winners:', activeWinners)
-        
         if (activeWinners.length > 0) {
           setAllJackpotWinners(activeWinners)
           setLatestWinner(activeWinners[0])
         }
       }
 
-      // 全体統計（アクティブユーザーのみ、アバター追加）
-      const { data: sessions } = await supabase
+      // 全体統計（アクティブユーザーのみ）- 修正箇所
+      const { data: allSessions } = await supabase
         .from('game_sessions')
         .select(`
           *,
-          profiles!inner(username, active, avatar_url)
+          profiles(username, active, avatar_url)
         `)
-        .eq('profiles.active', true)
       
-      if (sessions) {
+      // JavaScriptでアクティブユーザーのみフィルタリング
+      const sessions = allSessions?.filter(s => 
+        s.profiles && s.profiles.active !== false
+      ) || []
+      
+      if (sessions.length > 0) {
         const totalHours = sessions.reduce((sum, s) => sum + Number(s.play_hours), 0)
         const totalBuyin = sessions.reduce((sum, s) => sum + s.buy_in, 0)
         const uniquePlayers = new Set(sessions.map(s => s.user_id)).size
@@ -187,7 +186,7 @@ export default function CommunityPage() {
           activePlayers: uniquePlayers
         })
 
-        // 総合ランキング（アバター情報を含む）
+        // 総合ランキング
         const playerStats = new Map()
         sessions.forEach(session => {
           const userId = session.user_id
@@ -217,7 +216,7 @@ export default function CommunityPage() {
         
         setAllTimeRanking(rankingData)
 
-        // 今月のランキング（アバター情報を含む）
+        // 今月のランキング
         const currentMonth = new Date().toISOString().slice(0, 7)
         const monthlySessions = sessions.filter(s => 
           s.played_at.startsWith(currentMonth)
@@ -366,7 +365,7 @@ export default function CommunityPage() {
           </div>
         </div>
 
-        {/* 最新ジャックポット獲得者（アバター付き改善版） */}
+        {/* 最新ジャックポット獲得者 */}
         {latestWinner && (
           <div className="bg-gradient-to-br from-pink-500 via-purple-500 to-indigo-500 rounded-2xl shadow-xl p-5 mb-6 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-20 h-20 bg-white/10 rounded-full -ml-10 -mt-10"></div>
@@ -428,7 +427,34 @@ export default function CommunityPage() {
         {/* タブコンテンツ */}
         {activeTab === 'ranking' && (
           <div className="space-y-4">
-            {/* 総合収支ランキング（アバター付き） */}
+            {/* 今月のランキング */}
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-5 border border-indigo-100">
+              <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-gray-900">
+                <Target className="w-5 h-5 text-indigo-600" />
+                今月のランキング
+              </h2>
+              <div className="space-y-3">
+                {monthlyRanking.map((player, idx) => (
+                  <div key={idx} className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 hover:scale-105 transition-all">
+                    <span className="text-xl font-black w-8 text-gray-900">{idx + 1}.</span>
+                    <AvatarIcon profile={{ username: player.username, avatar_url: player.avatar_url } as Profile} size="sm" />
+                    <div className="flex-1">
+                      <div className="font-bold text-gray-900">{player.username}</div>
+                      <div className="text-xs font-semibold text-gray-800">{player.gamesPlayed}戦</div>
+                    </div>
+                    <div className={`px-4 py-2 rounded-full font-black text-white ${
+                      player.totalProfit >= 0 
+                        ? 'bg-gradient-to-r from-green-500 to-emerald-600' 
+                        : 'bg-gradient-to-r from-red-500 to-pink-600'
+                    }`}>
+                      {player.totalProfit >= 0 ? '+' : ''}{player.totalProfit.toLocaleString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 総合収支ランキング */}
             <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-5 border border-violet-100">
               <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-gray-900">
                 <Trophy className="w-5 h-5 text-yellow-500" />
@@ -464,33 +490,6 @@ export default function CommunityPage() {
                     </div>
                   )
                 })}
-              </div>
-            </div>
-
-            {/* 今月のランキング（アバター付き） */}
-            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-5 border border-indigo-100">
-              <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-gray-900">
-                <Target className="w-5 h-5 text-indigo-600" />
-                今月のランキング
-              </h2>
-              <div className="space-y-3">
-                {monthlyRanking.map((player, idx) => (
-                  <div key={idx} className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 hover:scale-105 transition-all">
-                    <span className="text-xl font-black w-8 text-gray-900">{idx + 1}.</span>
-                    <AvatarIcon profile={{ username: player.username, avatar_url: player.avatar_url } as Profile} size="sm" />
-                    <div className="flex-1">
-                      <div className="font-bold text-gray-900">{player.username}</div>
-                      <div className="text-xs font-semibold text-gray-800">{player.gamesPlayed}戦</div>
-                    </div>
-                    <div className={`px-4 py-2 rounded-full font-black text-white ${
-                      player.totalProfit >= 0 
-                        ? 'bg-gradient-to-r from-green-500 to-emerald-600' 
-                        : 'bg-gradient-to-r from-red-500 to-pink-600'
-                    }`}>
-                      {player.totalProfit >= 0 ? '+' : ''}{player.totalProfit.toLocaleString()}
-                    </div>
-                  </div>
-                ))}
               </div>
             </div>
           </div>
@@ -543,7 +542,7 @@ export default function CommunityPage() {
 
         {activeTab === 'records' && (
           <div className="space-y-4">
-            {/* ジャックポット殿堂（アバター付き） */}
+            {/* ジャックポット殿堂 */}
             {allJackpotWinners.length > 0 && (
               <div className="bg-gradient-to-br from-yellow-50 via-amber-50 to-orange-50 backdrop-blur-sm rounded-2xl shadow-xl p-5 border-2 border-yellow-300">
                 <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-gray-900">
@@ -604,7 +603,7 @@ export default function CommunityPage() {
               </div>
             )}
 
-            {/* 大勝ち記録（アバター付き） */}
+            {/* 大勝ち記録 */}
             <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-5 border border-green-200">
               <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-gray-900">
                 <Award className="w-5 h-5 text-green-600" />
@@ -643,7 +642,7 @@ export default function CommunityPage() {
               </div>
             </div>
 
-            {/* 大負け記録（アバター付き） */}
+            {/* 大負け記録 */}
             <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-5 border border-red-200">
               <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-gray-900">
                 <Award className="w-5 h-5 text-red-600" />

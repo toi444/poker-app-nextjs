@@ -773,6 +773,7 @@ export default function LessonPage() {
   const [potSize, setPotSize] = useState(10000)
   const [callAmount, setCallAmount] = useState(3000)
   const [activeTab, setActiveTab] = useState('range')
+  const [currentStreet, setCurrentStreet] = useState<'flop' | 'turn'>('flop') //
 
   // ユーザー取得と学習済み用語の読み込み
   useEffect(() => {
@@ -1077,55 +1078,136 @@ export default function LessonPage() {
               {/* ポットオッズ計算 */}
               <div className="bg-gradient-to-r from-amber-100 to-orange-100 rounded-2xl p-4 border border-orange-200">
                 <h3 className="font-bold text-base mb-3 text-gray-900">💰 ポットオッズ判断</h3>
-                <div className="grid grid-cols-2 gap-3 mb-3">
-                  <div>
-                    <label className="text-xs font-bold text-gray-800">ポットサイズ</label>
-                    <input
-                      type="number"
-                      value={potSize}
-                      onChange={(e) => {
-                        const val = e.target.value.replace(/^0+/, '') || '0'
-                        setPotSize(Math.max(0, Number(val)))
-                      }}
-                      className="w-full p-2 border-2 border-orange-200 rounded-lg text-sm font-bold text-gray-900 bg-white"
-                      step="1000"
-                      min="0"
-                    />
+                
+                {/* フロップ/ターン選択 */}
+                <div className="mb-3">
+                  <label className="text-xs font-bold text-gray-800 mb-2 block">現在のストリート</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => setCurrentStreet('flop')}
+                      className={`py-2 rounded-lg text-sm font-bold transition-all ${
+                        currentStreet === 'flop'
+                          ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg'
+                          : 'bg-white text-gray-700 border border-gray-300'
+                      }`}
+                    >
+                      🃏 フロップ
+                    </button>
+                    <button
+                      onClick={() => setCurrentStreet('turn')}
+                      className={`py-2 rounded-lg text-sm font-bold transition-all ${
+                        currentStreet === 'turn'
+                          ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg'
+                          : 'bg-white text-gray-700 border border-gray-300'
+                      }`}
+                    >
+                      🎴 ターン
+                    </button>
                   </div>
-                  <div>
-                    <label className="text-xs font-bold text-gray-800">コール額</label>
+                  <p className="text-xs text-gray-700 font-semibold mt-1 text-center">
+                    {currentStreet === 'flop' ? 'ターン+リバー両方の確率を使用' : 'リバーのみの確率を使用'}
+                  </p>
+                </div>
+
+                {/* ポットサイズ */}
+                <div className="mb-3">
+                  <label className="text-xs font-bold text-gray-800 mb-1 block">ポットサイズ (P)</label>
+                  <div className="flex gap-2 items-center">
+                    <button
+                      onClick={() => setPotSize(Math.max(0, potSize - 500))}
+                      className="w-10 h-10 bg-red-500 text-white rounded-lg font-bold hover:bg-red-600 active:scale-95 flex items-center justify-center"
+                    >
+                      -
+                    </button>
                     <input
                       type="number"
-                      value={callAmount}
+                      value={potSize === 0 ? '' : potSize}
                       onChange={(e) => {
-                        const val = e.target.value.replace(/^0+/, '') || '0'
-                        setCallAmount(Math.max(0, Number(val)))
+                        const val = e.target.value
+                        if (val === '') {
+                          setPotSize(0)
+                        } else {
+                          setPotSize(Math.max(0, Number(val)))
+                        }
                       }}
-                      className="w-full p-2 border-2 border-orange-200 rounded-lg text-sm font-bold text-gray-900 bg-white"
-                      step="1000"
+                      onBlur={() => {
+                        if (potSize === 0) setPotSize(0)
+                      }}
+                      className="flex-1 p-2 border-2 border-orange-200 rounded-lg text-center font-bold text-gray-900 bg-white"
+                      placeholder="0"
                       min="0"
                     />
+                    <button
+                      onClick={() => setPotSize(potSize + 500)}
+                      className="w-10 h-10 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 active:scale-95 flex items-center justify-center"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                {/* コール額 */}
+                <div className="mb-3">
+                  <label className="text-xs font-bold text-gray-800 mb-1 block">コール額 (P)</label>
+                  <div className="flex gap-2 items-center">
+                    <button
+                      onClick={() => setCallAmount(Math.max(0, callAmount - 500))}
+                      className="w-10 h-10 bg-red-500 text-white rounded-lg font-bold hover:bg-red-600 active:scale-95 flex items-center justify-center"
+                    >
+                      -
+                    </button>
+                    <input
+                      type="number"
+                      value={callAmount === 0 ? '' : callAmount}
+                      onChange={(e) => {
+                        const val = e.target.value
+                        if (val === '') {
+                          setCallAmount(0)
+                        } else {
+                          setCallAmount(Math.max(0, Number(val)))
+                        }
+                      }}
+                      onBlur={() => {
+                        if (callAmount === 0) setCallAmount(0)
+                      }}
+                      className="flex-1 p-2 border-2 border-orange-200 rounded-lg text-center font-bold text-gray-900 bg-white"
+                      placeholder="0"
+                      min="0"
+                    />
+                    <button
+                      onClick={() => setCallAmount(callAmount + 500)}
+                      className="w-10 h-10 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 active:scale-95 flex items-center justify-center"
+                    >
+                      +
+                    </button>
                   </div>
                 </div>
 
                 {/* 判定結果 */}
-                <div className={`rounded-xl p-3 ${shouldCall ? 'bg-gradient-to-r from-green-200 to-green-300 border border-green-400' : 'bg-gradient-to-r from-red-200 to-red-300 border border-red-400'}`}>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-bold text-gray-900">
-                        必要勝率: {potOdds.toFixed(1)}%
-                      </div>
-                      <div className="text-xs font-semibold text-gray-800">
-                        改善確率: {turnOrRiverProb.toFixed(1)}%
+                {(() => {
+                  const relevantProb = currentStreet === 'turn' ? riverProb : turnOrRiverProb
+                  const shouldCallNow = relevantProb >= potOdds
+                  
+                  return (
+                    <div className={`rounded-xl p-3 ${shouldCallNow ? 'bg-gradient-to-r from-green-200 to-green-300 border border-green-400' : 'bg-gradient-to-r from-red-200 to-red-300 border border-red-400'}`}>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-sm font-bold text-gray-900">
+                            必要勝率: {potOdds.toFixed(1)}%
+                          </div>
+                          <div className="text-xs font-semibold text-gray-800">
+                            改善確率: {relevantProb.toFixed(1)}%
+                          </div>
+                        </div>
+                        <span className={`px-3 py-1 rounded-full text-xs font-black ${
+                          shouldCallNow ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+                        }`}>
+                          {shouldCallNow ? '✓ コール推奨' : '✗ フォールド推奨'}
+                        </span>
                       </div>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-black ${
-                      shouldCall ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
-                    }`}>
-                      {shouldCall ? '✓ コール推奨' : '✗ フォールド推奨'}
-                    </span>
-                  </div>
-                </div>
+                  )
+                })()}
               </div>
             </div>
 

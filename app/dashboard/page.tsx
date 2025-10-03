@@ -16,21 +16,146 @@ interface NotificationData {
   type: string
 }
 
+interface WeeklyRanking {
+  player: string
+  profit: number
+  avatar_url?: string
+}
+
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null)
   const [currentTime, setCurrentTime] = useState(new Date())
   const [currentJackpot, setCurrentJackpot] = useState(0)
   const [recentStats, setRecentStats] = useState({ games: 0, profit: 0, winRate: 0, streak: 0 })
   const [pbankNotifications, setPbankNotifications] = useState<NotificationData>({ count: 0, type: '' })
+  const [weeklyRanking, setWeeklyRanking] = useState<WeeklyRanking[]>([])
+  const [roastComment, setRoastComment] = useState('')
   const [loading, setLoading] = useState(true)
   const [jackpotAnimation, setJackpotAnimation] = useState(false)
   const router = useRouter()
+
+  // 煽り系セリフ（27パターン）
+  const roastComments = [
+    "最近の{{player}}は負けすぎやろ！なんも変わってへんな！",
+    "最近の{{player}}、また負けとるんかい！学習能力ないんか！",
+    "{{player}}、ハンド見てるか？",
+    "{{player}}、絶好調に負けとるな！(笑)",
+    "{{player}}、フォールドボタン壊れとんのか？",
+    "{{player}}、チップの色、間違えて覚えてんのか？",
+    "最近の{{player}}、全ハンドフォールドした方がマシちゃうか？",
+    "最近の{{player}}、運がないんとちゃう、実力がないんや！",
+    "最近の{{player}}、ハンド1枚しかもらってないんか？",
+    "最近の{{player}}、捨てるほど金もってるってこと？",
+    "最近の{{player}}、負けんのが趣味なんか？",
+    "{{player}}、ポジション理解してる？まぁしてへんやろな！",
+    "最近の{{player}}、逆に才能やな。",
+    "最近の{{player}}、チップ配るボランティアご苦労さん！",
+    "最近の{{player}}、風邪でもひいてんのか？",
+    "大丈夫か？{{player}}、お前の人生やから俺はええけどな。",
+    "最近の{{player}}、フィッシュって自分のことやで？気づいてる？",
+    "{{player}}、コールばっかりしとったらアカンって！",
+    "{{player}}、ハンドレンジって知っとる？",
+    "{{player}}(笑)",
+    "{{player}}、いつからティルトや？もしかしてずっとか？",
+    "最近の{{player}}、ポットオッズ計算できてる？足し算から始めよか！",
+    "最近の{{player}}、相手のレンジ考えてプレイしてる？いや、してへんな！",
+    "{{player}}とポーカーするだけで家買えるんちゃうか(笑)",
+    "{{player}}みたいなプレイヤーばっかりやったら楽やねんけどな！(笑)",
+    "{{player}}、そろそろ勝ち方教えたろか？",
+    "最近の{{player}}、負けるのが趣味なんか？"
+  ]
+
+  // 褒め系セリフ（3パターン）
+  const praiseComments = [
+    "最近の{{player}}、強いやんけ！流石やな！",
+    "{{player}}、才能あると思っててん。嬉しいわ。",
+    "{{player}}、ええ打ち方しているわ。お前らも見習えよホンマ！"
+  ]
+
+  const fetchWeeklyRanking = async () => {
+    try {
+      const sevenDaysAgo = new Date()
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+
+      const { data } = await supabase
+        .from('game_sessions')
+        .select(`
+          user_id,
+          profit,
+          profiles(username, avatar_url)
+        `)
+        .gte('played_at', sevenDaysAgo.toISOString())
+
+      if (data) {
+        // プレイヤーごとに集計
+        const playerStats = new Map<string, { profit: number; username: string; avatar_url?: string }>()
+        
+        data.forEach((session: any) => {
+          const username = session.profiles?.username || 'Unknown'
+          const current = playerStats.get(session.user_id) || { profit: 0, username, avatar_url: session.profiles?.avatar_url }
+          current.profit += session.profit || 0
+          playerStats.set(session.user_id, current)
+        })
+
+        // 配列に変換してソート
+        const rankings: WeeklyRanking[] = Array.from(playerStats.values())
+          .map(stat => ({
+            player: stat.username,
+            profit: stat.profit,
+            avatar_url: stat.avatar_url
+          }))
+          .sort((a, b) => b.profit - a.profit)
+
+        setWeeklyRanking(rankings)
+
+        // コメント生成
+        if (rankings.length >= 3) {
+          // 上位3名でプラスの人を抽出
+          const topThreeWithProfit = rankings.slice(0, 3).filter(r => r.profit > 0)
+          
+          // 下位3名でマイナスの人を抽出
+          const bottomThreeWithLoss = rankings.slice(-3).filter(r => r.profit < 0)
+          
+          // 両方いる場合はランダムで選択
+          const hasPraise = topThreeWithProfit.length > 0
+          const hasRoast = bottomThreeWithLoss.length > 0
+          
+          if (hasPraise && hasRoast) {
+            // 50%の確率で褒めるか煽るか
+            if (Math.random() < 0.5) {
+              const winner = topThreeWithProfit[Math.floor(Math.random() * topThreeWithProfit.length)]
+              const comment = praiseComments[Math.floor(Math.random() * praiseComments.length)]
+              setRoastComment(comment.replace('{{player}}', winner.player))
+            } else {
+              const loser = bottomThreeWithLoss[Math.floor(Math.random() * bottomThreeWithLoss.length)]
+              const comment = roastComments[Math.floor(Math.random() * roastComments.length)]
+              setRoastComment(comment.replace('{{player}}', loser.player))
+            }
+          } else if (hasPraise) {
+            // 褒める人だけいる
+            const winner = topThreeWithProfit[Math.floor(Math.random() * topThreeWithProfit.length)]
+            const comment = praiseComments[Math.floor(Math.random() * praiseComments.length)]
+            setRoastComment(comment.replace('{{player}}', winner.player))
+          } else if (hasRoast) {
+            // 煽る人だけいる
+            const loser = bottomThreeWithLoss[Math.floor(Math.random() * bottomThreeWithLoss.length)]
+            const comment = roastComments[Math.floor(Math.random() * roastComments.length)]
+            setRoastComment(comment.replace('{{player}}', loser.player))
+          }
+          // どちらの条件にも該当しない場合はコメントなし
+        }
+      }
+    } catch (error) {
+      console.error('Weekly ranking fetch error:', error)
+    }
+  }
 
   useEffect(() => {
     checkUser()
     fetchJackpot()
     fetchRecentStats()
     fetchPbankNotifications()
+    fetchWeeklyRanking()
     const timer = setInterval(() => setCurrentTime(new Date()), 1000)
     const jackpotTimer = setInterval(() => {
       setJackpotAnimation(prev => !prev)
@@ -40,6 +165,47 @@ export default function DashboardPage() {
       clearInterval(jackpotTimer)
     }
   }, [])
+
+  // コメント5秒更新
+  useEffect(() => {
+    if (weeklyRanking.length >= 3) {
+      const updateComment = () => {
+        const topThreeWithProfit = weeklyRanking.slice(0, 3).filter(r => r.profit > 0)
+        const bottomThreeWithLoss = weeklyRanking.slice(-3).filter(r => r.profit < 0)
+        
+        const hasPraise = topThreeWithProfit.length > 0
+        const hasRoast = bottomThreeWithLoss.length > 0
+        
+        // 90%の確率で煽り、10%の確率で褒め
+        const shouldRoast = Math.random() < 0.9
+        
+        if (shouldRoast && hasRoast) {
+          // 煽りたいし煽れる人がいる
+          const loser = bottomThreeWithLoss[Math.floor(Math.random() * bottomThreeWithLoss.length)]
+          const comment = roastComments[Math.floor(Math.random() * roastComments.length)]
+          setRoastComment(comment.replace('{{player}}', loser.player))
+        } else if (!shouldRoast && hasPraise) {
+          // 褒めたいし褒める人がいる
+          const winner = topThreeWithProfit[Math.floor(Math.random() * topThreeWithProfit.length)]
+          const comment = praiseComments[Math.floor(Math.random() * praiseComments.length)]
+          setRoastComment(comment.replace('{{player}}', winner.player))
+        } else if (hasRoast) {
+          // 第一希望が叶わないが煽れる人がいる
+          const loser = bottomThreeWithLoss[Math.floor(Math.random() * bottomThreeWithLoss.length)]
+          const comment = roastComments[Math.floor(Math.random() * roastComments.length)]
+          setRoastComment(comment.replace('{{player}}', loser.player))
+        } else if (hasPraise) {
+          // 第一希望が叶わないが褒める人がいる
+          const winner = topThreeWithProfit[Math.floor(Math.random() * topThreeWithProfit.length)]
+          const comment = praiseComments[Math.floor(Math.random() * praiseComments.length)]
+          setRoastComment(comment.replace('{{player}}', winner.player))
+        }
+      }
+
+      const commentTimer = setInterval(updateComment, 5000)
+      return () => clearInterval(commentTimer)
+    }
+  }, [weeklyRanking])
 
   const checkUser = async () => {
     try {
@@ -363,6 +529,61 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* 直近7日間ランキング */}
+        {weeklyRanking.length > 0 && (
+          <div className="mb-6">
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-4 border border-violet-100 overflow-hidden">
+              <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-violet-600" />
+                直近7日間ランキング
+              </h3>
+              
+              {/* カルーセル */}
+              <div className="relative">
+                <div className="flex gap-3 animate-scroll">
+                  {[...weeklyRanking, ...weeklyRanking].map((rank, idx) => (
+                    <div 
+                      key={idx}
+                      className="flex-shrink-0 w-40 bg-gradient-to-br from-violet-50 to-indigo-50 rounded-xl p-3 border border-violet-200"
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-8 h-8 bg-gradient-to-br from-violet-400 to-indigo-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                          {(idx % weeklyRanking.length) + 1}
+                        </div>
+                        <span className="text-sm font-bold text-gray-900 truncate flex-1">
+                          {rank.player}
+                        </span>
+                      </div>
+                      <div className={`text-lg font-black text-center ${
+                        rank.profit >= 0 ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {rank.profit >= 0 ? '+' : ''}{rank.profit.toLocaleString()}P
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* 煽りコメント */}
+            {roastComment && (
+              <div className="mt-3 bg-gradient-to-r from-orange-100 to-amber-100 rounded-2xl p-4 border border-orange-200">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-600 rounded-full flex items-center justify-center">
+                    <span className="text-white text-lg font-bold">?</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs font-bold text-gray-700 mb-1">???さん</p>
+                    <p className="text-sm font-bold text-gray-900 leading-relaxed">
+                      「{roastComment}」
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* P-BANK通知 */}
         {pbankNotifications.count > 0 && (
           <div className="mb-4">
@@ -415,6 +636,32 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* 管理者：一括登録ボタン */}
+        {user?.role === 'admin' && (
+          <div className="mb-6">
+            <button
+              onClick={() => router.push('/game-report-batch')}
+              className="w-full relative group"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 rounded-3xl blur-lg opacity-50 group-hover:opacity-70 transition-opacity" />
+              <div className="relative bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 text-white rounded-3xl p-5 shadow-2xl transform transition-all hover:scale-[1.02] active:scale-95">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+                      <Users className="w-7 h-7" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-black text-lg">一括記録登録</p>
+                      <p className="text-xs text-white/80">複数プレイヤーの記録を一括管理</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-6 h-6 text-white/70" />
+                </div>
+              </div>
+            </button>
+          </div>
+        )}
+
         {/* メインメニュー */}
         <div className="grid grid-cols-2 gap-4">
           {mainMenuItems.map((item, index) => {
@@ -440,30 +687,30 @@ export default function DashboardPage() {
                     <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-bold animate-pulse z-10">
                       {item.badge}
                     </div>
-          )}
+                  )}
           
-          <div className={`bg-gradient-to-br ${item.gradient} w-14 h-14 rounded-2xl flex items-center justify-center mb-3 mx-auto ${item.shadowColor} shadow-lg transform group-hover:rotate-6 transition-transform`}>
-            <Icon className="w-7 h-7 text-white" />
-          </div>
+                  <div className={`bg-gradient-to-br ${item.gradient} w-14 h-14 rounded-2xl flex items-center justify-center mb-3 mx-auto ${item.shadowColor} shadow-lg transform group-hover:rotate-6 transition-transform`}>
+                    <Icon className="w-7 h-7 text-white" />
+                  </div>
           
-          <h3 className="font-black text-gray-900 text-sm mb-0.5">
-            {item.title}
-          </h3>
-          <p className="text-xs font-semibold text-gray-600">
-            {item.subtitle}
-          </p>
-          <p className="text-xs text-gray-500 mt-1">
-            {item.description}
-          </p>
+                  <h3 className="font-black text-gray-900 text-sm mb-0.5">
+                    {item.title}
+                  </h3>
+                  <p className="text-xs font-semibold text-gray-600">
+                    {item.subtitle}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {item.description}
+                  </p>
           
-          <div className="absolute bottom-2 right-2 opacity-10 group-hover:opacity-20 transition-opacity">
-            <AccentIcon className="w-8 h-8 text-gray-900" />
-          </div>
+                  <div className="absolute bottom-2 right-2 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <AccentIcon className="w-8 h-8 text-gray-900" />
+                  </div>
+                </div>
+              </button>
+            )
+          })}
         </div>
-      </button>
-    )
-  })}
-</div>
 
         {/* プロフィールカード（横長） */}
         <div className="mt-4">
@@ -529,6 +776,25 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      <style jsx global>{`
+        @keyframes scroll {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
+        }
+
+        .animate-scroll {
+          animation: scroll 7s linear infinite;
+        }
+
+        .animate-scroll:hover {
+          animation-play-state: paused;
+        }
+      `}</style>
     </div>
   )
 }

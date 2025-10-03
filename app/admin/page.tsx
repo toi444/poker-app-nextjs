@@ -7,7 +7,7 @@ import {
   ArrowLeft, Settings, DollarSign, Users, TrendingUp,
   Trash2, Plus, Edit, Save, X, AlertTriangle, 
   Shield, ShieldOff, Camera, Sparkles, Mail, Key,
-  Trophy, CreditCard, Calendar
+  Trophy, CreditCard, Calendar, ChevronRight
 } from 'lucide-react'
 
 export default function AdminPage() {
@@ -661,6 +661,29 @@ export default function AdminPage() {
             ))}
           </div>
         </div>
+
+        {/* P-BANK管理ボタン（特権管理者専用） */}
+        {user?.email === 'toui.reigetsu@gmail.com' && (
+          <div className="mb-6">
+            <button
+              onClick={() => router.push('/pbank-admin')}
+              className="w-full bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-2xl p-5 shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02] active:scale-95"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+                    <DollarSign className="w-7 h-7" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-black text-lg">P-BANK管理 🔐</p>
+                    <p className="text-xs text-white/80">貸借の追加・編集・削除（特権管理者専用）</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-6 h-6 text-white/70" />
+              </div>
+            </button>
+          </div>
+        )}
 
         {/* タブコンテンツ */}
         {activeTab === 'jackpot' && (
