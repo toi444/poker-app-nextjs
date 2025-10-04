@@ -793,7 +793,7 @@ export default function DashboardV2() {
             <div className="grid grid-cols-2 gap-4">
               {/* アクティブ1 */}
               <button
-                onClick={() => router.push('/poker-lesson')}
+                onClick={() => router.push('/lesson')}
                 className="relative group overflow-hidden rounded-2xl aspect-[3/4]"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-pink-600 to-rose-700 animate-gradient" />
