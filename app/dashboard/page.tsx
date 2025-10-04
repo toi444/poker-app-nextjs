@@ -793,7 +793,7 @@ export default function DashboardV2() {
             <div className="grid grid-cols-2 gap-4">
               {/* アクティブ1 */}
               <button
-                onClick={() => router.push('/lesson')}
+                onClick={() => router.push('/poker-lesson')}
                 className="relative group overflow-hidden rounded-2xl aspect-[3/4]"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-pink-600 to-rose-700 animate-gradient" />
@@ -806,6 +806,23 @@ export default function DashboardV2() {
                   </div>
                 </div>
                 <div className="absolute inset-0 border-4 border-pink-400/50 rounded-2xl" />
+              </button>
+
+              {/* バカラ - 2番目 */}
+              <button
+                onClick={() => router.push('/baccarat-lesson')}
+                className="relative group overflow-hidden rounded-2xl aspect-[3/4]"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-red-600 via-yellow-600 to-blue-600 animate-gradient" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                <div className="relative h-full flex flex-col items-center justify-center p-5 text-white">
+                  <span className="text-7xl drop-shadow-glow animate-float mb-6">💎</span>
+                  <div className="text-center">
+                    <p className="font-black text-lg drop-shadow-glow" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>バカラ</p>
+                    <p className="text-sm opacity-90 mt-1" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 700 }}>ルール・確率</p>
+                  </div>
+                </div>
+                <div className="absolute inset-0 border-4 border-red-400/50 rounded-2xl" />
               </button>
 
               {/* Coming Soon - 基本ルール */}
