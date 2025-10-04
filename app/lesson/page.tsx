@@ -18,7 +18,11 @@ import {
   RotateCcw,
   Sparkles,
   Square, 
-  CheckSquare
+  CheckSquare,
+  Zap,
+  Flame,
+  Brain,
+  Award
 } from 'lucide-react'
 
 // ハンドレンジデータ
@@ -561,145 +565,175 @@ const HandVsHandCalculator = () => {
   const loseRate = showResult ? (100 - winRate) : 50
   
   return (
-    <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-5 border border-indigo-100">
-      <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-gray-900">
-        ⚔️ ハンド vs ハンド勝率計算
-      </h2>
-      
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        {/* 自分のハンド */}
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
-          <div className="text-xs font-bold text-gray-700 mb-2 text-center">🎯 あなたのハンド</div>
-          <select 
-            value={myHand}
-            onChange={(e) => {
-              setMyHand(e.target.value)
-              setShowResult(false)
-            }}
-            className="w-full p-2 border-2 border-blue-300 rounded-lg text-center font-bold bg-white text-gray-900"
-          >
-            {commonHands.map(hand => (
-              <option key={hand} value={hand}>{hand}</option>
-            ))}
-          </select>
-          <div className="mt-3 text-center">
-            <div className="text-3xl font-black text-gray-900">
-              {myHand.length === 2 && myHand[0] === myHand[1] ? 
-                `${myHand[0]}♠ ${myHand[1]}♥` :
-                myHand.endsWith('s') ? 
-                `${myHand[0]}♠ ${myHand[1]}♠` :
-                `${myHand[0]}♠ ${myHand[1]}♥`
-              }
-            </div>
-            <div className="text-xs text-gray-600 font-semibold mt-1">
-              {myHand.length === 2 && myHand[0] === myHand[1] ? 'ポケットペア' :
-               myHand.endsWith('s') ? 'スーテッド' : 'オフスート'}
-            </div>
-          </div>
-        </div>
+    <div className="relative group">
+      <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-2xl blur-xl opacity-50" />
+      <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-2 border-cyan-500/30 shadow-2xl">
+        <h2 className="text-lg font-black mb-4 flex items-center gap-2 text-white">
+          <Zap className="w-5 h-5 text-cyan-400 drop-shadow-glow" />
+          ハンド vs ハンド勝率計算
+        </h2>
         
-        {/* 相手のハンド */}
-        <div className="bg-gradient-to-br from-red-50 to-pink-50 rounded-xl p-4 border border-red-200">
-          <div className="text-xs font-bold text-gray-700 mb-2 text-center">👤 相手のハンド</div>
-          <select 
-            value={oppHand}
-            onChange={(e) => {
-              setOppHand(e.target.value)
-              setShowResult(false)
-            }}
-            className="w-full p-2 border-2 border-red-300 rounded-lg text-center font-bold bg-white text-gray-900"
-          >
-            {commonHands.map(hand => (
-              <option key={hand} value={hand}>{hand}</option>
-            ))}
-          </select>
-          <div className="mt-3 text-center">
-            <div className="text-3xl font-black text-gray-900">
-              {oppHand.length === 2 && oppHand[0] === oppHand[1] ? 
-                `${oppHand[0]}♦ ${oppHand[1]}♣` :
-                oppHand.endsWith('s') ? 
-                `${oppHand[0]}♦ ${oppHand[1]}♦` :
-                `${oppHand[0]}♦ ${oppHand[1]}♣`
-              }
-            </div>
-            <div className="text-xs text-gray-600 font-semibold mt-1">
-              {oppHand.length === 2 && oppHand[0] === oppHand[1] ? 'ポケットペア' :
-               oppHand.endsWith('s') ? 'スーテッド' : 'オフスート'}
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      {/* バトルボタン */}
-      <button
-        onClick={() => setShowResult(true)}
-        className="w-full py-3 bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all mb-4"
-      >
-        ⚔️ 勝率を計算する
-      </button>
-      
-      {/* 結果表示 */}
-      {showResult && (
-        <div className="space-y-3">
-          {/* プログレスバー形式の結果 */}
-          <div className="bg-gray-100 rounded-xl p-4">
-            <div className="flex justify-between mb-2">
-              <span className="font-bold text-gray-900">{myHand}</span>
-              <span className="text-xs font-semibold text-gray-600">VS</span>
-              <span className="font-bold text-gray-900">{oppHand}</span>
-            </div>
-            <div className="relative h-8 bg-gray-200 rounded-full overflow-hidden">
-              <div 
-                className="absolute left-0 h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all"
-                style={{ width: `${winRate}%` }}
-              />
-              <div 
-                className="absolute right-0 h-full bg-gradient-to-l from-red-500 to-red-600"
-                style={{ width: `${loseRate}%` }}
-              />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-white font-bold text-sm drop-shadow-lg">
-                  {winRate.toFixed(2)}% - {loseRate.toFixed(2)}%
-                </span>
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          {/* 自分のハンド */}
+          <div className="relative group/card">
+            <div className="absolute inset-0 bg-blue-600 rounded-xl blur-lg opacity-50" />
+            <div className="relative bg-black/40 backdrop-blur-sm rounded-xl p-4 border-2 border-blue-500/30">
+              <div className="text-xs font-black text-blue-300 mb-2 text-center font-mono">あなた</div>
+              <select 
+                value={myHand}
+                onChange={(e) => {
+                  setMyHand(e.target.value)
+                  setShowResult(false)
+                }}
+                className="w-full p-2 border-2 border-blue-500/50 rounded-lg text-center font-black bg-black/60 text-white font-mono"
+              >
+                {commonHands.map(hand => (
+                  <option key={hand} value={hand}>{hand}</option>
+                ))}
+              </select>
+              <div className="mt-3 text-center">
+                <div className="text-3xl font-black text-white font-mono drop-shadow-glow">
+                  {myHand.length === 2 && myHand[0] === myHand[1] ? 
+                    `${myHand[0]}♠ ${myHand[1]}♥` :
+                    myHand.endsWith('s') ? 
+                    `${myHand[0]}♠ ${myHand[1]}♠` :
+                    `${myHand[0]}♠ ${myHand[1]}♥`
+                  }
+                </div>
+                <div className="text-xs text-gray-400 font-bold mt-1 font-mono">
+                  {myHand.length === 2 && myHand[0] === myHand[1] ? 'ペア' :
+                   myHand.endsWith('s') ? 'スーテッド' : 'オフスート'}
+                </div>
               </div>
             </div>
           </div>
           
-          {/* 詳細結果 */}
-          <div className="grid grid-cols-2 gap-2">
-            <div className={`rounded-xl p-3 text-center ${
-              winRate > loseRate ? 'bg-gradient-to-br from-green-100 to-emerald-200 border border-green-300' : 
-              winRate < loseRate ? 'bg-gradient-to-br from-gray-100 to-gray-200 border border-gray-300' :
-              'bg-gradient-to-br from-yellow-100 to-amber-200 border border-yellow-300'
-            }`}>
-              <div className="text-3xl font-black text-gray-900">{winRate.toFixed(2)}%</div>
-              <div className="text-xs font-bold text-gray-700">勝率</div>
-            </div>
-            <div className={`rounded-xl p-3 text-center ${
-              loseRate > winRate ? 'bg-gradient-to-br from-red-100 to-pink-200 border border-red-300' : 
-              'bg-gradient-to-br from-gray-100 to-gray-200 border border-gray-300'
-            }`}>
-              <div className="text-3xl font-black text-gray-900">{loseRate.toFixed(2)}%</div>
-              <div className="text-xs font-bold text-gray-700">敗率</div>
-            </div>
-          </div>
-          
-          {/* アドバイス */}
-          <div className={`rounded-xl p-3 text-center ${
-            winRate >= 70 ? 'bg-gradient-to-r from-green-100 to-emerald-100 border border-green-300' :
-            winRate >= 55 ? 'bg-gradient-to-r from-blue-100 to-indigo-100 border border-blue-300' :
-            winRate >= 45 ? 'bg-gradient-to-r from-yellow-100 to-amber-100 border border-yellow-300' :
-            'bg-gradient-to-r from-red-100 to-pink-100 border border-red-300'
-          }`}>
-            <div className="text-sm font-bold text-gray-900">
-              {winRate >= 70 ? '💪 圧倒的有利！積極的にプレイしましょう' :
-               winRate >= 55 ? '👍 有利な状況です' :
-               winRate >= 45 ? '⚖️ ほぼ互角。ポジションを考慮しましょう' :
-               '⚠️ 不利な状況。慎重にプレイしましょう'}
+          {/* 相手のハンド */}
+          <div className="relative group/card">
+            <div className="absolute inset-0 bg-red-600 rounded-xl blur-lg opacity-50" />
+            <div className="relative bg-black/40 backdrop-blur-sm rounded-xl p-4 border-2 border-red-500/30">
+              <div className="text-xs font-black text-red-300 mb-2 text-center font-mono">相手</div>
+              <select 
+                value={oppHand}
+                onChange={(e) => {
+                  setOppHand(e.target.value)
+                  setShowResult(false)
+                }}
+                className="w-full p-2 border-2 border-red-500/50 rounded-lg text-center font-black bg-black/60 text-white font-mono"
+              >
+                {commonHands.map(hand => (
+                  <option key={hand} value={hand}>{hand}</option>
+                ))}
+              </select>
+              <div className="mt-3 text-center">
+                <div className="text-3xl font-black text-white font-mono drop-shadow-glow">
+                  {oppHand.length === 2 && oppHand[0] === oppHand[1] ? 
+                    `${oppHand[0]}♦ ${oppHand[1]}♣` :
+                    oppHand.endsWith('s') ? 
+                    `${oppHand[0]}♦ ${oppHand[1]}♦` :
+                    `${oppHand[0]}♦ ${oppHand[1]}♣`
+                  }
+                </div>
+                <div className="text-xs text-gray-400 font-bold mt-1 font-mono">
+                  {oppHand.length === 2 && oppHand[0] === oppHand[1] ? 'ペア' :
+                   oppHand.endsWith('s') ? 'スーテッド' : 'オフスート'}
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      )}
+        
+        {/* バトルボタン */}
+        <div className="relative group mb-4">
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl blur-lg opacity-75 group-hover:opacity-100 transition-opacity" />
+          <button
+            onClick={() => setShowResult(true)}
+            className="relative w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-black rounded-xl shadow-2xl hover:scale-105 active:scale-95 transition-all border-2 border-white/20"
+          >
+            <span className="drop-shadow-glow">⚔️ 勝率を計算する</span>
+          </button>
+        </div>
+        
+        {/* 結果表示 */}
+        {showResult && (
+          <div className="space-y-3 animate-fadeIn">
+            {/* プログレスバー形式の結果 */}
+            <div className="bg-black/40 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+              <div className="flex justify-between mb-2">
+                <span className="font-black text-white font-mono">{myHand}</span>
+                <span className="text-xs font-bold text-gray-400 font-mono">VS</span>
+                <span className="font-black text-white font-mono">{oppHand}</span>
+              </div>
+              <div className="relative h-8 bg-black/60 rounded-full overflow-hidden border-2 border-white/10">
+                <div 
+                  className="absolute left-0 h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all shadow-lg shadow-blue-500/50"
+                  style={{ width: `${winRate}%` }}
+                />
+                <div 
+                  className="absolute right-0 h-full bg-gradient-to-l from-red-500 to-red-600 shadow-lg shadow-red-500/50"
+                  style={{ width: `${loseRate}%` }}
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-white font-black text-sm drop-shadow-glow font-mono">
+                    {winRate.toFixed(2)}% - {loseRate.toFixed(2)}%
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            {/* 詳細結果 */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="relative group/result">
+                <div className={`absolute inset-0 ${
+                  winRate > loseRate ? 'bg-green-600' : 'bg-gray-600'
+                } rounded-xl blur-lg opacity-50`} />
+                <div className={`relative rounded-xl p-3 text-center border-2 ${
+                  winRate > loseRate ? 'bg-green-600/20 border-green-500/50' : 
+                  winRate < loseRate ? 'bg-gray-600/20 border-gray-500/50' :
+                  'bg-yellow-600/20 border-yellow-500/50'
+                }`}>
+                  <div className="text-3xl font-black text-white drop-shadow-glow font-mono">{winRate.toFixed(2)}%</div>
+                  <div className="text-xs font-black text-gray-300 font-mono">勝率</div>
+                </div>
+              </div>
+              <div className="relative group/result">
+                <div className={`absolute inset-0 ${
+                  loseRate > winRate ? 'bg-red-600' : 'bg-gray-600'
+                } rounded-xl blur-lg opacity-50`} />
+                <div className={`relative rounded-xl p-3 text-center border-2 ${
+                  loseRate > winRate ? 'bg-red-600/20 border-red-500/50' : 'bg-gray-600/20 border-gray-500/50'
+                }`}>
+                  <div className="text-3xl font-black text-white drop-shadow-glow font-mono">{loseRate.toFixed(2)}%</div>
+                  <div className="text-xs font-black text-gray-300 font-mono">敗率</div>
+                </div>
+              </div>
+            </div>
+            
+            {/* アドバイス */}
+            <div className="relative group/advice">
+              <div className={`absolute inset-0 ${
+                winRate >= 70 ? 'bg-green-600' :
+                winRate >= 55 ? 'bg-blue-600' :
+                winRate >= 45 ? 'bg-yellow-600' :
+                'bg-red-600'
+              } rounded-xl blur-lg opacity-50`} />
+              <div className={`relative rounded-xl p-3 text-center border-2 ${
+                winRate >= 70 ? 'bg-green-600/20 border-green-500/50' :
+                winRate >= 55 ? 'bg-blue-600/20 border-blue-500/50' :
+                winRate >= 45 ? 'bg-yellow-600/20 border-yellow-500/50' :
+                'bg-red-600/20 border-red-500/50'
+              }`}>
+                <div className="text-sm font-black text-white font-mono drop-shadow-glow">
+                  {winRate >= 70 ? '💪 圧倒的有利！積極的にプレイ' :
+                   winRate >= 55 ? '👍 有利な状況です' :
+                   winRate >= 45 ? '⚖️ ほぼ互角。ポジション重視' :
+                   '⚠️ 不利。慎重にプレイ'}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -711,12 +745,12 @@ const HandRangeMatrix = ({ position, style }: { position: string; style: string 
   
   const getHandColor = (hand: string) => {
     if (selectedRange.raise.includes(hand)) {
-      return 'bg-gradient-to-br from-red-500 to-red-600 text-white border-red-700'
+      return 'bg-gradient-to-br from-red-500 to-red-600 text-white border-red-400 shadow-lg shadow-red-500/50'
     }
     if (selectedRange.call.includes(hand)) {
-      return 'bg-gradient-to-br from-yellow-400 to-amber-500 text-white border-yellow-600'
+      return 'bg-gradient-to-br from-yellow-400 to-amber-500 text-white border-yellow-400 shadow-lg shadow-yellow-500/50'
     }
-    return 'bg-gradient-to-br from-gray-100 to-gray-200 text-gray-400 border-gray-300'
+    return 'bg-black/40 text-gray-600 border-gray-700'
   }
   
   return (
@@ -726,7 +760,7 @@ const HandRangeMatrix = ({ position, style }: { position: string; style: string 
           <tr>
             <th className="w-8 h-8"></th>
             {ranks.map(rank => (
-              <th key={rank} className="w-8 h-8 text-xs font-bold text-gray-700">
+              <th key={rank} className="w-8 h-8 text-xs font-black text-purple-300 font-mono">
                 {rank}
               </th>
             ))}
@@ -735,7 +769,7 @@ const HandRangeMatrix = ({ position, style }: { position: string; style: string 
         <tbody>
           {ranks.map((rowRank, i) => (
             <tr key={rowRank}>
-              <th className="w-8 h-8 text-xs font-bold text-gray-700">{rowRank}</th>
+              <th className="w-8 h-8 text-xs font-black text-purple-300 font-mono">{rowRank}</th>
               {ranks.map((colRank, j) => {
                 let hand = ''
                 if (i < j) {
@@ -748,7 +782,7 @@ const HandRangeMatrix = ({ position, style }: { position: string; style: string 
                 
                 return (
                   <td key={`${i}-${j}`} className="p-0.5">
-                    <div className={`w-7 h-7 flex items-center justify-center text-[10px] font-bold rounded border ${getHandColor(hand)} transition-all hover:scale-110 cursor-pointer`}>
+                    <div className={`w-7 h-7 flex items-center justify-center text-[10px] font-black rounded border-2 ${getHandColor(hand)} transition-all hover:scale-125 cursor-pointer hover:z-10 relative font-mono`}>
                       {hand}
                     </div>
                   </td>
@@ -773,7 +807,7 @@ export default function LessonPage() {
   const [potSize, setPotSize] = useState(10000)
   const [callAmount, setCallAmount] = useState(3000)
   const [activeTab, setActiveTab] = useState('range')
-  const [currentStreet, setCurrentStreet] = useState<'flop' | 'turn'>('flop') //
+  const [currentStreet, setCurrentStreet] = useState<'flop' | 'turn'>('flop')
 
   // ユーザー取得と学習済み用語の読み込み
   useEffect(() => {
@@ -853,151 +887,204 @@ export default function LessonPage() {
   const learnedPercentage = (learnedTerms.size / totalTerms) * 100
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
-      <div className="container max-w-md mx-auto p-4 pb-20">
+    <div className="min-h-screen bg-black">
+      {/* 背景エフェクト */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-950/20 via-black to-indigo-950/20" />
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-[128px] animate-pulse" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-600/10 rounded-full blur-[128px] animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-pink-600/5 rounded-full blur-[128px] animate-pulse" style={{ animationDelay: '2s' }} />
+      </div>
+
+      <div className="relative container max-w-md mx-auto p-4 pb-20">
+        {/* ヘッダー */}
         <div className="mb-6">
-          {/* 戻るボタンを追加 */}
           <button
             onClick={() => router.push('/dashboard')}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-white/80 backdrop-blur-sm shadow-md hover:shadow-lg transition-all mb-4"
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 border-2 border-purple-500/30 hover:bg-white/10 hover:border-purple-500/50 transition-all hover:scale-110 mb-4"
           >
-            <ArrowLeft className="h-5 w-5 text-gray-900" />
+            <ArrowLeft className="h-5 w-5 text-purple-400" />
           </button>
           
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-            📖 ポーカーレッスン
-          </h1>
-          <p className="text-gray-800 mt-2 font-medium">戦略とスキルを磨こう</p>
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 blur-2xl opacity-50 animate-pulse" />
+            <div className="relative">
+              <h1 className="text-4xl font-black bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500 bg-clip-text text-transparent animate-shimmer drop-shadow-glow">
+                ポーカーレッスン
+              </h1>
+              <p className="text-purple-400/80 mt-2 font-mono text-sm font-bold">POKER MASTERY ACADEMY</p>
+            </div>
+          </div>
         </div>
 
         {/* タブナビゲーション */}
-        <div className="flex gap-1 mb-6 bg-white/80 backdrop-blur-sm rounded-2xl p-1.5 shadow-lg">
-          {[
-            { id: 'range', icon: '📊', label: 'レンジ' },
-            { id: 'calc', icon: '🎲', label: '確率' },
-            { id: 'terms', icon: '📚', label: '用語' },
-            { id: 'tournament', icon: '🏆', label: '大会' }
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 py-3 px-3 rounded-xl text-sm font-medium transition-all ${
-                activeTab === tab.id
-                  ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg transform scale-105'
-                  : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <span className="block text-lg mb-1">{tab.icon}</span>
-              <span className="text-xs font-semibold">{tab.label}</span>
-            </button>
-          ))}
+        <div className="relative group mb-6">
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl blur-xl opacity-50" />
+          <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-2 border-2 border-purple-500/30 shadow-2xl">
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { id: 'range', icon: Target, label: 'レンジ', color: 'purple' },
+                { id: 'calc', icon: Calculator, label: '確率', color: 'cyan' },
+                { id: 'terms', icon: BookOpen, label: '用語', color: 'pink' },
+                { id: 'tournament', icon: Trophy, label: '大会', color: 'yellow' }
+              ].map(tab => {
+                const Icon = tab.icon
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`relative group/tab py-3 px-2 rounded-xl text-xs font-black transition-all ${
+                      activeTab === tab.id
+                        ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-xl scale-105'
+                        : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    {activeTab === tab.id && (
+                      <div className={`absolute inset-0 bg-${tab.color}-600 blur-lg opacity-75 rounded-xl`} />
+                    )}
+                    <div className="relative flex flex-col items-center gap-1">
+                      <Icon className={`w-5 h-5 ${activeTab === tab.id ? 'drop-shadow-glow' : ''}`} />
+                      <span className="font-mono">{tab.label}</span>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
         </div>
 
         {/* ハンドレンジタブ */}
         {activeTab === 'range' && (
           <div className="space-y-4">
-            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-5 border border-violet-100">
-              <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-gray-900">
-                <Target className="w-5 h-5 text-violet-600" />
-                オープニングハンドレンジ
-              </h2>
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl blur-xl opacity-50" />
+              <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-2 border-purple-500/30 shadow-2xl">
+                <h2 className="text-lg font-black mb-4 flex items-center gap-2 text-white">
+                  <Target className="w-5 h-5 text-purple-400 drop-shadow-glow" />
+                  オープニングハンドレンジ
+                </h2>
 
-              {/* ポジション選択 */}
-              <div className="space-y-2 mb-4">
-                <label className="text-sm font-bold text-gray-900">ポジション</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {['UTG', 'MP', 'CO', 'BTN', 'SB', 'BB'].map((pos) => (
-                    <button
-                      key={pos}
-                      onClick={() => setSelectedPosition(pos)}
-                      className={`py-2.5 px-4 rounded-xl text-sm font-bold transition-all transform hover:scale-105 ${
-                        selectedPosition === pos
-                          ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg'
-                          : 'bg-white text-gray-800 hover:bg-violet-50 border border-gray-200'
-                      }`}
-                    >
-                      {pos}
-                    </button>
-                  ))}
+                {/* ポジション選択 */}
+                <div className="space-y-2 mb-4">
+                  <label className="text-xs font-black text-purple-300 font-mono">ポジション</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {['UTG', 'MP', 'CO', 'BTN', 'SB', 'BB'].map((pos) => (
+                      <button
+                        key={pos}
+                        onClick={() => setSelectedPosition(pos)}
+                        className={`relative group/btn py-2.5 px-4 rounded-xl text-sm font-black transition-all transform hover:scale-105 font-mono ${
+                          selectedPosition === pos
+                            ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg border-2 border-purple-400'
+                            : 'bg-black/40 text-gray-400 hover:bg-white/10 hover:text-white border-2 border-gray-700'
+                        }`}
+                      >
+                        {selectedPosition === pos && (
+                          <div className="absolute inset-0 bg-purple-600 blur-lg opacity-75 rounded-xl" />
+                        )}
+                        <span className="relative drop-shadow-glow">{pos}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              {/* スタイル選択 */}
-              <div className="space-y-2 mb-4">
-                <label className="text-sm font-bold text-gray-900">プレイスタイル</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {['タイト', 'スタンダード', 'アグレッシブ'].map((style) => (
-                    <button
-                      key={style}
-                      onClick={() => setSelectedStyle(style)}
-                      className={`py-2.5 px-4 rounded-xl text-sm font-bold transition-all transform hover:scale-105 ${
-                        selectedStyle === style
-                          ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg'
-                          : 'bg-white text-gray-800 hover:bg-violet-50 border border-gray-200'
-                      }`}
-                    >
-                      {style}
-                    </button>
-                  ))}
+                {/* スタイル選択 */}
+                <div className="space-y-2 mb-4">
+                  <label className="text-xs font-black text-purple-300 font-mono">プレイスタイル</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {['タイト', 'スタンダード', 'アグレッシブ'].map((style) => (
+                      <button
+                        key={style}
+                        onClick={() => setSelectedStyle(style)}
+                        className={`relative group/btn py-2.5 px-4 rounded-xl text-sm font-black transition-all transform hover:scale-105 ${
+                          selectedStyle === style
+                            ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg border-2 border-indigo-400'
+                            : 'bg-black/40 text-gray-400 hover:bg-white/10 hover:text-white border-2 border-gray-700'
+                        }`}
+                      >
+                        {selectedStyle === style && (
+                          <div className="absolute inset-0 bg-indigo-600 blur-lg opacity-75 rounded-xl" />
+                        )}
+                        <span className="relative drop-shadow-glow">{style}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              {/* 統計表示 */}
-              <div className="bg-gradient-to-r from-violet-100 to-indigo-100 rounded-2xl p-4 mb-4 border border-violet-200">
-                <div className="grid grid-cols-3 gap-4 text-center">
-                  <div>
-                    <div className="text-3xl font-black text-violet-700">
-                      {handRanges[selectedPosition]?.[selectedStyle]?.raise?.length || 0}
+                {/* 統計表示 */}
+                <div className="relative group mb-4">
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl blur-xl opacity-75 animate-pulse" />
+                  <div className="relative bg-gradient-to-r from-purple-600/20 to-pink-600/20 backdrop-blur-sm rounded-xl p-4 border-2 border-purple-500/50">
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-red-600 blur-lg opacity-30 rounded-lg" />
+                        <div className="relative">
+                          <div className="text-3xl font-black text-red-400 font-mono drop-shadow-glow">
+                            {handRanges[selectedPosition]?.[selectedStyle]?.raise?.length || 0}
+                          </div>
+                          <div className="text-xs font-black text-red-300 font-mono">レイズ</div>
+                        </div>
+                      </div>
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-yellow-600 blur-lg opacity-30 rounded-lg" />
+                        <div className="relative">
+                          <div className="text-3xl font-black text-yellow-400 font-mono drop-shadow-glow">
+                            {handRanges[selectedPosition]?.[selectedStyle]?.call?.length || 0}
+                          </div>
+                          <div className="text-xs font-black text-yellow-300 font-mono">コール</div>
+                        </div>
+                      </div>
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-purple-600 blur-lg opacity-30 rounded-lg" />
+                        <div className="relative">
+                          <div className="text-3xl font-black text-purple-400 font-mono drop-shadow-glow">
+                            {(((handRanges[selectedPosition]?.[selectedStyle]?.raise?.length || 0) + 
+                               (handRanges[selectedPosition]?.[selectedStyle]?.call?.length || 0)) / 169 * 100).toFixed(1)}%
+                          </div>
+                          <div className="text-xs font-black text-purple-300 font-mono">参加率</div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-xs font-bold text-gray-800">レイズ</div>
-                  </div>
-                  <div>
-                    <div className="text-3xl font-black text-indigo-700">
-                      {handRanges[selectedPosition]?.[selectedStyle]?.call?.length || 0}
-                    </div>
-                    <div className="text-xs font-bold text-gray-800">コール</div>
-                  </div>
-                  <div>
-                    <div className="text-3xl font-black text-purple-700">
-                      {(((handRanges[selectedPosition]?.[selectedStyle]?.raise?.length || 0) + 
-                         (handRanges[selectedPosition]?.[selectedStyle]?.call?.length || 0)) / 169 * 100).toFixed(1)}%
-                    </div>
-                    <div className="text-xs font-bold text-gray-800">参加率</div>
                   </div>
                 </div>
-              </div>
 
-              {/* ハンドレンジマトリックス */}
-              <div className="bg-gradient-to-br from-gray-50 to-violet-50 rounded-2xl p-4 border border-violet-100">
-                <div className="text-sm font-bold mb-3 text-gray-900">
-                  ハンドマトリックス（{selectedPosition} - {selectedStyle}）
+                {/* ハンドレンジマトリックス */}
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-indigo-600 rounded-xl blur-xl opacity-30" />
+                  <div className="relative bg-black/60 backdrop-blur-sm rounded-xl p-4 border-2 border-indigo-500/30">
+                    <div className="text-sm font-black mb-3 text-white font-mono">
+                      ハンドマトリックス（{selectedPosition} - {selectedStyle}）
+                    </div>
+                    <HandRangeMatrix position={selectedPosition} style={selectedStyle} />
+                    <div className="mt-3 flex gap-4 justify-center text-xs">
+                      <div className="flex items-center gap-1">
+                        <div className="w-4 h-4 bg-gradient-to-br from-red-500 to-red-600 rounded border-2 border-red-400"></div>
+                        <span className="font-black text-red-300 font-mono">レイズ</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-4 h-4 bg-gradient-to-br from-yellow-400 to-amber-500 rounded border-2 border-yellow-400"></div>
+                        <span className="font-black text-yellow-300 font-mono">コール</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-4 h-4 bg-black/40 rounded border-2 border-gray-700"></div>
+                        <span className="font-black text-gray-400 font-mono">フォールド</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <HandRangeMatrix position={selectedPosition} style={selectedStyle} />
-                <div className="mt-3 flex gap-4 justify-center text-xs">
-                  <div className="flex items-center gap-1">
-                    <div className="w-4 h-4 bg-gradient-to-br from-red-500 to-red-600 rounded border border-red-700"></div>
-                    <span className="font-bold text-gray-700">レイズ</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-4 h-4 bg-gradient-to-br from-yellow-400 to-amber-500 rounded border border-yellow-600"></div>
-                    <span className="font-bold text-gray-700">コール</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-4 h-4 bg-gradient-to-br from-gray-100 to-gray-200 rounded border border-gray-300"></div>
-                    <span className="font-bold text-gray-700">フォールド</span>
-                  </div>
-                </div>
-              </div>
 
-              {/* ポジション戦略の説明 */}
-              <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-4 border border-indigo-200 mt-4">
-                <div className="text-sm font-bold mb-2 text-gray-900 flex items-center gap-2">
-                  <Info className="w-4 h-4 text-indigo-600" />
-                  なぜこの戦略なのか？
+                {/* ポジション戦略の説明 */}
+                <div className="relative group mt-4">
+                  <div className="absolute inset-0 bg-blue-600 rounded-xl blur-xl opacity-30" />
+                  <div className="relative bg-black/40 backdrop-blur-sm rounded-xl p-4 border-2 border-blue-500/30">
+                    <div className="text-sm font-black mb-2 text-white flex items-center gap-2 font-mono">
+                      <Brain className="w-4 h-4 text-blue-400 drop-shadow-glow" />
+                      なぜこの戦略なのか？
+                    </div>
+                    <p className="text-xs text-gray-300 font-medium leading-relaxed">
+                      {positionStrategies[selectedPosition]?.[selectedStyle]}
+                    </p>
+                  </div>
                 </div>
-                <p className="text-xs text-gray-800 font-medium leading-relaxed">
-                  {positionStrategies[selectedPosition]?.[selectedStyle]}
-                </p>
               </div>
             </div>
           </div>
@@ -1006,208 +1093,244 @@ export default function LessonPage() {
         {/* 確率計算タブ */}
         {activeTab === 'calc' && (
           <div className="space-y-4">
-            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-5 border border-green-100">
-              <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-gray-900">
-                <TrendingUp className="w-5 h-5 text-green-600" />
-                アウツ・改善確率計算
-              </h2>
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-green-600 to-cyan-600 rounded-2xl blur-xl opacity-50" />
+              <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-2 border-green-500/30 shadow-2xl">
+                <h2 className="text-lg font-black mb-4 flex items-center gap-2 text-white">
+                  <TrendingUp className="w-5 h-5 text-green-400 drop-shadow-glow" />
+                  アウツ・改善確率計算
+                </h2>
 
-              {/* アウツ選択 */}
-              <div className="space-y-2 mb-4">
-                <label className="text-sm font-bold text-gray-900">ドローの種類</label>
-                <select 
-                  className="w-full p-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-violet-600 bg-white text-gray-900 font-semibold"
-                  onChange={(e) => {
-                    const outsMap: { [key: string]: number } = {
-                      'flush': 9,
-                      'oesd': 8,
-                      'gutshot': 4,
-                      'twopair': 4,
-                      'set': 2,
-                      'overcards': 6
-                    }
-                    setCurrentOuts(outsMap[e.target.value] || 8)
-                  }}
-                >
-                  <option value="flush">フラッシュドロー（9アウツ）</option>
-                  <option value="oesd">オープンエンドストレート（8アウツ）</option>
-                  <option value="gutshot">ガットショット（4アウツ）</option>
-                  <option value="twopair">ツーペア→フルハウス（4アウツ）</option>
-                  <option value="set">ペア→セット（2アウツ）</option>
-                  <option value="overcards">オーバーカード2枚（6アウツ）</option>
-                </select>
-              </div>
-
-              {/* カスタムアウツ */}
-              <div className="space-y-2 mb-4">
-                <label className="text-sm font-bold text-gray-900">
-                  アウツ数: <span className="text-violet-600 text-lg font-black">{currentOuts}</span>
-                </label>
-                <input
-                  type="range"
-                  min="1"
-                  max="20"
-                  value={currentOuts}
-                  onChange={(e) => setCurrentOuts(Number(e.target.value))}
-                  className="w-full accent-violet-600"
-                />
-              </div>
-
-              {/* 確率表示 */}
-              <div className="grid grid-cols-3 gap-2 mb-4">
-                <div className="bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl p-3 text-center border border-blue-300">
-                  <div className="text-2xl font-black text-blue-800">
-                    {turnProb.toFixed(1)}%
-                  </div>
-                  <div className="text-xs font-bold text-blue-900">ターン</div>
-                </div>
-                <div className="bg-gradient-to-br from-green-100 to-green-200 rounded-xl p-3 text-center border border-green-300">
-                  <div className="text-2xl font-black text-green-800">
-                    {riverProb.toFixed(1)}%
-                  </div>
-                  <div className="text-xs font-bold text-green-900">リバー</div>
-                </div>
-                <div className="bg-gradient-to-br from-purple-100 to-purple-200 rounded-xl p-3 text-center border border-purple-300">
-                  <div className="text-2xl font-black text-purple-800">
-                    {turnOrRiverProb.toFixed(1)}%
-                  </div>
-                  <div className="text-xs font-bold text-purple-900">どちらか</div>
-                </div>
-              </div>
-
-              {/* ポットオッズ計算 */}
-              <div className="bg-gradient-to-r from-amber-100 to-orange-100 rounded-2xl p-4 border border-orange-200">
-                <h3 className="font-bold text-base mb-3 text-gray-900">💰 ポットオッズ判断</h3>
-                
-                {/* フロップ/ターン選択 */}
-                <div className="mb-3">
-                  <label className="text-xs font-bold text-gray-800 mb-2 block">現在のストリート</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={() => setCurrentStreet('flop')}
-                      className={`py-2 rounded-lg text-sm font-bold transition-all ${
-                        currentStreet === 'flop'
-                          ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg'
-                          : 'bg-white text-gray-700 border border-gray-300'
-                      }`}
-                    >
-                      🃏 フロップ
-                    </button>
-                    <button
-                      onClick={() => setCurrentStreet('turn')}
-                      className={`py-2 rounded-lg text-sm font-bold transition-all ${
-                        currentStreet === 'turn'
-                          ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg'
-                          : 'bg-white text-gray-700 border border-gray-300'
-                      }`}
-                    >
-                      🎴 ターン
-                    </button>
-                  </div>
-                  <p className="text-xs text-gray-700 font-semibold mt-1 text-center">
-                    {currentStreet === 'flop' ? 'ターン+リバー両方の確率を使用' : 'リバーのみの確率を使用'}
-                  </p>
+                {/* アウツ選択 */}
+                <div className="space-y-2 mb-4">
+                  <label className="text-xs font-black text-green-300 font-mono">ドローの種類</label>
+                  <select 
+                    className="w-full p-3 border-2 border-green-500/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-500 bg-black/60 text-white font-bold"
+                    onChange={(e) => {
+                      const outsMap: { [key: string]: number } = {
+                        'flush': 9,
+                        'oesd': 8,
+                        'gutshot': 4,
+                        'twopair': 4,
+                        'set': 2,
+                        'overcards': 6
+                      }
+                      setCurrentOuts(outsMap[e.target.value] || 8)
+                    }}
+                  >
+                    <option value="flush">フラッシュドロー（9アウツ）</option>
+                    <option value="oesd">オープンエンドストレート（8アウツ）</option>
+                    <option value="gutshot">ガットショット（4アウツ）</option>
+                    <option value="twopair">ツーペア→フルハウス（4アウツ）</option>
+                    <option value="set">ペア→セット（2アウツ）</option>
+                    <option value="overcards">オーバーカード2枚（6アウツ）</option>
+                  </select>
                 </div>
 
-                {/* ポットサイズ */}
-                <div className="mb-3">
-                  <label className="text-xs font-bold text-gray-800 mb-1 block">ポットサイズ (P)</label>
-                  <div className="flex gap-2 items-center">
-                    <button
-                      onClick={() => setPotSize(Math.max(0, potSize - 500))}
-                      className="w-10 h-10 bg-red-500 text-white rounded-lg font-bold hover:bg-red-600 active:scale-95 flex items-center justify-center"
-                    >
-                      -
-                    </button>
-                    <input
-                      type="number"
-                      value={potSize === 0 ? '' : potSize}
-                      onChange={(e) => {
-                        const val = e.target.value
-                        if (val === '') {
-                          setPotSize(0)
-                        } else {
-                          setPotSize(Math.max(0, Number(val)))
-                        }
-                      }}
-                      onBlur={() => {
-                        if (potSize === 0) setPotSize(0)
-                      }}
-                      className="flex-1 p-2 border-2 border-orange-200 rounded-lg text-center font-bold text-gray-900 bg-white"
-                      placeholder="0"
-                      min="0"
-                    />
-                    <button
-                      onClick={() => setPotSize(potSize + 500)}
-                      className="w-10 h-10 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 active:scale-95 flex items-center justify-center"
-                    >
-                      +
-                    </button>
+                {/* カスタムアウツ */}
+                <div className="space-y-2 mb-4">
+                  <label className="text-xs font-black text-green-300 font-mono">
+                    アウツ数: <span className="text-green-400 text-lg font-black drop-shadow-glow">{currentOuts}</span>
+                  </label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="20"
+                    value={currentOuts}
+                    onChange={(e) => setCurrentOuts(Number(e.target.value))}
+                    className="w-full h-2 bg-black/60 rounded-lg appearance-none cursor-pointer slider"
+                    style={{
+                      background: `linear-gradient(to right, rgb(34, 197, 94) 0%, rgb(34, 197, 94) ${(currentOuts / 20) * 100}%, rgba(255,255,255,0.1) ${(currentOuts / 20) * 100}%, rgba(255,255,255,0.1) 100%)`
+                    }}
+                  />
+                </div>
+
+                {/* 確率表示 */}
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  <div className="relative group/stat">
+                    <div className="absolute inset-0 bg-blue-600 rounded-xl blur-lg opacity-50" />
+                    <div className="relative bg-blue-600/20 backdrop-blur-sm rounded-xl p-3 text-center border-2 border-blue-500/50">
+                      <div className="text-2xl font-black text-blue-400 font-mono drop-shadow-glow">
+                        {turnProb.toFixed(1)}%
+                      </div>
+                      <div className="text-xs font-black text-blue-300 font-mono">ターン</div>
+                    </div>
+                  </div>
+                  <div className="relative group/stat">
+                    <div className="absolute inset-0 bg-green-600 rounded-xl blur-lg opacity-50" />
+                    <div className="relative bg-green-600/20 backdrop-blur-sm rounded-xl p-3 text-center border-2 border-green-500/50">
+                      <div className="text-2xl font-black text-green-400 font-mono drop-shadow-glow">
+                        {riverProb.toFixed(1)}%
+                      </div>
+                      <div className="text-xs font-black text-green-300 font-mono">リバー</div>
+                    </div>
+                  </div>
+                  <div className="relative group/stat">
+                    <div className="absolute inset-0 bg-purple-600 rounded-xl blur-lg opacity-50" />
+                    <div className="relative bg-purple-600/20 backdrop-blur-sm rounded-xl p-3 text-center border-2 border-purple-500/50">
+                      <div className="text-2xl font-black text-purple-400 font-mono drop-shadow-glow">
+                        {turnOrRiverProb.toFixed(1)}%
+                      </div>
+                      <div className="text-xs font-black text-purple-300 font-mono">どちらか</div>
+                    </div>
                   </div>
                 </div>
 
-                {/* コール額 */}
-                <div className="mb-3">
-                  <label className="text-xs font-bold text-gray-800 mb-1 block">コール額 (P)</label>
-                  <div className="flex gap-2 items-center">
-                    <button
-                      onClick={() => setCallAmount(Math.max(0, callAmount - 500))}
-                      className="w-10 h-10 bg-red-500 text-white rounded-lg font-bold hover:bg-red-600 active:scale-95 flex items-center justify-center"
-                    >
-                      -
-                    </button>
-                    <input
-                      type="number"
-                      value={callAmount === 0 ? '' : callAmount}
-                      onChange={(e) => {
-                        const val = e.target.value
-                        if (val === '') {
-                          setCallAmount(0)
-                        } else {
-                          setCallAmount(Math.max(0, Number(val)))
-                        }
-                      }}
-                      onBlur={() => {
-                        if (callAmount === 0) setCallAmount(0)
-                      }}
-                      className="flex-1 p-2 border-2 border-orange-200 rounded-lg text-center font-bold text-gray-900 bg-white"
-                      placeholder="0"
-                      min="0"
-                    />
-                    <button
-                      onClick={() => setCallAmount(callAmount + 500)}
-                      className="w-10 h-10 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 active:scale-95 flex items-center justify-center"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
+                {/* ポットオッズ計算 */}
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-gradient-to-r from-orange-600 to-red-600 rounded-xl blur-xl opacity-50" />
+                  <div className="relative bg-black/40 backdrop-blur-sm rounded-xl p-4 border-2 border-orange-500/30">
+                    <h3 className="font-black text-base mb-3 text-white flex items-center gap-2">
+                      <Flame className="w-5 h-5 text-orange-400 drop-shadow-glow" />
+                      ポットオッズ判断
+                    </h3>
+                    
+                    {/* フロップ/ターン選択 */}
+                    <div className="mb-3">
+                      <label className="text-xs font-black text-gray-300 mb-2 block font-mono">現在のストリート</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => setCurrentStreet('flop')}
+                          className={`relative group/btn py-2 rounded-lg text-sm font-black transition-all font-mono ${
+                            currentStreet === 'flop'
+                              ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-xl border-2 border-blue-400'
+                              : 'bg-black/60 text-gray-400 border-2 border-gray-700 hover:text-white'
+                          }`}
+                        >
+                          {currentStreet === 'flop' && (
+                            <div className="absolute inset-0 bg-blue-600 blur-lg opacity-75 rounded-lg" />
+                          )}
+                          <span className="relative">フロップ</span>
+                        </button>
+                        <button
+                          onClick={() => setCurrentStreet('turn')}
+                          className={`relative group/btn py-2 rounded-lg text-sm font-black transition-all font-mono ${
+                            currentStreet === 'turn'
+                              ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-xl border-2 border-green-400'
+                              : 'bg-black/60 text-gray-400 border-2 border-gray-700 hover:text-white'
+                          }`}
+                        >
+                          {currentStreet === 'turn' && (
+                            <div className="absolute inset-0 bg-green-600 blur-lg opacity-75 rounded-lg" />
+                          )}
+                          <span className="relative">ターン</span>
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-400 font-bold mt-1 text-center font-mono">
+                        {currentStreet === 'flop' ? 'ターン+リバー両方の確率を使用' : 'リバーのみの確率を使用'}
+                      </p>
+                    </div>
 
-                {/* 判定結果 */}
-                {(() => {
-                  const relevantProb = currentStreet === 'turn' ? riverProb : turnOrRiverProb
-                  const shouldCallNow = relevantProb >= potOdds
-                  
-                  return (
-                    <div className={`rounded-xl p-3 ${shouldCallNow ? 'bg-gradient-to-r from-green-200 to-green-300 border border-green-400' : 'bg-gradient-to-r from-red-200 to-red-300 border border-red-400'}`}>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-sm font-bold text-gray-900">
-                            必要勝率: {potOdds.toFixed(1)}%
-                          </div>
-                          <div className="text-xs font-semibold text-gray-800">
-                            改善確率: {relevantProb.toFixed(1)}%
-                          </div>
-                        </div>
-                        <span className={`px-3 py-1 rounded-full text-xs font-black ${
-                          shouldCallNow ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
-                        }`}>
-                          {shouldCallNow ? '✓ コール推奨' : '✗ フォールド推奨'}
-                        </span>
+                    {/* ポットサイズ */}
+                    <div className="mb-3">
+                      <label className="text-xs font-black text-gray-300 mb-1 block font-mono">ポットサイズ (P)</label>
+                      <div className="flex gap-2 items-center">
+                        <button
+                          onClick={() => setPotSize(Math.max(0, potSize - 500))}
+                          className="relative group/btn w-10 h-10 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-lg font-black hover:shadow-lg hover:shadow-red-500/50 transition-all active:scale-95 flex items-center justify-center border-2 border-red-400"
+                        >
+                          <div className="absolute inset-0 bg-red-600 blur-lg opacity-0 group-hover/btn:opacity-50 rounded-lg transition-opacity" />
+                          <span className="relative text-xl">−</span>
+                        </button>
+                        <input
+                          type="number"
+                          value={potSize === 0 ? '' : potSize}
+                          onChange={(e) => {
+                            const val = e.target.value
+                            if (val === '') {
+                              setPotSize(0)
+                            } else {
+                              setPotSize(Math.max(0, Number(val)))
+                            }
+                          }}
+                          onBlur={() => {
+                            if (potSize === 0) setPotSize(0)
+                          }}
+                          className="flex-1 p-2 border-2 border-orange-500/50 rounded-lg text-center font-black text-white bg-black/60 font-mono"
+                          placeholder="0"
+                          min="0"
+                        />
+                        <button
+                          onClick={() => setPotSize(potSize + 500)}
+                          className="relative group/btn w-10 h-10 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-black hover:shadow-lg hover:shadow-green-500/50 transition-all active:scale-95 flex items-center justify-center border-2 border-green-400"
+                        >
+                          <div className="absolute inset-0 bg-green-600 blur-lg opacity-0 group-hover/btn:opacity-50 rounded-lg transition-opacity" />
+                          <span className="relative text-xl">＋</span>
+                        </button>
                       </div>
                     </div>
-                  )
-                })()}
+
+                    {/* コール額 */}
+                    <div className="mb-3">
+                      <label className="text-xs font-black text-gray-300 mb-1 block font-mono">コール額 (P)</label>
+                      <div className="flex gap-2 items-center">
+                        <button
+                          onClick={() => setCallAmount(Math.max(0, callAmount - 500))}
+                          className="relative group/btn w-10 h-10 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-lg font-black hover:shadow-lg hover:shadow-red-500/50 transition-all active:scale-95 flex items-center justify-center border-2 border-red-400"
+                        >
+                          <div className="absolute inset-0 bg-red-600 blur-lg opacity-0 group-hover/btn:opacity-50 rounded-lg transition-opacity" />
+                          <span className="relative text-xl">−</span>
+                        </button>
+                        <input
+                          type="number"
+                          value={callAmount === 0 ? '' : callAmount}
+                          onChange={(e) => {
+                            const val = e.target.value
+                            if (val === '') {
+                              setCallAmount(0)
+                            } else {
+                              setCallAmount(Math.max(0, Number(val)))
+                            }
+                          }}
+                          onBlur={() => {
+                            if (callAmount === 0) setCallAmount(0)
+                          }}
+                          className="flex-1 p-2 border-2 border-orange-500/50 rounded-lg text-center font-black text-white bg-black/60 font-mono"
+                          placeholder="0"
+                          min="0"
+                        />
+                        <button
+                          onClick={() => setCallAmount(callAmount + 500)}
+                          className="relative group/btn w-10 h-10 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-black hover:shadow-lg hover:shadow-green-500/50 transition-all active:scale-95 flex items-center justify-center border-2 border-green-400"
+                        >
+                          <div className="absolute inset-0 bg-green-600 blur-lg opacity-0 group-hover/btn:opacity-50 rounded-lg transition-opacity" />
+                          <span className="relative text-xl">＋</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* 判定結果 */}
+                    {(() => {
+                      const relevantProb = currentStreet === 'turn' ? riverProb : turnOrRiverProb
+                      const shouldCallNow = relevantProb >= potOdds
+                      
+                      return (
+                        <div className="relative group/result">
+                          <div className={`absolute inset-0 ${shouldCallNow ? 'bg-green-600' : 'bg-red-600'} rounded-xl blur-lg opacity-50`} />
+                          <div className={`relative rounded-xl p-3 border-2 ${
+                            shouldCallNow ? 'bg-green-600/20 border-green-500/50' : 'bg-red-600/20 border-red-500/50'
+                          }`}>
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="text-sm font-black text-white font-mono">
+                                  必要勝率: {potOdds.toFixed(1)}%
+                                </div>
+                                <div className="text-xs font-bold text-gray-300 font-mono">
+                                  改善確率: {relevantProb.toFixed(1)}%
+                                </div>
+                              </div>
+                              <span className={`px-3 py-1 rounded-full text-xs font-black font-mono ${
+                                shouldCallNow ? 'bg-green-600 text-white shadow-lg shadow-green-500/50' : 'bg-red-600 text-white shadow-lg shadow-red-500/50'
+                              }`}>
+                                {shouldCallNow ? '✓ コール推奨' : '✗ フォールド推奨'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })()}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1215,23 +1338,26 @@ export default function LessonPage() {
             <HandVsHandCalculator />
 
             {/* 簡易計算法 */}
-            <div className="bg-gradient-to-r from-blue-100 to-cyan-100 rounded-2xl p-4 border border-cyan-200">
-              <h3 className="font-bold text-base mb-3 flex items-center gap-2 text-gray-900">
-                <Sparkles className="w-4 h-4" />
-                2-4ルール（簡易暗算法）
-              </h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-1 bg-blue-600 text-white rounded text-xs font-bold">ターン</span>
-                  <span className="font-semibold text-gray-800">アウツ数 × 2 = おおよその確率(%)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-1 bg-green-600 text-white rounded text-xs font-bold">ターン+リバー</span>
-                  <span className="font-semibold text-gray-800">アウツ数 × 4 = おおよその確率(%)</span>
-                </div>
-                <div className="mt-3 p-2 bg-white rounded-lg text-xs font-semibold text-gray-700">
-                  例：フラッシュドロー（9アウツ）<br />
-                  ターン: 9×2=約18% / 両方: 9×4=約36%
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl blur-xl opacity-50" />
+              <div className="relative bg-black/40 backdrop-blur-sm rounded-xl p-4 border-2 border-cyan-500/30">
+                <h3 className="font-black text-base mb-3 flex items-center gap-2 text-white">
+                  <Sparkles className="w-4 h-4 text-cyan-400 drop-shadow-glow" />
+                  2-4ルール（簡易暗算法）
+                </h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-1 bg-blue-600 text-white rounded text-xs font-black font-mono">ターン</span>
+                    <span className="font-bold text-white font-mono">アウツ数 × 2 = おおよその確率(%)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-1 bg-green-600 text-white rounded text-xs font-black font-mono">ターン+リバー</span>
+                    <span className="font-bold text-white font-mono">アウツ数 × 4 = おおよその確率(%)</span>
+                  </div>
+                  <div className="mt-3 p-2 bg-white/5 rounded-lg text-xs font-bold text-gray-300 border border-white/10 font-mono">
+                    例：フラッシュドロー（9アウツ）<br />
+                    ターン: 9×2=約18% / 両方: 9×4=約36%
+                  </div>
                 </div>
               </div>
             </div>
@@ -1241,146 +1367,226 @@ export default function LessonPage() {
         {/* 用語集タブ */}
         {activeTab === 'terms' && (
           <div className="space-y-4">
-            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-5 border border-purple-100">
-              <h2 className="text-lg font-bold mb-2 text-gray-900">📚 ポーカー用語集</h2>
-              <div className="mb-4">
-                <div className="bg-gradient-to-r from-violet-200 to-purple-200 rounded-lg h-3 overflow-hidden">
-                  <div 
-                    className="bg-gradient-to-r from-violet-600 to-purple-600 h-full transition-all"
-                    style={{ width: `${learnedPercentage}%` }}
-                  />
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-pink-600 to-purple-600 rounded-2xl blur-xl opacity-50" />
+              <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-2 border-pink-500/30 shadow-2xl">
+                <h2 className="text-lg font-black mb-2 text-white flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-pink-400 drop-shadow-glow" />
+                  ポーカー用語集
+                </h2>
+                <div className="mb-4">
+                  <div className="bg-pink-600/20 rounded-lg h-3 overflow-hidden border-2 border-pink-500/30">
+                    <div 
+                      className="bg-gradient-to-r from-pink-600 to-purple-600 h-full transition-all shadow-lg shadow-pink-500/50"
+                      style={{ width: `${learnedPercentage}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-xs font-black text-gray-300 mt-1 font-mono">
+                    <span>{learnedTerms.size}/{totalTerms} 習得済み</span>
+                    <span>{learnedPercentage.toFixed(1)}%</span>
+                  </div>
                 </div>
-                <div className="flex justify-between text-xs font-bold text-gray-800 mt-1">
-                  <span>{learnedTerms.size}/{totalTerms} 習得済み</span>
-                  <span>{learnedPercentage.toFixed(1)}%</span>
-                </div>
-              </div>
 
-              {/* カテゴリ選択 */}
-              <div className="flex gap-2 overflow-x-auto pb-2 mb-4">
-                <button
-                  onClick={() => setSelectedCategory('全て')}
-                  className={`px-3 py-1 rounded-full text-xs whitespace-nowrap font-bold ${
-                    selectedCategory === '全て'
-                      ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  全て
-                </button>
-                {Object.keys(pokerTerms).map((cat) => (
+                {/* カテゴリ選択 */}
+                <div className="flex gap-2 overflow-x-auto pb-2 mb-4">
                   <button
-                    key={cat}
-                    onClick={() => setSelectedCategory(cat)}
-                    className={`px-3 py-1 rounded-full text-xs whitespace-nowrap font-bold ${
-                      selectedCategory === cat
-                        ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    onClick={() => setSelectedCategory('全て')}
+                    className={`relative group/cat px-3 py-1 rounded-full text-xs whitespace-nowrap font-black font-mono ${
+                      selectedCategory === '全て'
+                        ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-lg border-2 border-pink-400'
+                        : 'bg-black/40 text-gray-400 hover:text-white border-2 border-gray-700'
                     }`}
                   >
-                    {cat}
+                    {selectedCategory === '全て' && (
+                      <div className="absolute inset-0 bg-pink-600 blur-lg opacity-75 rounded-full" />
+                    )}
+                    <span className="relative">全て</span>
                   </button>
-                ))}
-              </div>
-
-              {/* 用語リスト */}
-              <div className="space-y-3 max-h-[500px] overflow-y-auto">
-                {Object.entries(pokerTerms).map(([category, terms]) => {
-                  if (selectedCategory !== '全て' && selectedCategory !== category) return null
-                  
-                  return (
-                    <div key={category}>
-                      {selectedCategory === '全て' && (
-                        <h3 className="font-bold text-sm text-gray-900 mb-2 sticky top-0 bg-white/90 py-1">{category}</h3>
+                  {Object.keys(pokerTerms).map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setSelectedCategory(cat)}
+                      className={`relative group/cat px-3 py-1 rounded-full text-xs whitespace-nowrap font-black ${
+                        selectedCategory === cat
+                          ? 'bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-lg border-2 border-pink-400'
+                          : 'bg-black/40 text-gray-400 hover:text-white border-2 border-gray-700'
+                      }`}
+                    >
+                      {selectedCategory === cat && (
+                        <div className="absolute inset-0 bg-pink-600 blur-lg opacity-75 rounded-full" />
                       )}
-                      <div className="space-y-2">
-                        {Object.entries(terms).map(([term, description]) => (
-                          <div 
-                            key={term} 
-                            className={`rounded-lg p-3 border transition-all ${
-                              learnedTerms.has(term) 
-                                ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-300' 
-                                : 'bg-white border-gray-200'
-                            }`}
-                          >
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex-1">
-                                <h4 className="font-bold text-sm text-gray-900">{term}</h4>
-                                <p className="text-xs text-gray-700 mt-1 font-medium">{description}</p>
-                              </div>
-                              <button
-                                onClick={() => toggleLearnedTerm(term)}
-                                className="p-1 transition-transform hover:scale-110"
-                              >
-                                {learnedTerms.has(term) ? 
-                                  <CheckSquare className="w-5 h-5 text-green-600" /> : 
-                                  <Square className="w-5 h-5 text-gray-400 hover:text-gray-600" />
-                                }
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
+                      <span className="relative">{cat}</span>
+                    </button>
+                  ))}
+                </div>
 
-              {/* リセットボタン */}
-              {learnedTerms.size > 0 && (
-                <button
-                  onClick={resetLearnedTerms}
-                  className="mt-4 w-full py-2 px-4 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:from-gray-200 hover:to-gray-300 transition-all border border-gray-300"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  習得状態をリセット
-                </button>
-              )}
+                {/* 用語リスト */}
+                <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
+                  {Object.entries(pokerTerms).map(([category, terms]) => {
+                    if (selectedCategory !== '全て' && selectedCategory !== category) return null
+                    
+                    return (
+                      <div key={category}>
+                        {selectedCategory === '全て' && (
+                          <h3 className="font-black text-sm text-pink-300 mb-2 sticky top-0 bg-black/90 py-1 z-10 font-mono">{category}</h3>
+                        )}
+                        <div className="space-y-2">
+                          {Object.entries(terms).map(([term, description]) => (
+                            <div 
+                              key={term} 
+                              className={`relative group/term rounded-lg p-3 border-2 transition-all ${
+                                learnedTerms.has(term) 
+                                  ? 'bg-green-600/10 border-green-500/50' 
+                                  : 'bg-white/5 border-white/10'
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1">
+                                  <h4 className="font-black text-sm text-white font-mono">{term}</h4>
+                                  <p className="text-xs text-gray-300 mt-1 font-medium">{description}</p>
+                                </div>
+                                <button
+                                  onClick={() => toggleLearnedTerm(term)}
+                                  className="relative group/check p-1 transition-transform hover:scale-125"
+                                >
+                                  {learnedTerms.has(term) ? 
+                                    <CheckSquare className="w-5 h-5 text-green-400 drop-shadow-glow" /> : 
+                                    <Square className="w-5 h-5 text-gray-600 hover:text-gray-400" />
+                                  }
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* リセットボタン */}
+                {learnedTerms.size > 0 && (
+                  <div className="relative group mt-4">
+                    <div className="absolute inset-0 bg-gray-600 rounded-xl blur-lg opacity-50" />
+                    <button
+                      onClick={resetLearnedTerms}
+                      className="relative w-full py-2 px-4 bg-gray-700 text-white rounded-xl text-sm font-black flex items-center justify-center gap-2 hover:bg-gray-600 transition-all border-2 border-gray-600"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      <span className="font-mono">習得状態をリセット</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
 
         {/* 大会情報タブ */}
         {activeTab === 'tournament' && (
-          <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-5 border border-yellow-100">
-            <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-gray-900">
-              <Trophy className="w-5 h-5 text-yellow-600" />
-              アジア大会情報
-            </h2>
-            <div className="text-center py-8">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-yellow-400 to-amber-600 rounded-full mb-4 shadow-lg">
-                <Trophy className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-lg font-bold mb-2 text-gray-900">Coming Soon!</h3>
-              <p className="text-sm text-gray-700 font-semibold">
-                アジア大会の情報は<br />
-                次回アップデートで追加予定です
-              </p>
-              <div className="mt-6 bg-gradient-to-r from-gray-50 to-violet-50 rounded-xl p-4 border border-violet-200">
-                <div className="text-xs font-bold text-gray-800 mb-2">予定コンテンツ</div>
-                <ul className="text-sm text-left space-y-1">
-                  <li className="flex items-center gap-2">
-                    <ChevronRight className="w-3 h-3 text-violet-600" />
-                    <span className="font-semibold text-gray-800">大会スケジュール</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <ChevronRight className="w-3 h-3 text-violet-600" />
-                    <span className="font-semibold text-gray-800">参加方法・エントリー</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <ChevronRight className="w-3 h-3 text-violet-600" />
-                    <span className="font-semibold text-gray-800">賞金・ポイント情報</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <ChevronRight className="w-3 h-3 text-violet-600" />
-                    <span className="font-semibold text-gray-800">過去の結果・統計</span>
-                  </li>
-                </ul>
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-yellow-600 to-amber-600 rounded-2xl blur-xl opacity-50" />
+            <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-2 border-yellow-500/30 shadow-2xl">
+              <h2 className="text-lg font-black mb-4 flex items-center gap-2 text-white">
+                <Trophy className="w-5 h-5 text-yellow-400 drop-shadow-glow" />
+                アジア大会情報
+              </h2>
+              <div className="text-center py-8">
+                <div className="relative inline-flex items-center justify-center w-20 h-20 mb-4">
+                  <div className="absolute inset-0 bg-gradient-to-r from-yellow-600 to-amber-600 rounded-full blur-xl animate-pulse" />
+                  <div className="relative w-16 h-16 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-full flex items-center justify-center border-2 border-yellow-400 shadow-2xl">
+                    <Trophy className="w-8 h-8 text-white drop-shadow-glow" />
+                  </div>
+                </div>
+                <h3 className="text-lg font-black mb-2 text-white font-mono">Coming Soon!</h3>
+                <p className="text-sm text-gray-300 font-bold font-mono">
+                  アジア大会の情報は<br />
+                  次回アップデートで追加予定です
+                </p>
+                <div className="mt-6 relative group">
+                  <div className="absolute inset-0 bg-purple-600 rounded-xl blur-xl opacity-30" />
+                  <div className="relative bg-black/40 backdrop-blur-sm rounded-xl p-4 border-2 border-purple-500/30">
+                    <div className="text-xs font-black text-purple-300 mb-2 font-mono">予定コンテンツ</div>
+                    <ul className="text-sm text-left space-y-1">
+                      <li className="flex items-center gap-2">
+                        <ChevronRight className="w-3 h-3 text-purple-400" />
+                        <span className="font-bold text-gray-300 font-mono">大会スケジュール</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <ChevronRight className="w-3 h-3 text-purple-400" />
+                        <span className="font-bold text-gray-300 font-mono">参加方法・エントリー</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <ChevronRight className="w-3 h-3 text-purple-400" />
+                        <span className="font-bold text-gray-300 font-mono">賞金・ポイント情報</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <ChevronRight className="w-3 h-3 text-purple-400" />
+                        <span className="font-bold text-gray-300 font-mono">過去の結果・統計</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         )}
       </div>
+
+      <style jsx global>{`
+        @keyframes shimmer {
+          0%, 100% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .animate-shimmer {
+          background-size: 200% auto;
+          animation: shimmer 3s linear infinite;
+        }
+
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-out;
+        }
+
+        .drop-shadow-glow {
+          filter: drop-shadow(0 0 8px currentColor);
+        }
+
+        .slider::-webkit-slider-thumb {
+          appearance: none;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, rgb(34, 197, 94), rgb(16, 185, 129));
+          cursor: pointer;
+          border: 2px solid rgb(134, 239, 172);
+          box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+        }
+
+        .slider::-moz-range-thumb {
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, rgb(34, 197, 94), rgb(16, 185, 129));
+          cursor: pointer;
+          border: 2px solid rgb(134, 239, 172);
+          box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+        }
+      `}</style>
     </div>
   )
 }

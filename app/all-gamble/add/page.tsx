@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Sparkles } from 'lucide-react'
 import dynamic from 'next/dynamic'
 
 // フォームコンポーネントを動的インポート
@@ -22,7 +22,7 @@ const categories = [
     name: 'ポーカー',
     subtitle: 'キャッシュ・トーナメント',
     gradient: 'from-purple-500 to-indigo-600',
-    shadowColor: 'shadow-purple-500/25'
+    glowColor: 'purple'
   },
   { 
     id: 'slot', 
@@ -30,7 +30,7 @@ const categories = [
     name: 'スロット',
     subtitle: 'パチスロ',
     gradient: 'from-red-500 to-pink-600',
-    shadowColor: 'shadow-red-500/25'
+    glowColor: 'red'
   },
   { 
     id: 'pachinko', 
@@ -38,7 +38,7 @@ const categories = [
     name: 'パチンコ',
     subtitle: '1円〜4円パチンコ',
     gradient: 'from-pink-400 to-rose-500',
-    shadowColor: 'shadow-pink-500/25'
+    glowColor: 'pink'
   },
   { 
     id: 'casino', 
@@ -46,7 +46,7 @@ const categories = [
     name: 'カジノ',
     subtitle: 'バカラ・BJ・ルーレット',
     gradient: 'from-yellow-500 to-amber-600',
-    shadowColor: 'shadow-yellow-500/25'
+    glowColor: 'yellow'
   },
   { 
     id: 'horse_race', 
@@ -54,7 +54,7 @@ const categories = [
     name: '競馬',
     subtitle: '中央・地方競馬',
     gradient: 'from-green-500 to-emerald-600',
-    shadowColor: 'shadow-green-500/25'
+    glowColor: 'green'
   },
   { 
     id: 'boat_race', 
@@ -62,7 +62,7 @@ const categories = [
     name: '競艇',
     subtitle: 'ボートレース',
     gradient: 'from-blue-500 to-cyan-600',
-    shadowColor: 'shadow-blue-500/25'
+    glowColor: 'blue'
   },
   { 
     id: 'bicycle_race', 
@@ -70,15 +70,15 @@ const categories = [
     name: '競輪',
     subtitle: 'KEIRINグランプリ',
     gradient: 'from-orange-500 to-yellow-600',
-    shadowColor: 'shadow-orange-500/25'
+    glowColor: 'orange'
   },
   { 
     id: 'other', 
     icon: '💰', 
     name: 'その他',
     subtitle: '麻雀・宝くじ等',
-    gradient: 'from-gray-500 to-slate-600',
-    shadowColor: 'shadow-gray-500/25'
+    gradient: 'from-gray-400 to-slate-500',
+    glowColor: 'gray'
   }
 ]
 
@@ -102,82 +102,108 @@ export default function AddGambleRecordPage() {
     router.push('/all-gamble')
   }
 
+  const selectedCategoryData = selectedCategory ? categories.find(c => c.id === selectedCategory) : null
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 pb-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-900">
       {/* ヘッダー */}
-      <div className="bg-white/70 backdrop-blur-xl border-b border-white/20 sticky top-0 z-50">
+      <div className="bg-black/50 backdrop-blur-xl border-b border-purple-500/30 sticky top-0 z-50 shadow-lg shadow-purple-500/20">
         <div className="container max-w-md mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <button
               onClick={handleBack}
-              className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95"
+              className="group relative"
             >
-              <ArrowLeft className="w-5 h-5 text-gray-700" />
+              <div className="absolute inset-0 bg-purple-600 blur-lg opacity-0 group-hover:opacity-50 transition-opacity" />
+              <div className="relative w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center border-2 border-white/20 hover:border-purple-400 transition-all group-hover:scale-105 active:scale-95">
+                <ArrowLeft className="w-6 h-6 text-white" />
+              </div>
             </button>
             
             <div className="text-center flex-1 mx-4">
-              <h1 className="text-xl font-black bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-                {selectedCategory ? categories.find(c => c.id === selectedCategory)?.name : '種目選択'}
+              <h1 className="text-2xl font-black bg-gradient-to-r from-orange-400 via-red-400 to-pink-400 bg-clip-text text-transparent">
+                {selectedCategory ? selectedCategoryData?.name : '種目選択'}
               </h1>
-              <p className="text-xs text-gray-600 mt-0.5">
+              <p className="text-sm text-purple-300 mt-0.5 font-semibold">
                 {selectedCategory ? '記録を追加' : 'プレイした種目を選択'}
               </p>
             </div>
 
-            <div className="w-10" />
+            <div className="w-12" />
           </div>
         </div>
       </div>
 
-      <div className="container max-w-md mx-auto px-4 py-6">
+      <div className="container max-w-md mx-auto px-4 py-6 pb-8">
         {!selectedCategory ? (
           // 種目選択画面
-          <>
-            <div className="mb-6 bg-gradient-to-r from-orange-500 to-red-600 rounded-2xl p-5 shadow-xl text-white">
-              <p className="text-sm font-semibold mb-1">📝 記録を追加</p>
-              <p className="text-xs opacity-90">
-                プレイした種目を選択してください。詳細な記録で収支分析が可能になります。
-              </p>
+          <div className="animate-slide-in">
+            {/* 説明カード */}
+            <div className="mb-6 relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-orange-600 to-red-600 rounded-2xl blur-xl opacity-75 animate-pulse" />
+              <div className="relative bg-gradient-to-r from-orange-500 to-red-600 rounded-2xl p-1 shadow-2xl">
+                <div className="bg-black/40 backdrop-blur-sm rounded-2xl p-5 border-2 border-white/20">
+                  <div className="flex items-start gap-3">
+                    <Sparkles className="w-6 h-6 text-yellow-300 flex-shrink-0 mt-0.5 drop-shadow-glow" />
+                    <div>
+                      <p className="text-base font-black text-white mb-2" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>
+                        📝 記録を追加
+                      </p>
+                      <p className="text-sm text-white/90 leading-relaxed" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 600 }}>
+                        プレイした種目を選択してください。詳細な記録で収支分析が可能になります。
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            {/* 種目グリッド */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
               {categories.map((category) => (
                 <button
                   key={category.id}
                   onClick={() => handleCategorySelect(category.id)}
-                  className="group relative"
+                  className="group relative aspect-[4/5]"
                 >
                   {/* グロー効果 */}
-                  <div className={`absolute inset-0 bg-gradient-to-br ${category.gradient} rounded-2xl blur-lg opacity-0 group-hover:opacity-30 transition-opacity`} />
+                  <div className={`absolute inset-0 bg-gradient-to-br ${category.gradient} rounded-3xl blur-xl opacity-0 group-hover:opacity-75 transition-all duration-300`} />
                   
                   {/* カード本体 */}
-                  <div className="relative bg-white/90 backdrop-blur-sm rounded-2xl p-5 shadow-lg hover:shadow-2xl transition-all transform hover:scale-105 active:scale-95 border border-white/50">
-                    {/* アイコン */}
-                    <div className={`bg-gradient-to-br ${category.gradient} w-16 h-16 rounded-2xl flex items-center justify-center mb-3 mx-auto ${category.shadowColor} shadow-lg transform group-hover:rotate-6 transition-transform`}>
-                      <span className="text-3xl">{category.icon}</span>
+                  <div className="relative h-full">
+                    <div className={`absolute inset-0 bg-gradient-to-br ${category.gradient} rounded-3xl blur-md opacity-50`} />
+                    <div className="relative h-full bg-black/60 backdrop-blur-sm rounded-3xl p-5 border-2 border-white/20 hover:border-white/40 transition-all transform hover:scale-105 active:scale-95 shadow-2xl flex flex-col items-center justify-center">
+                      {/* アイコン */}
+                      <div className={`bg-gradient-to-br ${category.gradient} w-16 h-16 rounded-2xl flex items-center justify-center mb-3 shadow-2xl shadow-${category.glowColor}-500/50 transform group-hover:rotate-6 group-hover:scale-110 transition-all`}>
+                        <span className="text-3xl drop-shadow-glow">{category.icon}</span>
+                      </div>
+                      
+                      {/* テキスト */}
+                      <h3 className="font-black text-white text-base mb-1 drop-shadow-glow text-center" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>
+                        {category.name}
+                      </h3>
+                      <p className="text-xs text-white/70 text-center leading-tight" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 600 }}>
+                        {category.subtitle}
+                      </p>
                     </div>
-                    
-                    {/* テキスト */}
-                    <h3 className="font-black text-gray-900 text-base mb-1">
-                      {category.name}
-                    </h3>
-                    <p className="text-xs text-gray-600">
-                      {category.subtitle}
-                    </p>
                   </div>
                 </button>
               ))}
             </div>
 
-            <div className="mt-8 bg-blue-50 rounded-2xl p-4 border border-blue-100">
-              <p className="text-xs text-gray-700 leading-relaxed">
-                💡 <span className="font-bold">ヒント:</span> 各種目で開始時刻と終了時刻を記録すると、プレイ時間が自動計算されます。詳細な記録で収支パターンを分析できます。
-              </p>
+            {/* ヒント */}
+            <div className="relative">
+              <div className="absolute inset-0 bg-blue-600 blur-xl opacity-50" />
+              <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-2 border-blue-500/50">
+                <p className="text-sm text-blue-100 leading-relaxed" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 600 }}>
+                  💡 <span className="font-black text-white">ヒント:</span> 各種目で開始時刻と終了時刻を記録すると、プレイ時間が自動計算されます。詳細な記録で収支パターンを分析できます。
+                </p>
+              </div>
             </div>
-          </>
+          </div>
         ) : (
           // フォーム表示
-          <div>
+          <div className="animate-slide-in">
             {selectedCategory === 'poker' && <PokerForm onSuccess={handleSuccess} onCancel={() => setSelectedCategory(null)} />}
             {selectedCategory === 'slot' && <SlotForm onSuccess={handleSuccess} onCancel={() => setSelectedCategory(null)} />}
             {selectedCategory === 'pachinko' && <PachinkoForm onSuccess={handleSuccess} onCancel={() => setSelectedCategory(null)} />}
@@ -193,6 +219,27 @@ export default function AddGambleRecordPage() {
           </div>
         )}
       </div>
+
+      <style jsx global>{`
+        @keyframes slide-in {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .animate-slide-in {
+          animation: slide-in 0.4s ease-out;
+        }
+
+        .drop-shadow-glow {
+          filter: drop-shadow(0 0 8px currentColor);
+        }
+      `}</style>
     </div>
   )
 }

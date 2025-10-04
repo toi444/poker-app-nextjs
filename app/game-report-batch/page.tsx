@@ -18,7 +18,10 @@ import {
   Plus,
   Minus,
   Trash2,
-  Eye
+  Eye,
+  Skull,
+  Zap,
+  Shield
 } from 'lucide-react'
 
 interface Profile {
@@ -318,175 +321,232 @@ export default function BatchGameReportPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-4 border-violet-600"></div>
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="relative">
+          <div className="w-24 h-24 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Users className="w-10 h-10 text-purple-500 animate-pulse" />
+          </div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
-      <div className="container max-w-md mx-auto p-4 pb-20">
-        {/* ヘッダー */}
-        <div className="mb-6">
-          <button
-            onClick={() => step === 1 ? router.push('/dashboard') : setStep(step - 1)}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-white/80 backdrop-blur-sm shadow-md hover:shadow-lg transition-all mb-4"
-          >
-            <ArrowLeft className="h-5 w-5 text-gray-900" />
-          </button>
-          
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-            <Users className="inline h-8 w-8 text-violet-600 mr-2" />
-            Batch Report
-          </h1>
-          <p className="text-gray-900 mt-2 font-medium">一括記録（管理者専用）</p>
-        </div>
+    <div className="min-h-screen bg-black">
+      {/* 背景エフェクト */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-950/20 via-black to-indigo-950/20" />
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-[128px] animate-pulse" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-600/10 rounded-full blur-[128px] animate-pulse" style={{ animationDelay: '1s' }} />
+      </div>
 
+      {/* ヘッダー */}
+      <div className="relative bg-black/80 backdrop-blur-xl border-b border-purple-500/30 sticky top-0 z-50 shadow-lg shadow-purple-500/10">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => step === 1 ? router.push('/dashboard') : setStep(step - 1)}
+              className="w-10 h-10 rounded-full bg-white/5 border-2 border-purple-500/30 flex items-center justify-center hover:bg-white/10 hover:border-purple-500/50 transition-all hover:scale-110"
+            >
+              <ArrowLeft className="w-5 h-5 text-purple-400" />
+            </button>
+            
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <div className="absolute inset-0 bg-purple-600 blur-xl animate-pulse" />
+                <Users className="relative w-8 h-8 text-purple-500 drop-shadow-glow" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-black bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500 bg-clip-text text-transparent animate-shimmer">
+                  一括記録登録
+                </h1>
+                <p className="text-xs text-purple-400/60 font-mono">管理者専用・複数プレイヤー</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="relative max-w-7xl mx-auto px-4 py-8 pb-20">
         {/* 成功メッセージ */}
         {showSuccess && (
           <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 animate-bounce">
-            <div className="bg-white rounded-3xl shadow-2xl p-6 border border-green-200">
-              <div className="flex items-center gap-3">
-                <CheckCircle className="w-12 h-12 text-green-600" />
-                <div>
-                  <p className="font-black text-gray-900">一括登録完了！</p>
-                  <p className="text-sm font-bold text-amber-600">JP +{totalJpContribution}P 積立</p>
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl blur-xl opacity-75 animate-pulse" />
+              <div className="relative bg-black/90 backdrop-blur-sm rounded-2xl shadow-2xl p-6 border-2 border-green-500/50">
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-green-600 blur-lg animate-pulse" />
+                    <CheckCircle className="relative w-12 h-12 text-green-400 drop-shadow-glow" />
+                  </div>
+                  <div>
+                    <p className="font-black text-white text-lg drop-shadow-glow">一括登録完了！</p>
+                    <p className="text-sm font-bold text-yellow-400 font-mono">JP +{totalJpContribution}P 積立</p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* タブ */}
-        <div className="flex gap-2 mb-6 bg-white/80 backdrop-blur-sm rounded-2xl p-1.5 shadow-lg">
-          <button
-            onClick={() => setStep(1)}
-            className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${
-              step === 1
-                ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg'
-                : 'text-gray-900 hover:bg-gray-50'
-            }`}
-          >
-            1. 選択
-          </button>
-          <button
-            onClick={() => playerInputs.length > 0 && setStep(2)}
-            disabled={playerInputs.length === 0}
-            className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${
-              step === 2
-                ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg'
-                : playerInputs.length > 0
-                ? 'text-gray-900 hover:bg-gray-50'
-                : 'text-gray-400 cursor-not-allowed'
-            }`}
-          >
-            2. 入力
-          </button>
-          <button
-            onClick={() => setStep(3)}
-            className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${
-              step === 3
-                ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg'
-                : 'text-gray-900 hover:bg-gray-50'
-            }`}
-          >
-            3. 履歴
-          </button>
+        {/* タブメニュー */}
+        <div className="relative mb-8">
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-indigo-600/20 rounded-2xl blur-xl" />
+          <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-2 border-2 border-purple-500/20 shadow-2xl">
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { id: 1, label: '選択', icon: Users, glow: 'purple' },
+                { id: 2, label: '入力', icon: DollarSign, glow: 'cyan', disabled: playerInputs.length === 0 },
+                { id: 3, label: '履歴', icon: Eye, glow: 'pink' }
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => !tab.disabled && setStep(tab.id)}
+                  disabled={tab.disabled}
+                  className={`relative group px-4 py-4 rounded-xl font-black text-sm transition-all ${
+                    step === tab.id
+                      ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/50'
+                      : tab.disabled
+                      ? 'text-gray-600 cursor-not-allowed'
+                      : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
+                  }`}
+                >
+                  {step === tab.id && (
+                    <div className={`absolute inset-0 bg-${tab.glow}-600 blur-xl opacity-50 rounded-xl`} />
+                  )}
+                  <div className="relative flex items-center justify-center gap-2">
+                    <tab.icon className={`w-5 h-5 ${step === tab.id ? 'drop-shadow-glow' : ''}`} />
+                    {tab.label}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Step 1: プレイヤー選択 */}
         {step === 1 && (
-          <div className="space-y-4">
-            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-5 border border-violet-100">
-              <h2 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
-                <Users className="w-5 h-5 text-violet-600" />
-                参加プレイヤー ({selectedPlayerIds.size}/10名)
-              </h2>
-              <p className="text-sm text-gray-700 mb-4 font-medium">2名以上、最大10名まで選択可能</p>
-              
-              <div className="space-y-2">
-                {allPlayers.map(player => (
-                  <button
-                    key={player.id}
-                    onClick={() => togglePlayer(player.id)}
-                    className={`w-full p-4 rounded-xl text-left transition-all font-bold ${
-                      selectedPlayerIds.has(player.id)
-                        ? 'bg-gradient-to-r from-violet-500 to-indigo-600 text-white shadow-lg scale-105'
-                        : 'bg-gray-50 text-gray-900 hover:bg-gray-100 border border-gray-200'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="truncate">{player.username}</span>
-                      {selectedPlayerIds.has(player.id) && (
-                        <CheckCircle className="w-5 h-5 flex-shrink-0" />
-                      )}
+          <div className="space-y-6">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl blur-xl opacity-50" />
+              <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-6 border-2 border-purple-500/30 shadow-2xl">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-6 h-6 text-purple-500 drop-shadow-glow" />
+                    <h2 className="text-xl font-black text-white">参加プレイヤー選択</h2>
+                  </div>
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-cyan-600 blur-lg opacity-50" />
+                    <div className="relative bg-black/40 backdrop-blur-sm rounded-xl px-4 py-2 border-2 border-cyan-500/50">
+                      <span className="text-2xl font-black text-cyan-400 font-mono drop-shadow-glow">
+                        {selectedPlayerIds.size}/10
+                      </span>
                     </div>
-                  </button>
-                ))}
+                  </div>
+                </div>
+                
+                <p className="text-sm text-gray-400 mb-6 font-mono">2名以上、最大10名まで選択可能</p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {allPlayers.map(player => (
+                    <button
+                      key={player.id}
+                      onClick={() => togglePlayer(player.id)}
+                      className={`relative group p-4 rounded-xl text-left transition-all font-bold border-2 ${
+                        selectedPlayerIds.has(player.id)
+                          ? 'bg-gradient-to-r from-purple-600 to-indigo-600 border-purple-400 shadow-lg shadow-purple-500/50 scale-105'
+                          : 'bg-white/5 border-gray-700/50 hover:bg-white/10 hover:border-gray-600/50'
+                      }`}
+                    >
+                      {selectedPlayerIds.has(player.id) && (
+                        <div className="absolute inset-0 bg-purple-600 blur-lg opacity-50 rounded-xl" />
+                      )}
+                      <div className="relative flex items-center justify-between">
+                        <span className={`truncate font-mono ${
+                          selectedPlayerIds.has(player.id) ? 'text-white drop-shadow-glow' : 'text-gray-300'
+                        }`}>
+                          {player.username}
+                        </span>
+                        {selectedPlayerIds.has(player.id) && (
+                          <CheckCircle className="w-5 h-5 flex-shrink-0 text-white drop-shadow-glow" />
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
-            <button
-              onClick={proceedToInput}
-              disabled={selectedPlayerIds.size < 2}
-              className={`w-full py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 ${
-                selectedPlayerIds.size >= 2
-                  ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95'
-                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-              }`}
-            >
-              次へ：共通情報入力
-              <ArrowRight className="w-5 h-5" />
-            </button>
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl blur-lg opacity-75 group-hover:opacity-100 transition-opacity" />
+              <button
+                onClick={proceedToInput}
+                disabled={selectedPlayerIds.size < 2}
+                className={`relative w-full py-4 rounded-xl font-black transition-all flex items-center justify-center gap-2 ${
+                  selectedPlayerIds.size >= 2
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-2xl hover:scale-105 active:scale-95'
+                    : 'bg-gray-800 text-gray-600 cursor-not-allowed'
+                }`}
+              >
+                <span className="relative">次へ：共通情報入力</span>
+                <ArrowRight className="relative w-5 h-5" />
+              </button>
+            </div>
           </div>
         )}
 
         {/* Step 2: 入力 */}
         {step === 2 && (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {/* 共通情報 */}
-            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-5 border border-indigo-100">
-              <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-indigo-600" />
-                共通情報
-              </h2>
-              
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-bold text-gray-900 mb-2">日付</label>
-                  <input
-                    type="date"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-gray-900 font-semibold"
-                  />
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-2xl blur-xl opacity-50" />
+              <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-6 border-2 border-cyan-500/30 shadow-2xl">
+                <div className="flex items-center gap-2 mb-6">
+                  <Calendar className="w-6 h-6 text-cyan-500 drop-shadow-glow" />
+                  <h2 className="text-xl font-black text-white">共通情報</h2>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-bold text-gray-900 mb-2">開始</label>
+                    <label className="block text-xs font-bold text-gray-400 mb-2 font-mono">日付</label>
                     <input
-                      type="time"
-                      value={startTime}
-                      onChange={(e) => setStartTime(e.target.value)}
-                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-gray-900 font-semibold"
+                      type="date"
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl bg-black/40 border-2 border-cyan-500/30 text-white focus:border-cyan-500 focus:outline-none transition-all backdrop-blur-sm font-mono"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-bold text-gray-900 mb-2">終了</label>
-                    <input
-                      type="time"
-                      value={endTime}
-                      onChange={(e) => setEndTime(e.target.value)}
-                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 text-gray-900 font-semibold"
-                    />
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 mb-2 font-mono">開始時刻</label>
+                      <input
+                        type="time"
+                        value={startTime}
+                        onChange={(e) => setStartTime(e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl bg-black/40 border-2 border-cyan-500/30 text-white focus:border-cyan-500 focus:outline-none transition-all backdrop-blur-sm font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 mb-2 font-mono">終了時刻</label>
+                      <input
+                        type="time"
+                        value={endTime}
+                        onChange={(e) => setEndTime(e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl bg-black/40 border-2 border-cyan-500/30 text-white focus:border-cyan-500 focus:outline-none transition-all backdrop-blur-sm font-mono"
+                      />
+                    </div>
                   </div>
-                </div>
 
-                <div className="bg-indigo-50 rounded-xl p-3 text-center border border-indigo-200">
-                  <span className="text-sm font-bold text-gray-900">プレイ時間: </span>
-                  <span className="text-lg font-black text-indigo-600">{calculatePlayHours()}h</span>
+                  <div className="relative group">
+                    <div className="absolute inset-0 bg-cyan-600 blur-lg opacity-50" />
+                    <div className="relative bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl p-4 text-center border-2 border-cyan-400/50 shadow-lg">
+                      <span className="text-sm font-bold text-white/80 font-mono">プレイ時間: </span>
+                      <span className="text-2xl font-black text-white drop-shadow-glow font-mono">{calculatePlayHours()}h</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -498,307 +558,441 @@ export default function BatchGameReportPage() {
               const profit = cashOut - player.buyIn
 
               return (
-                <div key={player.userId} className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-4 border border-gray-200">
-                  <h3 className="font-black text-gray-900 text-lg mb-3 truncate">
-                    {idx + 1}. {player.username}
-                  </h3>
-                  
-                  <div className="space-y-3">
-                    {/* バイイン */}
-                    <div>
-                      <label className="block text-xs font-bold text-gray-900 mb-1">バイイン (P)</label>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => adjustValue(idx, 'buyIn', -1000)}
-                          className="px-3 py-2 bg-red-500 text-white rounded-lg font-bold hover:bg-red-600 active:scale-95"
-                        >
-                          <Minus className="w-4 h-4" />
-                        </button>
-                        <input
-                          type="number"
-                          value={player.buyIn}
-                          onChange={(e) => updatePlayerInput(idx, 'buyIn', Number(e.target.value) || 0)}
-                          className="flex-1 px-3 py-2 border-2 border-gray-200 rounded-lg text-center font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-violet-600"
-                        />
-                        <button
-                          onClick={() => adjustValue(idx, 'buyIn', 1000)}
-                          className="px-3 py-2 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 active:scale-95"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* 最終チップ */}
-                    <div>
-                      <label className="block text-xs font-bold text-gray-900 mb-1">最終チップ (P)</label>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => adjustValue(idx, 'finalChips', -1000)}
-                          className="px-3 py-2 bg-red-500 text-white rounded-lg font-bold hover:bg-red-600 active:scale-95"
-                        >
-                          <Minus className="w-4 h-4" />
-                        </button>
-                        <input
-                          type="number"
-                          value={player.finalChips}
-                          onChange={(e) => updatePlayerInput(idx, 'finalChips', Number(e.target.value) || 0)}
-                          className="flex-1 px-3 py-2 border-2 border-gray-200 rounded-lg text-center font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-violet-600"
-                        />
-                        <button
-                          onClick={() => adjustValue(idx, 'finalChips', 1000)}
-                          className="px-3 py-2 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 active:scale-95"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* エアー貸出 */}
-                    <div>
-                      <label className="block text-xs font-bold text-gray-900 mb-1">エアー貸出 (P)</label>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => adjustValue(idx, 'airLent', -1000)}
-                          className="px-3 py-2 bg-red-500 text-white rounded-lg font-bold hover:bg-red-600 active:scale-95"
-                        >
-                          <Minus className="w-4 h-4" />
-                        </button>
-                        <input
-                          type="number"
-                          value={player.airLent}
-                          onChange={(e) => updatePlayerInput(idx, 'airLent', Number(e.target.value) || 0)}
-                          className="flex-1 px-3 py-2 border-2 border-gray-200 rounded-lg text-center font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-violet-600"
-                        />
-                        <button
-                          onClick={() => adjustValue(idx, 'airLent', 1000)}
-                          className="px-3 py-2 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 active:scale-95"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* エアー借入 */}
-                    <div>
-                      <label className="block text-xs font-bold text-gray-900 mb-1">エアー借入 (P)</label>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => adjustValue(idx, 'airBorrowed', -1000)}
-                          className="px-3 py-2 bg-red-500 text-white rounded-lg font-bold hover:bg-red-600 active:scale-95"
-                        >
-                          <Minus className="w-4 h-4" />
-                        </button>
-                        <input
-                          type="number"
-                          value={player.airBorrowed}
-                          onChange={(e) => updatePlayerInput(idx, 'airBorrowed', Number(e.target.value) || 0)}
-                          className="flex-1 px-3 py-2 border-2 border-gray-200 rounded-lg text-center font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-violet-600"
-                        />
-                        <button
-                          onClick={() => adjustValue(idx, 'airBorrowed', 1000)}
-                          className="px-3 py-2 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 active:scale-95"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* 収支表示 */}
-                    {player.finalChips > 0 && player.buyIn > 0 && (
-                      <div className="bg-gradient-to-r from-gray-50 to-violet-50 rounded-xl p-3 border border-violet-200">
-                        <div className="flex justify-between text-xs mb-1">
-                          <span className="font-semibold text-gray-700">JP積立:</span>
-                          <span className="font-bold text-amber-600">-{jpAmount}P</span>
+                <div key={player.userId} className="relative group">
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl blur-xl opacity-30" />
+                  <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-2 border-purple-500/30 shadow-2xl">
+                    <div className="flex items-center justify-between mb-5">
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-purple-600 blur-lg opacity-50" />
+                          <div className="relative w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center border-2 border-purple-400 shadow-lg">
+                            <span className="text-white font-black text-lg drop-shadow-glow font-mono">{idx + 1}</span>
+                          </div>
                         </div>
-                        <div className="flex justify-between text-xs mb-2">
-                          <span className="font-semibold text-gray-700">キャッシュアウト:</span>
-                          <span className="font-bold text-gray-900">{cashOut.toLocaleString()}P</span>
-                        </div>
-                        <div className="flex justify-between items-center pt-2 border-t border-violet-300">
-                          <span className="font-bold text-gray-900">収支:</span>
-                          <span className={`text-xl font-black ${profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {profit >= 0 ? '+' : ''}{profit.toLocaleString()}P
-                          </span>
+                        <h3 className="font-black text-white text-lg truncate font-mono drop-shadow-glow">
+                          {player.username}
+                        </h3>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      {/* バイイン */}
+                      <div>
+                        <label className="block text-xs font-bold text-gray-400 mb-2 font-mono">バイイン (P)</label>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => adjustValue(idx, 'buyIn', -1000)}
+                            className="relative group px-4 py-3 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-xl font-black hover:shadow-lg hover:shadow-red-500/50 transition-all active:scale-95 border-2 border-red-400/50"
+                          >
+                            <div className="absolute inset-0 bg-red-600 blur-lg opacity-0 group-hover:opacity-50 rounded-xl transition-opacity" />
+                            <Minus className="relative w-5 h-5 drop-shadow-glow" />
+                          </button>
+                          <input
+                            type="number"
+                            step="1"
+                            min="0"
+                            value={player.buyIn || ''}
+                            onChange={(e) => updatePlayerInput(idx, 'buyIn', Number(e.target.value) || 0)}
+                            className="flex-1 px-4 py-3 border-2 border-purple-500/30 rounded-xl text-center font-black text-white text-xl bg-black/40 focus:outline-none focus:border-purple-500 transition-all backdrop-blur-sm font-mono"
+                            placeholder="0"
+                          />
+                          <button
+                            onClick={() => adjustValue(idx, 'buyIn', 1000)}
+                            className="relative group px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-black hover:shadow-lg hover:shadow-green-500/50 transition-all active:scale-95 border-2 border-green-400/50"
+                          >
+                            <div className="absolute inset-0 bg-green-600 blur-lg opacity-0 group-hover:opacity-50 rounded-xl transition-opacity" />
+                            <Plus className="relative w-5 h-5 drop-shadow-glow" />
+                          </button>
                         </div>
                       </div>
-                    )}
+
+                      {/* 最終チップ */}
+                      <div>
+                        <label className="block text-xs font-bold text-gray-400 mb-2 font-mono">最終チップ (P)</label>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => adjustValue(idx, 'finalChips', -1000)}
+                            className="relative group px-4 py-3 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-xl font-black hover:shadow-lg hover:shadow-red-500/50 transition-all active:scale-95 border-2 border-red-400/50"
+                          >
+                            <div className="absolute inset-0 bg-red-600 blur-lg opacity-0 group-hover:opacity-50 rounded-xl transition-opacity" />
+                            <Minus className="relative w-5 h-5 drop-shadow-glow" />
+                          </button>
+                          <input
+                            type="number"
+                            step="1"
+                            min="0"
+                            value={player.finalChips || ''}
+                            onChange={(e) => updatePlayerInput(idx, 'finalChips', Number(e.target.value) || 0)}
+                            className="flex-1 px-4 py-3 border-2 border-purple-500/30 rounded-xl text-center font-black text-white text-xl bg-black/40 focus:outline-none focus:border-purple-500 transition-all backdrop-blur-sm font-mono"
+                            placeholder="0"
+                          />
+                          <button
+                            onClick={() => adjustValue(idx, 'finalChips', 1000)}
+                            className="relative group px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-black hover:shadow-lg hover:shadow-green-500/50 transition-all active:scale-95 border-2 border-green-400/50"
+                          >
+                            <div className="absolute inset-0 bg-green-600 blur-lg opacity-0 group-hover:opacity-50 rounded-xl transition-opacity" />
+                            <Plus className="relative w-5 h-5 drop-shadow-glow" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* エアー貸出 */}
+                      <div>
+                        <label className="block text-xs font-bold text-gray-400 mb-2 font-mono">エアー貸出 (P)</label>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => adjustValue(idx, 'airLent', -1000)}
+                            className="relative group px-4 py-3 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-xl font-black hover:shadow-lg hover:shadow-red-500/50 transition-all active:scale-95 border-2 border-red-400/50"
+                          >
+                            <div className="absolute inset-0 bg-red-600 blur-lg opacity-0 group-hover:opacity-50 rounded-xl transition-opacity" />
+                            <Minus className="relative w-5 h-5 drop-shadow-glow" />
+                          </button>
+                          <input
+                            type="number"
+                            step="1"
+                            min="0"
+                            value={player.airLent || ''}
+                            onChange={(e) => updatePlayerInput(idx, 'airLent', Number(e.target.value) || 0)}
+                            className="flex-1 px-4 py-3 border-2 border-purple-500/30 rounded-xl text-center font-black text-white text-xl bg-black/40 focus:outline-none focus:border-purple-500 transition-all backdrop-blur-sm font-mono"
+                            placeholder="0"
+                          />
+                          <button
+                            onClick={() => adjustValue(idx, 'airLent', 1000)}
+                            className="relative group px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-black hover:shadow-lg hover:shadow-green-500/50 transition-all active:scale-95 border-2 border-green-400/50"
+                          >
+                            <div className="absolute inset-0 bg-green-600 blur-lg opacity-0 group-hover:opacity-50 rounded-xl transition-opacity" />
+                            <Plus className="relative w-5 h-5 drop-shadow-glow" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* エアー借入 */}
+                      <div>
+                        <label className="block text-xs font-bold text-gray-400 mb-2 font-mono">エアー借入 (P)</label>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => adjustValue(idx, 'airBorrowed', -1000)}
+                            className="relative group px-4 py-3 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-xl font-black hover:shadow-lg hover:shadow-red-500/50 transition-all active:scale-95 border-2 border-red-400/50"
+                          >
+                            <div className="absolute inset-0 bg-red-600 blur-lg opacity-0 group-hover:opacity-50 rounded-xl transition-opacity" />
+                            <Minus className="relative w-5 h-5 drop-shadow-glow" />
+                          </button>
+                          <input
+                            type="number"
+                            step="1"
+                            min="0"
+                            value={player.airBorrowed || ''}
+                            onChange={(e) => updatePlayerInput(idx, 'airBorrowed', Number(e.target.value) || 0)}
+                            className="flex-1 px-4 py-3 border-2 border-purple-500/30 rounded-xl text-center font-black text-white text-xl bg-black/40 focus:outline-none focus:border-purple-500 transition-all backdrop-blur-sm font-mono"
+                            placeholder="0"
+                          />
+                          <button
+                            onClick={() => adjustValue(idx, 'airBorrowed', 1000)}
+                            className="relative group px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-black hover:shadow-lg hover:shadow-green-500/50 transition-all active:scale-95 border-2 border-green-400/50"
+                          >
+                            <div className="absolute inset-0 bg-green-600 blur-lg opacity-0 group-hover:opacity-50 rounded-xl transition-opacity" />
+                            <Plus className="relative w-5 h-5 drop-shadow-glow" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* 収支表示 */}
+                      {player.finalChips > 0 && player.buyIn > 0 && (
+                        <div className="relative group">
+                          <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl blur-lg opacity-50" />
+                          <div className="relative bg-black/40 backdrop-blur-sm rounded-xl p-4 border-2 border-purple-500/30">
+                            <div className="flex justify-between text-sm mb-2">
+                              <span className="font-bold text-gray-400 font-mono">JP積立:</span>
+                              <span className="font-black text-yellow-400 font-mono drop-shadow-glow">-{jpAmount}P</span>
+                            </div>
+                            <div className="flex justify-between text-sm mb-3">
+                              <span className="font-bold text-gray-400 font-mono">キャッシュアウト:</span>
+                              <span className="font-black text-white font-mono">{cashOut.toLocaleString()}P</span>
+                            </div>
+                            <div className="relative pt-3 border-t border-purple-500/30">
+                              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-purple-500 to-transparent" />
+                              <div className="flex justify-between items-center">
+                                <span className="font-black text-white font-mono">収支:</span>
+                                <div className="relative">
+                                  <div className={`absolute inset-0 ${profit >= 0 ? 'bg-green-600' : 'bg-red-600'} blur-lg opacity-50`} />
+                                  <span className={`relative text-2xl font-black font-mono drop-shadow-glow ${profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                    {profit >= 0 ? '+' : ''}{profit.toLocaleString()}P
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               )
             })}
 
             {/* バリデーション */}
-            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-5 border-2 border-violet-200">
-              <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-violet-600" />
-                入力チェック
-              </h3>
-              
-              <div className="space-y-2">
-                <div className={`flex items-center justify-between p-3 rounded-xl ${
-                  isBuyInValid ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
-                }`}>
-                  <span className="text-sm font-bold text-gray-900">バイイン = 最終チップ</span>
-                  <div className="text-right">
-                    <div className="text-xs text-gray-700 font-semibold">
-                      {totalBuyIn.toLocaleString()} = {totalFinalChips.toLocaleString()}
-                    </div>
-                    {isBuyInValid ? (
-                      <CheckCircle className="w-5 h-5 text-green-600 ml-auto" />
-                    ) : (
-                      <AlertCircle className="w-5 h-5 text-red-600 ml-auto" />
-                    )}
-                  </div>
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-yellow-600 to-orange-600 rounded-2xl blur-xl opacity-50" />
+              <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-6 border-2 border-yellow-500/30 shadow-2xl">
+                <div className="flex items-center gap-2 mb-6">
+                  <AlertCircle className="w-6 h-6 text-yellow-500 drop-shadow-glow animate-pulse" />
+                  <h3 className="font-black text-white font-mono">入力チェック</h3>
                 </div>
-
-                <div className={`flex items-center justify-between p-3 rounded-xl ${
-                  isAirValid ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
-                }`}>
-                  <span className="text-sm font-bold text-gray-900">エアー貸出 = 借入</span>
-                  <div className="text-right">
-                    <div className="text-xs text-gray-700 font-semibold">
-                      {totalAirLent.toLocaleString()} = {totalAirBorrowed.toLocaleString()}
+                
+                <div className="space-y-3">
+                  <div className={`relative group p-4 rounded-xl border-2 ${
+                    isBuyInValid 
+                      ? 'bg-green-950/30 border-green-500/50' 
+                      : 'bg-red-950/30 border-red-500/50'
+                  }`}>
+                    {isBuyInValid && <div className="absolute inset-0 bg-green-600 blur-lg opacity-30 rounded-xl" />}
+                    {!isBuyInValid && <div className="absolute inset-0 bg-red-600 blur-lg opacity-30 rounded-xl" />}
+                    <div className="relative flex items-center justify-between">
+                      <span className="text-sm font-bold text-white font-mono">バイイン = 最終チップ</span>
+                      <div className="text-right">
+                        <div className="text-xs text-gray-400 font-mono mb-1">
+                          {totalBuyIn.toLocaleString()} = {totalFinalChips.toLocaleString()}
+                        </div>
+                        {isBuyInValid ? (
+                          <CheckCircle className="w-6 h-6 text-green-400 ml-auto drop-shadow-glow" />
+                        ) : (
+                          <AlertCircle className="w-6 h-6 text-red-400 ml-auto drop-shadow-glow" />
+                        )}
+                      </div>
                     </div>
-                    {isAirValid ? (
-                      <CheckCircle className="w-5 h-5 text-green-600 ml-auto" />
-                    ) : (
-                      <AlertCircle className="w-5 h-5 text-red-600 ml-auto" />
-                    )}
                   </div>
-                </div>
 
-                <div className="bg-gradient-to-r from-amber-50 to-yellow-50 p-3 rounded-xl border border-amber-200">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-amber-600" />
-                      JP自動積立
-                    </span>
-                    <span className="text-lg font-black text-amber-600">
-                      +{totalJpContribution.toLocaleString()}P
-                    </span>
+                  <div className={`relative group p-4 rounded-xl border-2 ${
+                    isAirValid 
+                      ? 'bg-green-950/30 border-green-500/50' 
+                      : 'bg-red-950/30 border-red-500/50'
+                  }`}>
+                    {isAirValid && <div className="absolute inset-0 bg-green-600 blur-lg opacity-30 rounded-xl" />}
+                    {!isAirValid && <div className="absolute inset-0 bg-red-600 blur-lg opacity-30 rounded-xl" />}
+                    <div className="relative flex items-center justify-between">
+                      <span className="text-sm font-bold text-white font-mono">エアー貸出 = 借入</span>
+                      <div className="text-right">
+                        <div className="text-xs text-gray-400 font-mono mb-1">
+                          {totalAirLent.toLocaleString()} = {totalAirBorrowed.toLocaleString()}
+                        </div>
+                        {isAirValid ? (
+                          <CheckCircle className="w-6 h-6 text-green-400 ml-auto drop-shadow-glow" />
+                        ) : (
+                          <AlertCircle className="w-6 h-6 text-red-400 ml-auto drop-shadow-glow" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="relative group">
+                    <div className="absolute inset-0 bg-gradient-to-r from-yellow-600 to-amber-600 rounded-xl blur-lg opacity-75 animate-pulse" />
+                    <div className="relative bg-gradient-to-r from-yellow-600 to-amber-600 p-4 rounded-xl border-2 border-yellow-400/50 shadow-lg">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-bold text-white flex items-center gap-2 font-mono">
+                          <Sparkles className="w-5 h-5 drop-shadow-glow" />
+                          JP自動積立
+                        </span>
+                        <span className="text-2xl font-black text-white drop-shadow-glow font-mono">
+                          +{totalJpContribution.toLocaleString()}P
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* 保存ボタン */}
-            <button
-              onClick={handleSave}
-              disabled={!isValid || saving}
-              className={`w-full py-4 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 ${
+            <div className="relative group">
+              <div className={`absolute inset-0 rounded-xl blur-lg transition-opacity ${
                 isValid && !saving
-                  ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95'
-                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-              }`}
-            >
-              {saving ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  保存中...
-                </>
-              ) : (
-                <>
-                  <Save className="w-5 h-5" />
-                  一括登録を保存
-                </>
-              )}
-            </button>
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 opacity-75 group-hover:opacity-100'
+                  : 'bg-gray-600 opacity-30'
+              }`} />
+              <button
+                onClick={handleSave}
+                disabled={!isValid || saving}
+                className={`relative w-full py-5 rounded-xl font-black transition-all flex items-center justify-center gap-3 border-2 ${
+                  isValid && !saving
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-400 shadow-2xl hover:scale-105 active:scale-95'
+                    : 'bg-gray-800 text-gray-600 border-gray-700 cursor-not-allowed'
+                }`}
+              >
+                {saving ? (
+                  <>
+                    <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin" />
+                    <span className="text-lg font-mono">保存中...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-6 h-6 drop-shadow-glow" />
+                    <span className="text-lg drop-shadow-glow font-mono">一括登録を保存</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         )}
 
         {/* Step 3: 履歴 */}
         {step === 3 && (
-          <div className="space-y-4">
-            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-5 border border-indigo-100">
-              <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <Eye className="w-5 h-5 text-indigo-600" />
-                一括登録履歴
-              </h2>
+          <div className="space-y-6">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-pink-600 to-purple-600 rounded-2xl blur-xl opacity-50" />
+              <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl overflow-hidden border-2 border-pink-500/30 shadow-2xl">
+                <div className="p-6 border-b border-pink-500/20">
+                  <div className="flex items-center gap-2">
+                    <Eye className="w-6 h-6 text-pink-500 drop-shadow-glow" />
+                    <h2 className="text-xl font-black text-white">一括登録履歴</h2>
+                  </div>
+                </div>
 
-              {batchHistory.length === 0 ? (
-                <p className="text-center text-gray-700 py-8 font-semibold">まだ履歴がありません</p>
-              ) : (
-                <div className="space-y-3">
-                  {batchHistory.map(batch => {
-                    const totalProfit = batch.sessions.reduce((sum: number, s: any) => sum + (s.profit || 0), 0)
-                    const totalJp = batch.sessions.reduce((sum: number, s: any) => sum + (s.jackpot_contribution || 0), 0)
-                    const date = new Date(batch.created_at).toLocaleDateString('ja-JP')
+                {batchHistory.length === 0 ? (
+                  <div className="p-12 text-center">
+                    <Skull className="w-16 h-16 text-gray-600 mx-auto mb-4 opacity-50" />
+                    <p className="text-gray-500 font-bold font-mono">まだ履歴がありません</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-pink-500/10">
+                    {batchHistory.map(batch => {
+                      const totalProfit = batch.sessions.reduce((sum: number, s: any) => sum + (s.profit || 0), 0)
+                      const totalJp = batch.sessions.reduce((sum: number, s: any) => sum + (s.jackpot_contribution || 0), 0)
+                      const date = new Date(batch.created_at).toLocaleDateString('ja-JP')
 
-                    return (
-                      <div key={batch.batch_id} className="bg-gradient-to-r from-violet-50 to-indigo-50 rounded-xl p-4 border border-violet-200">
-                        <div className="flex items-start justify-between mb-3">
-                          <div>
-                            <div className="font-bold text-gray-900">{date}</div>
-                            <div className="text-sm text-gray-700 font-semibold">{batch.player_count}名参加</div>
-                          </div>
-                          <button
-                            onClick={() => deleteBatch(batch.batch_id)}
-                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all active:scale-95"
-                          >
-                            <Trash2 className="w-5 h-5" />
-                          </button>
-                        </div>
-
-                       <div className="space-y-2 mb-3">
-                          {batch.sessions.map((s: any) => (
-                            <div key={s.id} className="bg-white/50 rounded-lg p-2">
-                              <div className="flex justify-between items-start mb-1">
-                                <span className="font-bold text-gray-900 text-sm truncate">{s.profiles?.username}</span>
-                                <span className={`font-black text-lg ${s.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                  {s.profit >= 0 ? '+' : ''}{s.profit.toLocaleString()}
-                                </span>
+                      return (
+                        <div key={batch.batch_id} className="p-5 hover:bg-white/5 transition-all">
+                          <div className="relative group">
+                            <div className="absolute inset-0 bg-gradient-to-r from-pink-600 to-purple-600 rounded-xl blur-lg opacity-20" />
+                            <div className="relative bg-black/40 backdrop-blur-sm rounded-xl p-5 border-2 border-pink-500/30">
+                              <div className="flex items-start justify-between mb-5">
+                                <div>
+                                  <div className="font-black text-white text-lg font-mono mb-1">{date}</div>
+                                  <div className="text-sm text-pink-400 font-bold font-mono">{batch.player_count}名参加</div>
+                                </div>
+                                <button
+                                  onClick={() => deleteBatch(batch.batch_id)}
+                                  className="relative group p-3 hover:bg-red-600/20 rounded-xl transition-all border-2 border-red-500/20 hover:border-red-500/50"
+                                >
+                                  <div className="absolute inset-0 bg-red-600 blur-lg opacity-0 group-hover:opacity-50 rounded-xl transition-opacity" />
+                                  <Trash2 className="relative w-5 h-5 text-red-500" />
+                                </button>
                               </div>
-                              <div className="grid grid-cols-2 gap-2 text-xs">
-                                <div className="flex justify-between">
-                                  <span className="text-gray-600 font-semibold">IN:</span>
-                                  <span className="text-gray-900 font-bold">{s.buy_in.toLocaleString()}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-gray-600 font-semibold">OUT:</span>
-                                  <span className="text-gray-900 font-bold">{s.cash_out.toLocaleString()}</span>
-                                </div>
-                                {(s.air_lent > 0 || s.air_borrowed > 0) && (
-                                  <>
-                                    <div className="flex justify-between">
-                                      <span className="text-blue-600 font-semibold">エアー貸:</span>
-                                      <span className="text-blue-700 font-bold">{s.air_lent.toLocaleString()}</span>
+
+                              <div className="space-y-3 mb-5">
+                                {batch.sessions.map((s: any) => (
+                                  <div key={s.id} className="bg-white/5 rounded-lg p-3 border border-white/10">
+                                    <div className="flex justify-between items-start mb-2">
+                                      <span className="font-bold text-white text-sm truncate font-mono">{s.profiles?.username}</span>
+                                      <div className="relative">
+                                        <div className={`absolute inset-0 ${s.profit >= 0 ? 'bg-green-600' : 'bg-red-600'} blur-lg opacity-50`} />
+                                        <span className={`relative font-black text-lg font-mono drop-shadow-glow ${s.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                          {s.profit >= 0 ? '+' : ''}{s.profit.toLocaleString()}
+                                        </span>
+                                      </div>
                                     </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-orange-600 font-semibold">エアー借:</span>
-                                      <span className="text-orange-700 font-bold">{s.air_borrowed.toLocaleString()}</span>
+                                    <div className="grid grid-cols-2 gap-2 text-xs">
+                                      <div className="flex justify-between">
+                                        <span className="text-gray-500 font-mono">IN:</span>
+                                        <span className="text-gray-300 font-bold font-mono">{s.buy_in.toLocaleString()}</span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span className="text-gray-500 font-mono">OUT:</span>
+                                        <span className="text-gray-300 font-bold font-mono">{s.cash_out.toLocaleString()}</span>
+                                      </div>
+                                      {(s.air_lent > 0 || s.air_borrowed > 0) && (
+                                        <>
+                                          <div className="flex justify-between">
+                                            <span className="text-cyan-500 font-mono">貸:</span>
+                                            <span className="text-cyan-400 font-bold font-mono">{s.air_lent.toLocaleString()}</span>
+                                          </div>
+                                          <div className="flex justify-between">
+                                            <span className="text-orange-500 font-mono">借:</span>
+                                            <span className="text-orange-400 font-bold font-mono">{s.air_borrowed.toLocaleString()}</span>
+                                          </div>
+                                        </>
+                                      )}
                                     </div>
-                                  </>
-                                )}
+                                  </div>
+                                ))}
+                              </div>
+
+                              <div className="relative pt-4 border-t border-pink-500/30">
+                                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-pink-500 to-transparent" />
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm font-bold text-white font-mono">JP積立:</span>
+                                  <div className="relative">
+                                    <div className="absolute inset-0 bg-yellow-600 blur-lg opacity-50" />
+                                    <span className="relative text-lg font-black text-yellow-400 font-mono drop-shadow-glow">
+                                      +{totalJp.toLocaleString()}P
+                                    </span>
+                                  </div>
+                                </div>
                               </div>
                             </div>
-                          ))}
+                          </div>
                         </div>
-
-                        <div className="flex items-center justify-between pt-3 border-t border-violet-300">
-                          <span className="text-sm font-bold text-gray-900">JP積立:</span>
-                          <span className="text-sm font-black text-amber-600">+{totalJp.toLocaleString()}P</span>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
 
-            <button
-              onClick={() => {
-                setSelectedPlayerIds(new Set())
-                setPlayerInputs([])
-                setStep(1)
-              }}
-              className="w-full py-4 rounded-2xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all"
-            >
-              新しい一括登録を作成
-            </button>
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl blur-lg opacity-75 group-hover:opacity-100 transition-opacity" />
+              <button
+                onClick={() => {
+                  setSelectedPlayerIds(new Set())
+                  setPlayerInputs([])
+                  setStep(1)
+                }}
+                className="relative w-full py-5 rounded-xl font-black bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-2xl hover:scale-105 active:scale-95 transition-all border-2 border-purple-400 flex items-center justify-center gap-3"
+              >
+                <Plus className="w-6 h-6 drop-shadow-glow" />
+                <span className="text-lg drop-shadow-glow font-mono">新しい一括登録を作成</span>
+              </button>
+            </div>
           </div>
         )}
       </div>
+
+      <style jsx global>{`
+        @keyframes shimmer {
+          0% {
+            background-position: -200% center;
+          }
+          100% {
+            background-position: 200% center;
+          }
+        }
+
+        .animate-shimmer {
+          background-size: 200% auto;
+          animation: shimmer 3s linear infinite;
+        }
+
+        .drop-shadow-glow {
+          filter: drop-shadow(0 0 8px currentColor);
+        }
+
+        /* カスタムスクロールバー */
+        ::-webkit-scrollbar {
+          width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+          background: rgba(0, 0, 0, 0.3);
+        }
+
+        ::-webkit-scrollbar-thumb {
+          background: rgba(168, 85, 247, 0.5);
+          border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+          background: rgba(168, 85, 247, 0.7);
+        }
+      `}</style>
     </div>
   )
 }

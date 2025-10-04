@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Save, X, Plus, Trash2 } from 'lucide-react'
+import { Save, X, Plus, Trash2, MapPin, Sparkles, TrendingUp, DollarSign } from 'lucide-react'
 
 interface CasinoFormProps {
   onSuccess: () => void
@@ -11,8 +11,8 @@ interface CasinoFormProps {
 
 interface CasinoGame {
   game_type: 'baccarat' | 'blackjack' | 'roulette' | 'slot' | 'other'
-  buy_in: string
-  cash_out: string
+  buy_in: number
+  cash_out: number
   note: string
 }
 
@@ -24,14 +24,14 @@ export default function CasinoForm({ onSuccess, onCancel }: CasinoFormProps) {
   const [playedDate, setPlayedDate] = useState(new Date().toISOString().split('T')[0])
   
   const [games, setGames] = useState<CasinoGame[]>([
-    { game_type: 'baccarat', buy_in: '', cash_out: '', note: '' }
+    { game_type: 'baccarat', buy_in: 0, cash_out: 0, note: '' }
   ])
   
   const [feeling, setFeeling] = useState<'excellent' | 'good' | 'normal' | 'bad' | 'terrible'>('normal')
   const [memo, setMemo] = useState('')
 
   const addGame = () => {
-    setGames([...games, { game_type: 'baccarat', buy_in: '', cash_out: '', note: '' }])
+    setGames([...games, { game_type: 'baccarat', buy_in: 0, cash_out: 0, note: '' }])
   }
 
   const removeGame = (index: number) => {
@@ -40,16 +40,14 @@ export default function CasinoForm({ onSuccess, onCancel }: CasinoFormProps) {
     }
   }
 
-  const updateGame = (index: number, field: keyof CasinoGame, value: string) => {
+  const updateGame = (index: number, field: keyof CasinoGame, value: any) => {
     const newGames = [...games]
     newGames[index] = { ...newGames[index], [field]: value }
     setGames(newGames)
   }
 
   const calculateGameProfit = (game: CasinoGame) => {
-    const buyIn = parseInt(game.buy_in) || 0
-    const cashOut = parseInt(game.cash_out) || 0
-    return cashOut - buyIn
+    return game.cash_out - game.buy_in
   }
 
   const calculateTotalProfit = () => {
@@ -57,11 +55,11 @@ export default function CasinoForm({ onSuccess, onCancel }: CasinoFormProps) {
   }
 
   const calculateTotalBuyIn = () => {
-    return games.reduce((sum, game) => sum + (parseInt(game.buy_in) || 0), 0)
+    return games.reduce((sum, game) => sum + game.buy_in, 0)
   }
 
   const calculateTotalCashOut = () => {
-    return games.reduce((sum, game) => sum + (parseInt(game.cash_out) || 0), 0)
+    return games.reduce((sum, game) => sum + game.cash_out, 0)
   }
 
   const getGameTypeLabel = (type: string) => {
@@ -77,6 +75,12 @@ export default function CasinoForm({ onSuccess, onCancel }: CasinoFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!casinoName) {
+      alert('カジノ名を入力してください')
+      return
+    }
+
     setLoading(true)
 
     try {
@@ -92,8 +96,8 @@ export default function CasinoForm({ onSuccess, onCancel }: CasinoFormProps) {
         country: country || null,
         games: games.map(game => ({
           game_type: game.game_type,
-          buy_in: parseInt(game.buy_in) || 0,
-          cash_out: parseInt(game.cash_out) || 0,
+          buy_in: game.buy_in,
+          cash_out: game.cash_out,
           profit: calculateGameProfit(game),
           note: game.note || null
         }))
@@ -128,250 +132,333 @@ export default function CasinoForm({ onSuccess, onCancel }: CasinoFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-5 shadow-lg">
-        <h3 className="font-black text-gray-900 mb-4">カジノ情報</h3>
-        
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">
-              カジノ名 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              required
-              value={casinoName}
-              onChange={(e) => setCasinoName(e.target.value)}
-              placeholder="マリーナベイサンズ"
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-yellow-500 text-gray-900 focus:outline-none transition-colors"
-            />
-          </div>
+    <form onSubmit={handleSubmit} className="space-y-5">
+      {/* カジノ情報 */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-yellow-600 blur-xl opacity-50" />
+        <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-2 border-white/20 shadow-2xl">
+          <h3 className="font-black text-white mb-4 flex items-center gap-2 text-lg" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>
+            <MapPin className="w-5 h-5 text-yellow-400" />
+            カジノ情報
+          </h3>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-black text-white mb-2" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>
+                カジノ名 <span className="text-red-400">*</span>
+              </label>
+              <input
+                type="text"
+                value={casinoName}
+                onChange={(e) => setCasinoName(e.target.value)}
+                placeholder="パラダイスシティ"
+                className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 focus:border-yellow-400 text-white placeholder-white/50 focus:outline-none transition-all"
+                style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 600 }}
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">国・地域</label>
-            <input
-              type="text"
-              value={country}
-              onChange={(e) => setCountry(e.target.value)}
-              placeholder="シンガポール"
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-yellow-500 text-gray-900 focus:outline-none transition-colors"
-            />
-          </div>
+            <div>
+              <label className="block text-sm font-black text-white mb-2" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>
+                国・地域
+              </label>
+              <input
+                type="text"
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                placeholder="韓国"
+                className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 focus:border-yellow-400 text-white placeholder-white/50 focus:outline-none transition-all"
+                style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 600 }}
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">
-              訪問日 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="date"
-              required
-              value={playedDate}
-              onChange={(e) => setPlayedDate(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-yellow-500 text-gray-900 focus:outline-none transition-colors"
-            />
+            <div>
+              <label className="block text-sm font-black text-white mb-2" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>
+                訪問日 <span className="text-red-400">*</span>
+              </label>
+              <input
+                type="date"
+                value={playedDate}
+                onChange={(e) => setPlayedDate(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 focus:border-yellow-400 text-white focus:outline-none transition-all"
+                style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 600 }}
+              />
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-5 shadow-lg">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="font-black text-gray-900">ゲーム記録</h3>
-          <p className="text-xs text-gray-600">プレイしたゲーム毎に記録</p>
-        </div>
+      {/* ゲーム記録 */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-amber-600 blur-xl opacity-50" />
+        <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-2 border-white/20 shadow-2xl">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-black text-white text-lg" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>
+              <DollarSign className="w-5 h-5 inline mr-1 text-amber-400" />
+              ゲーム記録
+            </h3>
+            <p className="text-xs text-white/60" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 600 }}>
+              プレイしたゲーム毎に記録
+            </p>
+          </div>
 
-        <div className="space-y-4">
-          {games.map((game, index) => (
-            <div key={index} className="bg-gray-50 rounded-xl p-4 border-2 border-gray-200">
-              <div className="flex justify-between items-center mb-3">
-                <h4 className="font-bold text-gray-900">ゲーム {index + 1}</h4>
-                {games.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeGame(index)}
-                    className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                )}
+          <div className="space-y-4">
+            {games.map((game, index) => (
+              <div key={index} className="relative">
+                <div className="absolute inset-0 bg-white/5 rounded-xl blur-sm" />
+                <div className="relative bg-black/40 backdrop-blur-sm rounded-xl p-4 border-2 border-white/20">
+                  <div className="flex justify-between items-center mb-3">
+                    <h4 className="font-black text-white text-base" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>
+                      ゲーム {index + 1}
+                    </h4>
+                    {games.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeGame(index)}
+                        className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-all"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-black text-white mb-2" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>
+                        ゲーム種類 <span className="text-red-400">*</span>
+                      </label>
+                      <select
+                        value={game.game_type}
+                        onChange={(e) => updateGame(index, 'game_type', e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 focus:border-yellow-400 text-white focus:outline-none transition-all"
+                        style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 600 }}
+                      >
+                        <option value="baccarat">バカラ</option>
+                        <option value="blackjack">ブラックジャック</option>
+                        <option value="roulette">ルーレット</option>
+                        <option value="slot">スロット</option>
+                        <option value="other">その他</option>
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-black text-white mb-2" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>
+                          バイイン <span className="text-red-400">*</span>
+                        </label>
+                        <input
+                          type="number"
+                          step="1000"
+                          min="0"
+                          value={game.buy_in || ''}
+                          onChange={(e) => updateGame(index, 'buy_in', Number(e.target.value) || 0)}
+                          placeholder="10000"
+                          className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 focus:border-red-400 text-white placeholder-white/50 focus:outline-none transition-all text-lg font-black"
+                          style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-black text-white mb-2" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>
+                          現金化 <span className="text-red-400">*</span>
+                        </label>
+                        <input
+                          type="number"
+                          step="1000"
+                          min="0"
+                          value={game.cash_out || ''}
+                          onChange={(e) => updateGame(index, 'cash_out', Number(e.target.value) || 0)}
+                          placeholder="15000"
+                          className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 focus:border-green-400 text-white placeholder-white/50 focus:outline-none transition-all text-lg font-black"
+                          style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}
+                        />
+                      </div>
+                    </div>
+
+                    {game.game_type === 'other' && (
+                      <div>
+                        <label className="block text-sm font-black text-white mb-2" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>
+                          ゲーム名・メモ
+                        </label>
+                        <input
+                          type="text"
+                          value={game.note}
+                          onChange={(e) => updateGame(index, 'note', e.target.value)}
+                          placeholder="ゲーム名を入力"
+                          className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 focus:border-yellow-400 text-white placeholder-white/50 focus:outline-none transition-all"
+                          style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 600 }}
+                        />
+                      </div>
+                    )}
+
+                    {(game.buy_in > 0 || game.cash_out > 0) && (
+                      <div className={`rounded-xl p-3 ${
+                        calculateGameProfit(game) >= 0 
+                          ? 'bg-green-500/20 border border-green-400/30' 
+                          : 'bg-red-500/20 border border-red-400/30'
+                      }`}>
+                        <p className="text-xs text-white/70 mb-1" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 600 }}>
+                          このゲームの収支
+                        </p>
+                        <p className={`text-xl font-black ${
+                          calculateGameProfit(game) >= 0 ? 'text-green-400' : 'text-red-400'
+                        }`} style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>
+                          {calculateGameProfit(game) >= 0 ? '+' : ''}{calculateGameProfit(game).toLocaleString()}円
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
+            ))}
 
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">
-                    ゲーム種類 <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    required
-                    value={game.game_type}
-                    onChange={(e) => updateGame(index, 'game_type', e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-yellow-500 text-gray-900 focus:outline-none transition-colors"
-                  >
-                    <option value="baccarat">バカラ</option>
-                    <option value="blackjack">ブラックジャック</option>
-                    <option value="roulette">ルーレット</option>
-                    <option value="slot">スロット</option>
-                    <option value="other">その他</option>
-                  </select>
-                </div>
+            <button
+              type="button"
+              onClick={addGame}
+              className="w-full py-4 rounded-xl bg-yellow-500/20 border-2 border-yellow-400/30 text-yellow-300 font-black hover:bg-yellow-500/30 transition-all flex items-center justify-center gap-2"
+              style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}
+            >
+              <Plus className="w-5 h-5" />
+              ゲームを追加
+            </button>
+          </div>
+        </div>
+      </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">
-                      バイイン <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      required
-                      value={game.buy_in}
-                      onChange={(e) => updateGame(index, 'buy_in', e.target.value)}
-                      placeholder="10000"
-                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-yellow-500 text-gray-900 focus:outline-none transition-colors"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">
-                      現金化 <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      required
-                      value={game.cash_out}
-                      onChange={(e) => updateGame(index, 'cash_out', e.target.value)}
-                      placeholder="15000"
-                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-yellow-500 text-gray-900 focus:outline-none transition-colors"
-                    />
-                  </div>
-                </div>
-
-                {game.game_type === 'other' && (
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">ゲーム名・メモ</label>
-                    <input
-                      type="text"
-                      value={game.note}
-                      onChange={(e) => updateGame(index, 'note', e.target.value)}
-                      placeholder="ゲーム名を入力"
-                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-yellow-500 text-gray-900 focus:outline-none transition-colors"
-                    />
-                  </div>
-                )}
-
-                {game.buy_in && game.cash_out && (
-                  <div className={`rounded-xl p-3 ${
-                    calculateGameProfit(game) >= 0 
-                      ? 'bg-green-100 border border-green-300' 
-                      : 'bg-red-100 border border-red-300'
-                  }`}>
-                    <p className="text-xs text-gray-700 mb-1">このゲームの収支</p>
-                    <p className={`text-xl font-black ${
-                      calculateGameProfit(game) >= 0 ? 'text-green-700' : 'text-red-700'
-                    }`}>
-                      {calculateGameProfit(game) >= 0 ? '+' : ''}{calculateGameProfit(game).toLocaleString()}円
-                    </p>
-                  </div>
-                )}
+      {/* 総合収支 */}
+      <div className="relative group">
+        <div className={`absolute inset-0 ${calculateTotalProfit() >= 0 ? 'bg-green-600' : 'bg-red-600'} blur-xl opacity-75 animate-pulse`} />
+        <div className={`relative bg-gradient-to-r ${
+          calculateTotalProfit() >= 0 
+            ? 'from-green-500 to-emerald-600' 
+            : 'from-red-500 to-pink-600'
+        } rounded-2xl p-1 shadow-2xl`}>
+          <div className="bg-black/40 backdrop-blur-sm rounded-2xl p-6">
+            <h3 className="font-black text-white text-lg mb-4" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>
+              <TrendingUp className="w-5 h-5 inline mr-1" />
+              総合収支
+            </h3>
+            
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <p className="text-sm text-white/80 mb-1" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 600 }}>
+                  総バイイン
+                </p>
+                <p className="text-2xl font-black text-white" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>
+                  {calculateTotalBuyIn().toLocaleString()}円
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-white/80 mb-1" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 600 }}>
+                  総現金化
+                </p>
+                <p className="text-2xl font-black text-white" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>
+                  {calculateTotalCashOut().toLocaleString()}円
+                </p>
               </div>
             </div>
-          ))}
 
+            <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4">
+              <p className="text-sm text-white/80 mb-2" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 600 }}>
+                カジノ全体の収支
+              </p>
+              <p className="text-4xl font-black text-white drop-shadow-glow" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>
+                {calculateTotalProfit() >= 0 ? '+' : ''}{calculateTotalProfit().toLocaleString()}
+                <span className="text-2xl ml-1">円</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 振り返り */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-purple-600 blur-xl opacity-50" />
+        <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-2 border-white/20 shadow-2xl">
+          <h3 className="font-black text-white mb-4 flex items-center gap-2 text-lg" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>
+            <Sparkles className="w-5 h-5 text-purple-400" />
+            振り返り
+          </h3>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-black text-white mb-3" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>
+                満足度
+              </label>
+              <div className="grid grid-cols-5 gap-2">
+                {[
+                  { value: 'excellent', emoji: '😄', label: '最高' },
+                  { value: 'good', emoji: '🙂', label: '良い' },
+                  { value: 'normal', emoji: '😐', label: '普通' },
+                  { value: 'bad', emoji: '😞', label: '悪い' },
+                  { value: 'terrible', emoji: '😡', label: '最悪' }
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setFeeling(option.value as any)}
+                    className={`py-3 rounded-xl font-black text-xs transition-all ${
+                      feeling === option.value
+                        ? 'bg-gradient-to-r from-yellow-500 to-amber-600 text-white shadow-lg scale-105'
+                        : 'bg-white/10 text-white/70 hover:bg-white/20 border-2 border-white/20'
+                    }`}
+                    style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}
+                  >
+                    <div className="text-2xl mb-1">{option.emoji}</div>
+                    <div>{option.label}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-black text-white mb-2" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>
+                メモ
+              </label>
+              <textarea
+                value={memo}
+                onChange={(e) => setMemo(e.target.value)}
+                placeholder="雰囲気が良かった、ディーラーが親切だった、など"
+                rows={4}
+                className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 focus:border-purple-400 text-white placeholder-white/50 focus:outline-none transition-all resize-none"
+                style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 600 }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 送信ボタン */}
+      <div className="flex gap-3 pt-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="flex-1 py-4 rounded-xl bg-white/10 border-2 border-white/20 text-white font-black hover:bg-white/20 transition-all"
+          style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}
+        >
+          キャンセル
+        </button>
+        <div className="flex-1 relative group">
+          <div className="absolute inset-0 bg-gradient-to-r from-yellow-600 to-amber-600 blur-lg opacity-75 group-hover:opacity-100 transition-opacity" />
           <button
-            type="button"
-            onClick={addGame}
-            className="w-full py-3 rounded-xl bg-yellow-50 border-2 border-yellow-200 text-yellow-700 font-bold hover:bg-yellow-100 transition-all flex items-center justify-center gap-2"
+            type="submit"
+            disabled={loading}
+            className="relative w-full py-4 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-600 text-white font-black shadow-2xl hover:shadow-yellow-500/50 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}
           >
-            <Plus className="w-5 h-5" />
-            ゲームを追加
+            {loading ? '保存中...' : (
+              <>
+                <Save className="w-5 h-5" />
+                記録を保存
+              </>
+            )}
           </button>
         </div>
       </div>
 
-      <div className="bg-gradient-to-br from-yellow-500 to-amber-600 rounded-2xl p-6 shadow-xl text-white">
-        <h3 className="font-black text-lg mb-4">総合収支</h3>
-        
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div>
-            <p className="text-sm opacity-90 mb-1">総バイイン</p>
-            <p className="text-2xl font-black">{calculateTotalBuyIn().toLocaleString()}円</p>
-          </div>
-          <div>
-            <p className="text-sm opacity-90 mb-1">総現金化</p>
-            <p className="text-2xl font-black">{calculateTotalCashOut().toLocaleString()}円</p>
-          </div>
-        </div>
-
-        <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4">
-          <p className="text-sm opacity-90 mb-2">カジノ全体の収支</p>
-          <p className="text-4xl font-black">
-            {calculateTotalProfit() >= 0 ? '+' : ''}{calculateTotalProfit().toLocaleString()}円
-          </p>
-        </div>
-      </div>
-
-      <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-5 shadow-lg">
-        <h3 className="font-black text-gray-900 mb-4">振り返り</h3>
-        
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">満足度</label>
-            <div className="grid grid-cols-5 gap-2">
-              {[
-                { value: 'excellent', emoji: '😄', label: '最高' },
-                { value: 'good', emoji: '🙂', label: '良い' },
-                { value: 'normal', emoji: '😐', label: '普通' },
-                { value: 'bad', emoji: '😞', label: '悪い' },
-                { value: 'terrible', emoji: '😡', label: '最悪' }
-              ].map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => setFeeling(option.value as any)}
-                  className={`py-3 rounded-xl font-bold text-sm transition-all ${
-                    feeling === option.value
-                      ? 'bg-yellow-500 text-white shadow-lg scale-105'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  <div className="text-2xl mb-1">{option.emoji}</div>
-                  <div className="text-xs">{option.label}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">メモ</label>
-            <textarea
-              value={memo}
-              onChange={(e) => setMemo(e.target.value)}
-              placeholder="雰囲気が良かった、ディーラーが親切だった、など"
-              rows={4}
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-yellow-500 text-gray-900 focus:outline-none transition-colors resize-none"
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="flex gap-3">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="flex-1 py-4 rounded-xl bg-gray-200 text-gray-700 font-bold hover:bg-gray-300 transition-all"
-        >
-          キャンセル
-        </button>
-        <button
-          type="submit"
-          disabled={loading}
-          className="flex-1 py-4 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-600 text-white font-bold shadow-lg hover:shadow-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-        >
-          {loading ? '保存中...' : (
-            <>
-              <Save className="w-5 h-5" />
-              記録を保存
-            </>
-          )}
-        </button>
-      </div>
+      <style jsx global>{`
+        .drop-shadow-glow {
+          filter: drop-shadow(0 0 8px currentColor);
+        }
+      `}</style>
     </form>
   )
 }

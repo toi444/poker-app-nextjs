@@ -22,8 +22,8 @@ export default function BudgetPage() {
   const [saving, setSaving] = useState(false)
   
   const [periodType, setPeriodType] = useState<'daily' | 'weekly' | 'monthly'>('monthly')
-  const [budgetAmount, setBudgetAmount] = useState('')
-  const [targetProfit, setTargetProfit] = useState('')
+  const [budgetAmount, setBudgetAmount] = useState<number>(0)
+  const [targetProfit, setTargetProfit] = useState<number>(0)
   const [existingBudget, setExistingBudget] = useState<Budget | null>(null)
 
   useEffect(() => {
@@ -32,9 +32,7 @@ export default function BudgetPage() {
     const fetchCurrentBudget = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser()
-        if (!user || !mounted) {
-          return
-        }
+        if (!user || !mounted) return
 
         const { start, end } = getPeriodDates()
 
@@ -51,27 +49,22 @@ export default function BudgetPage() {
 
         if (data) {
           setExistingBudget(data)
-          setBudgetAmount(data.budget_amount.toString())
-          setTargetProfit(data.target_profit?.toString() || '')
+          setBudgetAmount(data.budget_amount)
+          setTargetProfit(data.target_profit || 0)
         } else {
           setExistingBudget(null)
-          setBudgetAmount('')
-          setTargetProfit('')
+          setBudgetAmount(0)
+          setTargetProfit(0)
         }
       } catch (error) {
         console.error('Fetch error:', error)
       } finally {
-        if (mounted) {
-          setLoading(false)
-        }
+        if (mounted) setLoading(false)
       }
     }
 
     fetchCurrentBudget()
-
-    return () => {
-      mounted = false
-    }
+    return () => { mounted = false }
   }, [periodType])
 
   const getPeriodDates = () => {
@@ -80,16 +73,10 @@ export default function BudgetPage() {
     const month = today.getMonth() + 1
     const day = today.getDate()
 
-    let startYear = year
-    let startMonth = month
-    let startDay = day
-    let endYear = year
-    let endMonth = month
-    let endDay = day
+    let startYear = year, startMonth = month, startDay = day
+    let endYear = year, endMonth = month, endDay = day
 
-    if (periodType === 'daily') {
-      // そのまま
-    } else if (periodType === 'weekly') {
+    if (periodType === 'weekly') {
       const dayOfWeek = today.getDay()
       const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1
       const weekStart = new Date(today.getTime() - daysFromMonday * 24 * 60 * 60 * 1000)
@@ -107,9 +94,8 @@ export default function BudgetPage() {
       endDay = lastDay.getDate()
     }
 
-    const formatDate = (y: number, m: number, d: number) => {
-      return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
-    }
+    const formatDate = (y: number, m: number, d: number) => 
+      `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
 
     return {
       start: formatDate(startYear, startMonth, startDay),
@@ -121,11 +107,11 @@ export default function BudgetPage() {
     const { start, end } = getPeriodDates()
     
     if (periodType === 'daily') {
-      const [year, month, day] = start.split('-')
+      const [, month, day] = start.split('-')
       return `${parseInt(month)}月${parseInt(day)}日`
     } else if (periodType === 'weekly') {
-      const [y1, m1, d1] = start.split('-')
-      const [y2, m2, d2] = end.split('-')
+      const [, m1, d1] = start.split('-')
+      const [, m2, d2] = end.split('-')
       return `${parseInt(m1)}/${parseInt(d1)} - ${parseInt(m2)}/${parseInt(d2)}`
     } else {
       const [year, month] = start.split('-')
@@ -148,8 +134,8 @@ export default function BudgetPage() {
         period_type: periodType,
         period_start: start,
         period_end: end,
-        budget_amount: parseInt(budgetAmount),
-        target_profit: targetProfit ? parseInt(targetProfit) : null
+        budget_amount: budgetAmount,
+        target_profit: targetProfit || null
       }
 
       if (existingBudget?.id) {
@@ -157,13 +143,11 @@ export default function BudgetPage() {
           .from('gamble_budgets')
           .update(budgetData)
           .eq('id', existingBudget.id)
-
         if (error) throw error
       } else {
         const { error } = await supabase
           .from('gamble_budgets')
           .insert(budgetData)
-
         if (error) throw error
       }
 
@@ -179,133 +163,144 @@ export default function BudgetPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center">
-        <div className="animate-pulse">
-          <div className="w-16 h-16 bg-gradient-to-r from-orange-600 to-red-600 rounded-full" />
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-orange-900 to-red-900 flex items-center justify-center">
+        <div className="relative">
+          <div className="w-24 h-24 border-4 border-orange-500/30 border-t-orange-500 rounded-full animate-spin" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Target className="w-10 h-10 text-orange-500 animate-pulse" />
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 pb-8">
-      <div className="bg-white/70 backdrop-blur-xl border-b border-white/20 sticky top-0 z-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-orange-900 to-red-900 pb-8">
+      <div className="bg-black/60 backdrop-blur-xl border-b-2 border-orange-500/50 sticky top-0 z-50">
         <div className="container max-w-md mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <button
-              onClick={() => router.push('/all-gamble')}
-              className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95"
-            >
-              <ArrowLeft className="w-5 h-5 text-gray-700" />
+            <button onClick={() => router.push('/all-gamble')} className="relative group">
+              <div className="absolute inset-0 bg-orange-600 blur-lg opacity-0 group-hover:opacity-75 transition-opacity rounded-full" />
+              <div className="relative w-12 h-12 flex items-center justify-center rounded-full bg-black/60 backdrop-blur-sm border-2 border-orange-500/50 hover:border-orange-400 transition-all">
+                <ArrowLeft className="h-5 w-5 text-orange-300" />
+              </div>
             </button>
             
             <div className="text-center flex-1 mx-4">
-              <h1 className="text-xl font-black bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+              <h1 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-red-400 to-pink-400 drop-shadow-glow">
                 予算・目標設定
               </h1>
-              <p className="text-xs text-gray-600 mt-0.5">Budget & Goals</p>
+              <p className="text-xs text-orange-200 mt-0.5 font-semibold">Budget & Goals</p>
             </div>
-
-            <div className="w-10" />
+            <div className="w-12" />
           </div>
         </div>
       </div>
 
       <div className="container max-w-md mx-auto px-4 py-6">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-5 shadow-lg">
-            <div className="flex items-center gap-2 mb-4">
-              <Calendar className="w-5 h-5 text-orange-600" />
-              <h3 className="font-black text-gray-900">期間選択</h3>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2">
-              {(['daily', 'weekly', 'monthly'] as const).map((type) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => setPeriodType(type)}
-                  className={`py-3 rounded-xl font-bold text-sm transition-all ${
-                    periodType === type
-                      ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-lg'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {type === 'daily' && '日毎'}
-                  {type === 'weekly' && '週毎'}
-                  {type === 'monthly' && '月毎'}
-                </button>
-              ))}
-            </div>
-
-            <div className="mt-4 bg-orange-50 rounded-xl p-3 border border-orange-200">
-              <p className="text-sm text-gray-700">
-                <span className="font-bold">対象期間:</span> {getPeriodLabel()}
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-5 shadow-lg">
-            <div className="flex items-center gap-2 mb-4">
-              <Target className="w-5 h-5 text-orange-600" />
-              <h3 className="font-black text-gray-900">予算設定</h3>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  使える金額（予算） <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  required
-                  value={budgetAmount}
-                  onChange={(e) => setBudgetAmount(e.target.value)}
-                  placeholder="50000"
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 text-gray-900 focus:outline-none transition-colors"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  この期間で使える最大金額を設定します
-                </p>
+        <div className="space-y-6">
+          <div className="relative">
+            <div className="absolute inset-0 bg-orange-600 blur-xl opacity-50" />
+            <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-2 border-orange-500/50">
+              <div className="flex items-center gap-2 mb-4">
+                <Calendar className="w-5 h-5 text-orange-400" />
+                <h3 className="font-black text-white">期間選択</h3>
               </div>
 
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  勝ちたい金額（目標）
-                </label>
-                <input
-                  type="number"
-                  value={targetProfit}
-                  onChange={(e) => setTargetProfit(e.target.value)}
-                  placeholder="30000"
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 text-gray-900 focus:outline-none transition-colors"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  この期間で達成したい収支目標を設定します（任意）
+              <div className="grid grid-cols-3 gap-2">
+                {(['daily', 'weekly', 'monthly'] as const).map((type) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setPeriodType(type)}
+                    className={`py-3 rounded-xl font-black text-sm transition-all ${
+                      periodType === type
+                        ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-lg'
+                        : 'bg-white/10 text-orange-200 hover:bg-white/20'
+                    }`}
+                  >
+                    {type === 'daily' ? '日毎' : type === 'weekly' ? '週毎' : '月毎'}
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-4 bg-orange-500/20 rounded-xl p-3 border border-orange-400/30">
+                <p className="text-sm text-orange-100 font-semibold">
+                  <span className="font-black">対象期間:</span> {getPeriodLabel()}
                 </p>
               </div>
             </div>
           </div>
 
-          {budgetAmount && (
-            <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-5 shadow-lg border border-blue-200">
-              <h4 className="font-bold text-gray-900 mb-3">設定内容プレビュー</h4>
-              <ul className="space-y-2 text-sm text-gray-700">
-                <li className="flex justify-between">
-                  <span>期間:</span>
-                  <span className="font-bold">{getPeriodLabel()}</span>
-                </li>
-                <li className="flex justify-between">
-                  <span>予算:</span>
-                  <span className="font-bold">{parseInt(budgetAmount).toLocaleString()}円</span>
-                </li>
-                {targetProfit && (
+          <div className="relative">
+            <div className="absolute inset-0 bg-red-600 blur-xl opacity-50" />
+            <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-2 border-red-500/50">
+              <div className="flex items-center gap-2 mb-4">
+                <Target className="w-5 h-5 text-red-400" />
+                <h3 className="font-black text-white">予算設定</h3>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-black text-red-300 mb-2">
+                    使える金額（予算） <span className="text-yellow-400">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    value={budgetAmount || ''}
+                    onChange={(e) => setBudgetAmount(parseInt(e.target.value) || 0)}
+                    placeholder="50000"
+                    step={1000}
+                    className="w-full px-4 py-3 rounded-xl border-2 border-red-500/50 bg-black/40 text-white focus:border-red-400 focus:outline-none transition-colors font-black text-lg backdrop-blur-sm placeholder-red-400"
+                  />
+                  <p className="text-xs text-red-200 mt-2 font-semibold">
+                    この期間で使える最大金額を設定します
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-black text-red-300 mb-2">
+                    勝ちたい金額（目標）
+                  </label>
+                  <input
+                    type="number"
+                    value={targetProfit || ''}
+                    onChange={(e) => setTargetProfit(parseInt(e.target.value) || 0)}
+                    placeholder="30000"
+                    step={1000}
+                    className="w-full px-4 py-3 rounded-xl border-2 border-red-500/50 bg-black/40 text-white focus:border-red-400 focus:outline-none transition-colors font-black text-lg backdrop-blur-sm placeholder-red-400"
+                  />
+                  <p className="text-xs text-red-200 mt-2 font-semibold">
+                    この期間で達成したい収支目標を設定します（任意）
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {budgetAmount > 0 && (
+            <div className="relative">
+              <div className="absolute inset-0 bg-blue-600 blur-xl opacity-50" />
+              <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-2 border-blue-500/50">
+                <h4 className="font-black text-white mb-3">設定内容プレビュー</h4>
+                <ul className="space-y-2 text-sm text-blue-100">
                   <li className="flex justify-between">
-                    <span>目標:</span>
-                    <span className="font-bold text-green-600">+{parseInt(targetProfit).toLocaleString()}円</span>
+                    <span className="font-semibold">期間:</span>
+                    <span className="font-black">{getPeriodLabel()}</span>
                   </li>
-                )}
-              </ul>
+                  <li className="flex justify-between">
+                    <span className="font-semibold">予算:</span>
+                    <span className="font-black">{budgetAmount.toLocaleString()}円</span>
+                  </li>
+                  {targetProfit > 0 && (
+                    <li className="flex justify-between">
+                      <span className="font-semibold">目標:</span>
+                      <span className="font-black text-green-400">+{targetProfit.toLocaleString()}円</span>
+                    </li>
+                  )}
+                </ul>
+              </div>
             </div>
           )}
 
@@ -313,25 +308,26 @@ export default function BudgetPage() {
             <button
               type="button"
               onClick={() => router.push('/all-gamble')}
-              className="flex-1 py-4 rounded-xl bg-gray-200 text-gray-700 font-bold hover:bg-gray-300 transition-all"
+              className="flex-1 py-4 rounded-xl bg-white/10 text-white font-black hover:bg-white/20 transition-all border-2 border-white/20"
             >
               キャンセル
             </button>
             <button
-              type="submit"
-              disabled={saving}
-              className="flex-1 py-4 rounded-xl bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold shadow-lg hover:shadow-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              onClick={handleSubmit}
+              disabled={saving || budgetAmount === 0}
+              className="flex-1 py-4 rounded-xl bg-gradient-to-r from-orange-500 to-red-600 text-white font-black shadow-lg hover:shadow-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {saving ? '保存中...' : (
-                <>
-                  <Save className="w-5 h-5" />
-                  保存する
-                </>
-              )}
+              {saving ? '保存中...' : <><Save className="w-5 h-5" />保存する</>}
             </button>
           </div>
-        </form>
+        </div>
       </div>
+
+      <style jsx global>{`
+        .drop-shadow-glow {
+          filter: drop-shadow(0 0 8px currentColor);
+        }
+      `}</style>
     </div>
   )
 }

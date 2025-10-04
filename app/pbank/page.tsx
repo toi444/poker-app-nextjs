@@ -20,7 +20,6 @@ import {
   BarChart3
 } from 'lucide-react'
 
-// 型定義
 interface Profile {
   id: string
   username: string
@@ -66,16 +65,18 @@ interface InterestRecord {
   to_user_id: string
 }
 
-// 成功メッセージコンポーネント
 const SuccessAnimation = ({ message, show }: { message: string; show: boolean }) => {
   if (!show) return null
 
   return (
     <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center">
-      <div className="bg-white rounded-2xl shadow-2xl p-6 animate-bounce-in pointer-events-auto">
-        <div className="text-center">
-          <div className="text-6xl mb-3 animate-spin-slow">🎉</div>
-          <p className="text-xl font-bold text-gray-900">{message}</p>
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-green-600 to-emerald-600 rounded-3xl blur-2xl opacity-75 animate-pulse" />
+        <div className="relative bg-gradient-to-br from-green-600 to-emerald-600 rounded-3xl p-1 shadow-2xl animate-bounce-in pointer-events-auto">
+          <div className="bg-black/40 backdrop-blur-sm rounded-3xl p-8 text-center">
+            <div className="text-6xl mb-3 animate-spin-slow">🎉</div>
+            <p className="text-2xl font-black text-white drop-shadow-glow">{message}</p>
+          </div>
         </div>
       </div>
       <div className="absolute inset-0 pointer-events-none">
@@ -109,19 +110,16 @@ export default function PBankPage() {
   const [activeUsers, setActiveUsers] = useState<Profile[]>([])
   const [loading, setLoading] = useState(true)
   
-  // 統計情報
   const [totalLent, setTotalLent] = useState(0)
   const [totalBorrowed, setTotalBorrowed] = useState(0)
   const [pendingApps, setPendingApps] = useState(0)
   const [netInterest, setNetInterest] = useState(0)
   
-  // フォーム用の状態
   const [selectedLender, setSelectedLender] = useState('')
   const [loanAmount, setLoanAmount] = useState(1000)
   const [loanMessage, setLoanMessage] = useState('')
   const [confirmApply, setConfirmApply] = useState(false)
   
-  // 成功メッセージ用
   const [successMessage, setSuccessMessage] = useState('')
   const [showSuccess, setShowSuccess] = useState(false)
 
@@ -160,7 +158,6 @@ export default function PBankPage() {
     setLoading(true)
     
     try {
-      // アクティブユーザーのみ取得
       const { data: usersData } = await supabase
         .from('profiles')
         .select('id, username, email, active')
@@ -169,7 +166,6 @@ export default function PBankPage() {
       
       setActiveUsers(usersData || [])
       
-      // 融資情報を取得（関連プロフィール付き）
       const { data: loansData } = await supabase
         .from('loans')
         .select(`
@@ -181,7 +177,6 @@ export default function PBankPage() {
       
       setLoans(loansData || [])
       
-      // 申請情報を取得
       const { data: appsData } = await supabase
         .from('loan_applications')
         .select(`
@@ -193,7 +188,6 @@ export default function PBankPage() {
       
       setApplications(appsData || [])
       
-      // 利息記録を取得
       const { data: interestData } = await supabase
         .from('interest_records')
         .select('*')
@@ -201,7 +195,6 @@ export default function PBankPage() {
       
       setInterests(interestData || [])
       
-      // 統計情報を計算
       calculateStats(loansData || [], appsData || [], interestData || [])
       
     } catch (error) {
@@ -214,25 +207,21 @@ export default function PBankPage() {
   const calculateStats = (loansData: Loan[], appsData: LoanApplication[], interestData: InterestRecord[]) => {
     if (!user) return
     
-    // 貸出額合計
     const lentSum = loansData
       .filter(loan => loan.lender_id === user.id && loan.status === 'active')
       .reduce((sum, loan) => sum + (loan.remaining || 0), 0)
     setTotalLent(lentSum)
     
-    // 借入額合計
     const borrowedSum = loansData
       .filter(loan => loan.borrower_id === user.id && loan.status === 'active')
       .reduce((sum, loan) => sum + (loan.remaining || 0), 0)
     setTotalBorrowed(borrowedSum)
     
-    // 承認待ち件数
     const pendingCount = appsData
       .filter(app => app.to_user_id === user.id && app.status === '申込中')
       .length
     setPendingApps(pendingCount)
     
-    // 利息収支
     const earnedInterest = interestData
       .filter(record => record.to_user_id === user.id)
       .reduce((sum, record) => sum + record.amount, 0)
@@ -266,7 +255,6 @@ export default function PBankPage() {
           const interestAmount = Math.floor(loan.remaining * 0.1)
           const newRemaining = loan.remaining + interestAmount
           
-          // ローン残高を更新
           await supabase
             .from('loans')
             .update({
@@ -275,7 +263,6 @@ export default function PBankPage() {
             })
             .eq('id', loan.id)
           
-          // 利息記録を作成
           await supabase
             .from('interest_records')
             .insert({
@@ -287,7 +274,6 @@ export default function PBankPage() {
         }
       }
       
-      // データを再読み込み
       loadData()
     } catch (error) {
       console.error('利息適用エラー:', error)
@@ -322,14 +308,12 @@ export default function PBankPage() {
       
       if (error) throw error
       
-      // 成功処理
       showSuccessMessage(`${lenderUser?.username}さんに${loanAmount.toLocaleString()} Pの融資を申込みました！`)
       setLoanAmount(1000)
       setLoanMessage('')
       setSelectedLender('')
       setConfirmApply(false)
       
-      // データ再読み込み
       setTimeout(() => {
         loadData()
       }, 500)
@@ -372,7 +356,6 @@ export default function PBankPage() {
 
   const handleApprove = async (appId: string, app: LoanApplication) => {
     try {
-      // 申請を承認済みに更新
       const { error: updateError } = await supabase
         .from('loan_applications')
         .update({ status: '承認済' })
@@ -381,7 +364,6 @@ export default function PBankPage() {
       if (updateError) throw updateError
       
       if (app.type === 'loan') {
-        // 新規融資を作成
         const { error: loanError } = await supabase
           .from('loans')
           .insert({
@@ -397,7 +379,6 @@ export default function PBankPage() {
         showSuccessMessage('融資を承認しました！')
         
       } else if (app.type === 'repayment' && app.loan_id) {
-        // 返済処理
         const loan = loans.find(l => l.id === app.loan_id)
         if (loan) {
           const newRemaining = Math.max(0, loan.remaining - app.amount)
@@ -443,14 +424,22 @@ export default function PBankPage() {
   
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-4 border-violet-600"></div>
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-900 flex items-center justify-center">
+        <div className="relative">
+          <div className="w-24 h-24 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <PiggyBank className="w-10 h-10 text-emerald-500 animate-pulse" />
+          </div>
+          <div className="absolute inset-0 animate-ping opacity-20">
+            <div className="w-24 h-24 border-4 border-emerald-500 rounded-full" />
+          </div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-900">
       <style jsx global>{`
         @keyframes bounce-in {
           0% {
@@ -485,6 +474,17 @@ export default function PBankPage() {
             transform: rotate(360deg);
           }
         }
+
+        @keyframes slide-in {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
         
         .animate-bounce-in {
           animation: bounce-in 0.5s ease-out;
@@ -497,354 +497,412 @@ export default function PBankPage() {
         .animate-spin-slow {
           animation: spin-slow 2s linear infinite;
         }
+
+        .animate-slide-in {
+          animation: slide-in 0.4s ease-out;
+        }
+
+        .drop-shadow-glow {
+          filter: drop-shadow(0 0 8px currentColor);
+        }
       `}</style>
       
       <SuccessAnimation message={successMessage} show={showSuccess} />
       
       <div className="container max-w-md mx-auto p-4 pb-20">
-        {/* ヘッダー with 戻るボタン */}
         <div className="mb-6">
           <button
             onClick={() => router.push('/dashboard')}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-white/80 backdrop-blur-sm shadow-md hover:shadow-lg transition-all mb-4"
+            className="relative group mb-4"
           >
-            <ArrowLeft className="h-5 w-5 text-gray-900" />
+            <div className="absolute inset-0 bg-emerald-600 blur-lg opacity-0 group-hover:opacity-75 transition-opacity rounded-full" />
+            <div className="relative w-12 h-12 flex items-center justify-center rounded-full bg-black/60 backdrop-blur-sm border-2 border-emerald-500/50 hover:border-emerald-400 transition-all">
+              <ArrowLeft className="h-5 w-5 text-emerald-300" />
+            </div>
           </button>
           
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-            <PiggyBank className="inline h-8 w-8 text-emerald-500 mr-2" />
-            P-BANK
-          </h1>
-          <p className="text-gray-900 mt-2 font-medium">融資管理システム</p>
+          <div className="relative">
+            <div className="absolute inset-0 bg-emerald-600 blur-2xl opacity-50" />
+            <h1 className="relative text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-green-400 to-teal-400 flex items-center gap-3 drop-shadow-glow">
+              <PiggyBank className="w-10 h-10 text-emerald-400" />
+              P-BANK
+            </h1>
+          </div>
+          <p className="text-emerald-200 mt-2 font-semibold">融資管理システム</p>
         </div>
 
-        {/* 利息通知バナー */}
-        <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl p-4 mb-6 text-white shadow-xl">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5" />
-            <p className="text-sm font-bold">毎月1日に残高の10%が利息として自動加算されます</p>
+        <div className="relative mb-6">
+          <div className="absolute inset-0 bg-blue-600 blur-xl opacity-50 animate-pulse" />
+          <div className="relative bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-4 text-white shadow-2xl border-2 border-blue-400/50">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 animate-pulse" />
+              <p className="text-sm font-black drop-shadow-glow">毎月1日に残高の10%が利息として自動加算されます</p>
+            </div>
           </div>
         </div>
 
-        {/* 統計カード - 数値表示に修正 */}
         <div className="grid grid-cols-2 gap-3 mb-6">
-          <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-4 border border-green-100">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="w-5 h-5 text-green-600" />
-              <p className="text-xs font-bold text-gray-800">貸出額</p>
+          <div className="relative group">
+            <div className="absolute inset-0 bg-green-600 blur-lg opacity-50" />
+            <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-4 border-2 border-green-500/50">
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className="w-5 h-5 text-green-400" />
+                <p className="text-xs font-black text-green-300">貸出額</p>
+              </div>
+              <p className="text-2xl font-black text-green-400 drop-shadow-glow">{totalLent.toLocaleString()}</p>
+              <p className="text-xs font-semibold text-green-200 mt-1">P</p>
             </div>
-            <p className="text-2xl font-black text-green-600">{totalLent.toLocaleString()} P</p>
           </div>
           
-          <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-4 border border-red-100">
-            <div className="flex items-center gap-2 mb-2">
-              <CreditCard className="w-5 h-5 text-red-600" />
-              <p className="text-xs font-bold text-gray-800">借入額</p>
+          <div className="relative group">
+            <div className="absolute inset-0 bg-red-600 blur-lg opacity-50" />
+            <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-4 border-2 border-red-500/50">
+              <div className="flex items-center gap-2 mb-2">
+                <CreditCard className="w-5 h-5 text-red-400" />
+                <p className="text-xs font-black text-red-300">借入額</p>
+              </div>
+              <p className="text-2xl font-black text-red-400 drop-shadow-glow">{totalBorrowed.toLocaleString()}</p>
+              <p className="text-xs font-semibold text-red-200 mt-1">P</p>
             </div>
-            <p className="text-2xl font-black text-red-600">{totalBorrowed.toLocaleString()} P</p>
           </div>
           
-          <div className={`bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-4 border ${
-            netInterest >= 0 ? 'border-blue-100' : 'border-orange-100'
-          }`}>
-            <div className="flex items-center gap-2 mb-2">
-              <BarChart3 className={`w-5 h-5 ${netInterest >= 0 ? 'text-blue-600' : 'text-orange-600'}`} />
-              <p className="text-xs font-bold text-gray-800">利息収支</p>
+          <div className="relative group">
+            <div className={`absolute inset-0 ${netInterest >= 0 ? 'bg-blue-600' : 'bg-orange-600'} blur-lg opacity-50`} />
+            <div className={`relative bg-black/60 backdrop-blur-sm rounded-2xl p-4 border-2 ${
+              netInterest >= 0 ? 'border-blue-500/50' : 'border-orange-500/50'
+            }`}>
+              <div className="flex items-center gap-2 mb-2">
+                <BarChart3 className={`w-5 h-5 ${netInterest >= 0 ? 'text-blue-400' : 'text-orange-400'}`} />
+                <p className={`text-xs font-black ${netInterest >= 0 ? 'text-blue-300' : 'text-orange-300'}`}>利息収支</p>
+              </div>
+              <p className={`text-2xl font-black ${netInterest >= 0 ? 'text-blue-400' : 'text-orange-400'} drop-shadow-glow`}>
+                {netInterest >= 0 ? '+' : ''}{netInterest.toLocaleString()}
+              </p>
+              <p className={`text-xs font-semibold ${netInterest >= 0 ? 'text-blue-200' : 'text-orange-200'} mt-1`}>P</p>
             </div>
-            <p className={`text-2xl font-black ${netInterest >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
-              {netInterest >= 0 ? '+' : ''}{netInterest.toLocaleString()} P
-            </p>
           </div>
           
-          <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-4 border border-yellow-100">
-            <div className="flex items-center gap-2 mb-2">
-              <AlertCircle className="w-5 h-5 text-yellow-600" />
-              <p className="text-xs font-bold text-gray-800">承認待ち</p>
+          <div className="relative group">
+            <div className="absolute inset-0 bg-yellow-600 blur-lg opacity-50" />
+            <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-4 border-2 border-yellow-500/50">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertCircle className="w-5 h-5 text-yellow-400" />
+                <p className="text-xs font-black text-yellow-300">承認待ち</p>
+              </div>
+              <p className="text-2xl font-black text-yellow-400 drop-shadow-glow">{pendingApps}</p>
+              <p className="text-xs font-semibold text-yellow-200 mt-1">件</p>
             </div>
-            <p className="text-2xl font-black text-yellow-600">{pendingApps}件</p>
           </div>
         </div>
 
-        {/* タブナビゲーション */}
-        <div className="flex gap-1 mb-6 bg-white/80 backdrop-blur-sm rounded-2xl p-1.5 shadow-lg">
-          {[
-            { id: 'apply', icon: '💸', label: '融資申込', badge: 0 },
-            { id: 'repay', icon: '💰', label: '返済', badge: 0 },
-            { id: 'lending', icon: '📋', label: '貸出一覧', badge: 0 },
-            { id: 'pending', icon: '✅', label: '承認待ち', badge: pendingApps },
-            { id: 'interest', icon: '📈', label: '利息', badge: 0 },
-            { id: 'history', icon: '📊', label: '履歴', badge: 0 }
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`flex-1 py-3 px-2 rounded-xl text-xs font-medium transition-all relative ${
-                activeTab === tab.id
-                  ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg transform scale-105'
-                  : 'text-gray-900 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <span className="block text-base mb-1">{tab.icon}</span>
-              <span className="text-[10px] font-bold">{tab.label}</span>
-              {tab.badge > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                  {tab.badge}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-
-        {/* タブコンテンツ */}
-        {activeTab === 'apply' && (
-          <div className="space-y-4">
-            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-5 border border-violet-100">
-              <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <Send className="w-5 h-5 text-violet-600" />
-                新規融資申込
-              </h3>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-bold text-gray-900 mb-2">
-                    融資元を選択
-                  </label>
-                  <select
-                    value={selectedLender}
-                    onChange={(e) => setSelectedLender(e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-violet-600 font-semibold"
-                  >
-                    <option value="">選択してください</option>
-                    {activeUsers.map(u => (
-                      <option key={u.id} value={u.id}>{u.username}</option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-bold text-gray-900 mb-2">
-                    申込金額 (P)
-                  </label>
-                  <input
-                    type="number"
-                    value={loanAmount}
-                    onChange={(e) => setLoanAmount(Math.max(100, parseInt(e.target.value) || 0))}
-                    min={100}
-                    step={1000}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-violet-600 font-bold text-lg"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-bold text-gray-900 mb-2">
-                    メッセージ (任意)
-                  </label>
-                  <textarea
-                    value={loanMessage}
-                    onChange={(e) => setLoanMessage(e.target.value)}
-                    placeholder="融資の目的など..."
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-violet-600 font-medium"
-                    rows={3}
-                  />
-                </div>
-                
-                <div className="flex items-center bg-gray-50 rounded-xl p-3">
-                  <input
-                    type="checkbox"
-                    checked={confirmApply}
-                    onChange={(e) => setConfirmApply(e.target.checked)}
-                    className="mr-3 w-5 h-5 text-violet-600"
-                    id="confirm-apply"
-                  />
-                  <label htmlFor="confirm-apply" className="text-sm font-semibold text-gray-900">
-                    上記の内容で申込することを確認しました
-                  </label>
-                </div>
-                
+        <div className="relative mb-6">
+          <div className="absolute inset-0 bg-purple-600 blur-xl opacity-50" />
+          <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-1.5 border-2 border-purple-500/50">
+            <div className="grid grid-cols-3 gap-1">
+              {[
+                { id: 'apply', icon: '💸', label: '融資申込', badge: 0 },
+                { id: 'repay', icon: '💰', label: '返済', badge: 0 },
+                { id: 'lending', icon: '📋', label: '貸出一覧', badge: 0 },
+                { id: 'pending', icon: '✅', label: '承認待ち', badge: pendingApps },
+                { id: 'interest', icon: '📈', label: '利息', badge: 0 },
+                { id: 'history', icon: '📊', label: '履歴', badge: 0 }
+              ].map(tab => (
                 <button
-                  onClick={handleLoanApplication}
-                  disabled={!confirmApply || !selectedLender || loanAmount < 100}
-                  className={`w-full py-4 rounded-xl font-bold transition-all transform ${
-                    confirmApply && selectedLender && loanAmount >= 100
-                      ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg hover:shadow-xl hover:scale-105 active:scale-95'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`py-3 px-2 rounded-xl text-xs font-medium transition-all relative ${
+                    activeTab === tab.id
+                      ? 'bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg transform scale-105'
+                      : 'text-purple-200 hover:bg-white/10'
                   }`}
                 >
-                  📤 申込する
+                  <span className="block text-base mb-1">{tab.icon}</span>
+                  <span className="text-[10px] font-black leading-tight">{tab.label}</span>
+                  {tab.badge > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center shadow-lg shadow-red-500/50">
+                      {tab.badge}
+                    </span>
+                  )}
                 </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {activeTab === 'apply' && (
+          <div className="space-y-4 animate-slide-in">
+            <div className="relative">
+              <div className="absolute inset-0 bg-violet-600 blur-xl opacity-50" />
+              <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-2 border-violet-500/50">
+                <h3 className="font-black text-white mb-4 flex items-center gap-2">
+                  <Send className="w-5 h-5 text-violet-400" />
+                  新規融資申込
+                </h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-black text-violet-300 mb-2">
+                      融資元を選択
+                    </label>
+                    <select
+                      value={selectedLender}
+                      onChange={(e) => setSelectedLender(e.target.value)}
+                      className="w-full px-4 py-3 border-2 border-violet-500/50 rounded-xl text-white bg-black/40 focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-violet-600 font-semibold backdrop-blur-sm"
+                    >
+                      <option value="" className="bg-gray-900">選択してください</option>
+                      {activeUsers.map(u => (
+                        <option key={u.id} value={u.id} className="bg-gray-900">{u.username}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-black text-violet-300 mb-2">
+                      申込金額 (P)
+                    </label>
+                    <input
+                      type="number"
+                      value={loanAmount || ''}
+                      onChange={(e) => setLoanAmount(parseInt(e.target.value) || 0)}
+                      min={1000}
+                      step={1000}
+                      className="w-full px-4 py-3 border-2 border-violet-500/50 rounded-xl text-white bg-black/40 focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-violet-600 font-black text-lg backdrop-blur-sm"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-black text-violet-300 mb-2">
+                      メッセージ (任意)
+                    </label>
+                    <textarea
+                      value={loanMessage}
+                      onChange={(e) => setLoanMessage(e.target.value)}
+                      placeholder="融資の目的など..."
+                      className="w-full px-4 py-3 border-2 border-violet-500/50 rounded-xl text-white bg-black/40 focus:outline-none focus:ring-2 focus:ring-violet-600 focus:border-violet-600 font-medium backdrop-blur-sm placeholder-purple-400"
+                      rows={3}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center bg-white/5 rounded-xl p-3 border border-white/10">
+                    <input
+                      type="checkbox"
+                      checked={confirmApply}
+                      onChange={(e) => setConfirmApply(e.target.checked)}
+                      className="mr-3 w-5 h-5 text-violet-600"
+                      id="confirm-apply"
+                    />
+                    <label htmlFor="confirm-apply" className="text-sm font-semibold text-white">
+                      上記の内容で申込することを確認しました
+                    </label>
+                  </div>
+                  
+                  <button
+                    onClick={handleLoanApplication}
+                    disabled={!confirmApply || !selectedLender || loanAmount < 100}
+                    className={`w-full py-4 rounded-xl font-black transition-all transform ${
+                      confirmApply && selectedLender && loanAmount >= 100
+                        ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg hover:shadow-xl hover:scale-105 active:scale-95'
+                        : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                    }`}
+                  >
+                    📤 申込する
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         )}
 
         {activeTab === 'repay' && (
-          <div className="space-y-4">
+          <div className="space-y-4 animate-slide-in">
             {loans.filter(loan => loan.borrower_id === user?.id && loan.status === 'active').map(loan => (
-              <div key={loan.id} className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-5 border border-red-100">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h4 className="font-bold text-gray-900 text-lg">
-                      {loan.lender?.username}さんへの借入
-                    </h4>
-                    <p className="text-xs font-semibold text-gray-800 mt-1">
-                      借入日: {new Date(loan.created_at).toLocaleDateString('ja-JP')}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs font-bold text-gray-800">現在残高</p>
-                    <p className="text-3xl font-black text-red-600">{loan.remaining.toLocaleString()} P</p>
-                  </div>
-                </div>
-                
-                <div className="bg-gradient-to-r from-gray-50 to-red-50 rounded-xl p-4 mb-4">
-                  <div className="grid grid-cols-2 gap-3">
+              <div key={loan.id} className="relative">
+                <div className="absolute inset-0 bg-red-600 blur-xl opacity-50" />
+                <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-2 border-red-500/50">
+                  <div className="flex justify-between items-start mb-4">
                     <div>
-                      <span className="text-xs font-bold text-gray-800">元本:</span>
-                      <p className="font-black text-gray-900 text-lg">{loan.amount.toLocaleString()} P</p>
-                    </div>
-                    <div>
-                      <span className="text-xs font-bold text-gray-800">利息合計:</span>
-                      <p className="font-black text-orange-600 text-lg">
-                        +{(loan.remaining - loan.amount).toLocaleString()} P
+                      <h4 className="font-black text-white text-lg">
+                        {loan.lender?.username}さんへの借入
+                      </h4>
+                      <p className="text-xs font-semibold text-red-200 mt-1">
+                        借入日: {new Date(loan.created_at).toLocaleDateString('ja-JP')}
                       </p>
                     </div>
+                    <div className="text-right">
+                      <p className="text-xs font-black text-red-300">現在残高</p>
+                      <p className="text-3xl font-black text-red-400 drop-shadow-glow">{loan.remaining.toLocaleString()}</p>
+                      <p className="text-xs font-semibold text-red-200">P</p>
+                    </div>
                   </div>
-                </div>
-                
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    placeholder="返済額"
-                    min={100}
-                    max={loan.remaining}
-                    step={1000}
-                    className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl text-gray-900 bg-white font-bold"
-                    id={`repay-${loan.id}`}
-                  />
-                  <button
-                    onClick={() => {
-                      const input = document.getElementById(`repay-${loan.id}`) as HTMLInputElement
-                      const amount = parseInt(input.value) || 0
-                      if (amount >= 100) {
-                        handleRepayment(loan.id, amount)
-                      }
-                    }}
-                    className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-bold hover:shadow-lg transition-all"
-                  >
-                    返済申請
-                  </button>
+                  
+                  <div className="bg-gradient-to-r from-red-500/20 to-pink-500/20 rounded-xl p-4 mb-4 border border-red-400/30">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <span className="text-xs font-black text-red-300">元本:</span>
+                        <p className="font-black text-white text-lg">{loan.amount.toLocaleString()} P</p>
+                      </div>
+                      <div>
+                        <span className="text-xs font-black text-orange-300">利息合計:</span>
+                        <p className="font-black text-orange-400 text-lg drop-shadow-glow">
+                          +{(loan.remaining - loan.amount).toLocaleString()} P
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      placeholder="返済額"
+                      defaultValue=""
+                      min={1000}
+                      max={loan.remaining}
+                      step={1000}
+                      className="flex-1 px-4 py-3 border-2 border-red-500/50 rounded-xl text-white bg-black/40 font-black backdrop-blur-sm placeholder-red-400"
+                      id={`repay-${loan.id}`}
+                    />
+                    <button
+                      onClick={() => {
+                        const input = document.getElementById(`repay-${loan.id}`) as HTMLInputElement
+                        const amount = parseInt(input.value) || 0
+                        if (amount >= 100) {
+                          handleRepayment(loan.id, amount)
+                        }
+                      }}
+                      className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-black hover:shadow-lg transition-all"
+                    >
+                      返済申請
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
             
             {loans.filter(loan => loan.borrower_id === user?.id && loan.status === 'active').length === 0 && (
-              <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-8 text-center">
-                <p className="text-gray-900 font-bold">🎉 現在借入はありません</p>
+              <div className="relative">
+                <div className="absolute inset-0 bg-green-600 blur-xl opacity-50 animate-pulse" />
+                <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-8 text-center border-2 border-green-500/50">
+                  <p className="text-white font-black text-xl">🎉 現在借入はありません</p>
+                </div>
               </div>
             )}
           </div>
         )}
 
         {activeTab === 'lending' && (
-          <div className="space-y-4">
+          <div className="space-y-4 animate-slide-in">
             {loans.filter(loan => loan.lender_id === user?.id && loan.status === 'active').map(loan => (
-              <div key={loan.id} className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-5 border border-green-100">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h4 className="font-bold text-gray-900 text-lg">
-                      {loan.borrower?.username}さん
-                    </h4>
-                    <p className="text-xs font-semibold text-gray-800 mt-1">
-                      貸付日: {new Date(loan.created_at).toLocaleDateString('ja-JP')}
-                    </p>
-                    <div className="mt-3 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-gray-800">元本:</span>
-                        <span className="font-black text-gray-900">{loan.amount.toLocaleString()} P</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-gray-800">利息収入:</span>
-                        <span className="font-black text-green-600">
-                          +{(loan.remaining - loan.amount).toLocaleString()} P
-                        </span>
+              <div key={loan.id} className="relative">
+                <div className="absolute inset-0 bg-green-600 blur-xl opacity-50" />
+                <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-2 border-green-500/50">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="font-black text-white text-lg">
+                        {loan.borrower?.username}さん
+                      </h4>
+                      <p className="text-xs font-semibold text-green-200 mt-1">
+                        貸付日: {new Date(loan.created_at).toLocaleDateString('ja-JP')}
+                      </p>
+                      <div className="mt-3 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-black text-green-300">元本:</span>
+                          <span className="font-black text-white">{loan.amount.toLocaleString()} P</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-black text-emerald-300">利息収入:</span>
+                          <span className="font-black text-emerald-400 drop-shadow-glow">
+                            +{(loan.remaining - loan.amount).toLocaleString()} P
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs font-bold text-gray-800">現在残高</p>
-                    <p className="text-3xl font-black text-green-600">{loan.remaining.toLocaleString()} P</p>
+                    <div className="text-right">
+                      <p className="text-xs font-black text-green-300">現在残高</p>
+                      <p className="text-3xl font-black text-green-400 drop-shadow-glow">{loan.remaining.toLocaleString()}</p>
+                      <p className="text-xs font-semibold text-green-200">P</p>
+                    </div>
                   </div>
                 </div>
               </div>
             ))}
             
             {loans.filter(loan => loan.lender_id === user?.id && loan.status === 'active').length === 0 && (
-              <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-8 text-center">
-                <p className="text-gray-900 font-bold">📝 貸出中の融資はありません</p>
+              <div className="relative">
+                <div className="absolute inset-0 bg-purple-600 blur-xl opacity-50 animate-pulse" />
+                <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-8 text-center border-2 border-purple-500/50">
+                  <p className="text-white font-black text-xl">📝 貸出中の融資はありません</p>
+                </div>
               </div>
             )}
           </div>
         )}
 
         {activeTab === 'pending' && (
-          <div className="space-y-4">
-            <h3 className="font-bold text-gray-900 text-lg">受信した申請</h3>
+          <div className="space-y-4 animate-slide-in">
+            <h3 className="font-black text-white text-lg">受信した申請</h3>
             
             {applications.filter(app => app.to_user_id === user?.id && app.status === '申込中').map(app => (
-              <div key={app.id} className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-5 border-l-4 border-yellow-400">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h4 className="font-bold text-gray-900">
-                      {app.from_user?.username}さんからの{app.type === 'loan' ? '融資' : '返済'}申請
-                    </h4>
-                    <p className="text-xs font-semibold text-gray-800 mt-1">
-                      {new Date(app.created_at).toLocaleString('ja-JP')}
-                    </p>
-                    {app.message && (
-                      <p className="text-sm font-medium text-gray-900 mt-3 bg-gray-50 rounded-xl p-3">
-                        {app.message}
+              <div key={app.id} className="relative">
+                <div className="absolute inset-0 bg-yellow-600 blur-xl opacity-50" />
+                <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-l-4 border-yellow-400">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h4 className="font-black text-white">
+                        {app.from_user?.username}さんからの{app.type === 'loan' ? '融資' : '返済'}申請
+                      </h4>
+                      <p className="text-xs font-semibold text-yellow-200 mt-1">
+                        {new Date(app.created_at).toLocaleString('ja-JP')}
                       </p>
-                    )}
+                      {app.message && (
+                        <p className="text-sm font-medium text-white mt-3 bg-white/5 rounded-xl p-3 border border-white/10">
+                          {app.message}
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-black text-yellow-300">申請額</p>
+                      <p className="text-2xl font-black text-yellow-400 drop-shadow-glow">{app.amount.toLocaleString()}</p>
+                      <p className="text-xs font-semibold text-yellow-200">P</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-xs font-bold text-gray-800">申請額</p>
-                    <p className="text-2xl font-black text-gray-900">{app.amount.toLocaleString()} P</p>
+                  
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleApprove(app.id, app)}
+                      className="flex-1 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-black hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                    >
+                      <CheckCircle className="w-5 h-5" />
+                      承認
+                    </button>
+                    <button
+                      onClick={() => handleReject(app.id)}
+                      className="flex-1 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-xl font-black hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                    >
+                      <XCircle className="w-5 h-5" />
+                      却下
+                    </button>
                   </div>
-                </div>
-                
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleApprove(app.id, app)}
-                    className="flex-1 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-bold hover:shadow-lg transition-all flex items-center justify-center gap-2"
-                  >
-                    <CheckCircle className="w-5 h-5" />
-                    承認
-                  </button>
-                  <button
-                    onClick={() => handleReject(app.id)}
-                    className="flex-1 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-xl font-bold hover:shadow-lg transition-all flex items-center justify-center gap-2"
-                  >
-                    <XCircle className="w-5 h-5" />
-                    却下
-                  </button>
                 </div>
               </div>
             ))}
             
             {applications.filter(app => app.to_user_id === user?.id && app.status === '申込中').length === 0 && (
-              <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-8 text-center">
-                <p className="text-gray-900 font-bold">📝 承認待ちの申請はありません</p>
+              <div className="relative">
+                <div className="absolute inset-0 bg-indigo-600 blur-xl opacity-50 animate-pulse" />
+                <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-8 text-center border-2 border-indigo-500/50">
+                  <p className="text-white font-black text-xl">📝 承認待ちの申請はありません</p>
+                </div>
               </div>
             )}
             
-            <h3 className="font-bold text-gray-900 text-lg mt-6">自分の申請状況</h3>
+            <h3 className="font-black text-white text-lg mt-6">自分の申請状況</h3>
             
             {applications.filter(app => app.from_user_id === user?.id && app.status === '申込中').map(app => (
-              <div key={app.id} className="bg-white/90 backdrop-blur-sm rounded-xl p-4 shadow-md">
-                <p className="text-sm font-semibold text-gray-900">
+              <div key={app.id} className="bg-black/40 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+                <p className="text-sm font-semibold text-white">
                   • {app.to_user?.username}さんへの{app.type === 'loan' ? '融資' : '返済'}申請
-                  <span className="font-black text-violet-600 ml-2">{app.amount.toLocaleString()} P</span>
-                  <span className="text-yellow-600 ml-2 text-xs">(承認待ち)</span>
+                  <span className="font-black text-violet-400 ml-2">{app.amount.toLocaleString()} P</span>
+                  <span className="text-yellow-400 ml-2 text-xs">(承認待ち)</span>
                 </p>
               </div>
             ))}
@@ -852,69 +910,78 @@ export default function PBankPage() {
         )}
 
         {activeTab === 'interest' && (
-          <div className="space-y-4">
-            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-5 border border-blue-100">
-              <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-blue-600" />
-                利息収支サマリー
-              </h3>
-              
-              <div className="grid grid-cols-3 gap-3">
-                <div className="bg-gradient-to-br from-green-100 to-emerald-100 rounded-xl p-3 text-center">
-                  <p className="text-xs font-bold text-gray-800">受取累計</p>
-                  <p className="text-xl font-black text-green-600">
-                    {interests.filter(i => i.to_user_id === user?.id)
-                      .reduce((sum, i) => sum + i.amount, 0).toLocaleString()} P
-                  </p>
-                </div>
-                <div className="bg-gradient-to-br from-red-100 to-pink-100 rounded-xl p-3 text-center">
-                  <p className="text-xs font-bold text-gray-800">支払累計</p>
-                  <p className="text-xl font-black text-red-600">
-                    {interests.filter(i => i.from_user_id === user?.id)
-                      .reduce((sum, i) => sum + i.amount, 0).toLocaleString()} P
-                  </p>
-                </div>
-                <div className="bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl p-3 text-center">
-                  <p className="text-xs font-bold text-gray-800">収支</p>
-                  <p className="text-xl font-black text-blue-600">
-                    {netInterest >= 0 ? '+' : ''}{netInterest.toLocaleString()} P
-                  </p>
+          <div className="space-y-4 animate-slide-in">
+            <div className="relative">
+              <div className="absolute inset-0 bg-blue-600 blur-xl opacity-50" />
+              <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-2 border-blue-500/50">
+                <h3 className="font-black text-white mb-4 flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-blue-400" />
+                  利息収支サマリー
+                </h3>
+                
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-xl p-3 text-center border border-green-400/30">
+                    <p className="text-xs font-black text-green-300">受取累計</p>
+                    <p className="text-xl font-black text-green-400 drop-shadow-glow">
+                      {interests.filter(i => i.to_user_id === user?.id)
+                        .reduce((sum, i) => sum + i.amount, 0).toLocaleString()}
+                    </p>
+                    <p className="text-xs font-semibold text-green-200">P</p>
+                  </div>
+                  <div className="bg-gradient-to-br from-red-500/20 to-pink-500/20 rounded-xl p-3 text-center border border-red-400/30">
+                    <p className="text-xs font-black text-red-300">支払累計</p>
+                    <p className="text-xl font-black text-red-400 drop-shadow-glow">
+                      {interests.filter(i => i.from_user_id === user?.id)
+                        .reduce((sum, i) => sum + i.amount, 0).toLocaleString()}
+                    </p>
+                    <p className="text-xs font-semibold text-red-200">P</p>
+                  </div>
+                  <div className="bg-gradient-to-br from-blue-500/20 to-indigo-500/20 rounded-xl p-3 text-center border border-blue-400/30">
+                    <p className="text-xs font-black text-blue-300">収支</p>
+                    <p className="text-xl font-black text-blue-400 drop-shadow-glow">
+                      {netInterest >= 0 ? '+' : ''}{netInterest.toLocaleString()}
+                    </p>
+                    <p className="text-xs font-semibold text-blue-200">P</p>
+                  </div>
                 </div>
               </div>
             </div>
             
-            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl p-5 border border-purple-100">
-              <h3 className="font-bold text-gray-900 mb-4">💡 次回利息予測（翌月1日）</h3>
-              
-              <div className="space-y-3">
-                {loans.filter(loan => loan.lender_id === user?.id && loan.status === 'active').map(loan => (
-                  <div key={loan.id} className="flex items-center justify-between p-3 bg-green-50 rounded-xl">
-                    <span className="text-sm font-semibold text-gray-900">{loan.borrower?.username}さんから</span>
-                    <span className="font-black text-green-600">+{Math.floor(loan.remaining * 0.1).toLocaleString()} P</span>
-                  </div>
-                ))}
+            <div className="relative">
+              <div className="absolute inset-0 bg-purple-600 blur-xl opacity-50" />
+              <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-2 border-purple-500/50">
+                <h3 className="font-black text-white mb-4">💡 次回利息予測（翌月1日）</h3>
                 
-                {loans.filter(loan => loan.borrower_id === user?.id && loan.status === 'active').map(loan => (
-                  <div key={loan.id} className="flex items-center justify-between p-3 bg-red-50 rounded-xl">
-                    <span className="text-sm font-semibold text-gray-900">{loan.lender?.username}さんへ</span>
-                    <span className="font-black text-red-600">-{Math.floor(loan.remaining * 0.1).toLocaleString()} P</span>
-                  </div>
-                ))}
+                <div className="space-y-3">
+                  {loans.filter(loan => loan.lender_id === user?.id && loan.status === 'active').map(loan => (
+                    <div key={loan.id} className="flex items-center justify-between p-3 bg-green-500/20 rounded-xl border border-green-400/30">
+                      <span className="text-sm font-semibold text-white">{loan.borrower?.username}さんから</span>
+                      <span className="font-black text-green-400 drop-shadow-glow">+{Math.floor(loan.remaining * 0.1).toLocaleString()} P</span>
+                    </div>
+                  ))}
+                  
+                  {loans.filter(loan => loan.borrower_id === user?.id && loan.status === 'active').map(loan => (
+                    <div key={loan.id} className="flex items-center justify-between p-3 bg-red-500/20 rounded-xl border border-red-400/30">
+                      <span className="text-sm font-semibold text-white">{loan.lender?.username}さんへ</span>
+                      <span className="font-black text-red-400 drop-shadow-glow">-{Math.floor(loan.remaining * 0.1).toLocaleString()} P</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         )}
 
         {activeTab === 'history' && (
-          <div className="space-y-3">
+          <div className="space-y-3 animate-slide-in">
             {[...loans, ...applications]
               .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
               .slice(0, 20)
               .map((item, index) => (
-                <div key={index} className="bg-white/90 backdrop-blur-sm rounded-xl p-4 shadow-md">
+                <div key={index} className="bg-black/60 backdrop-blur-sm rounded-xl p-4 border border-white/10">
                   <div className="flex justify-between items-center">
                     <div>
-                      <p className="text-sm font-bold text-gray-900">
+                      <p className="text-sm font-black text-white">
                         {'lender_id' in item ? (
                           item.lender_id === user?.id ? 
                             `貸出: ${item.borrower?.username}さんへ` :
@@ -925,15 +992,15 @@ export default function PBankPage() {
                             `${item.type === 'loan' ? '融資' : '返済'}申請(受信)`
                         )}
                       </p>
-                      <p className="text-xs font-semibold text-gray-800">
+                      <p className="text-xs font-semibold text-purple-200">
                         {new Date(item.created_at).toLocaleString('ja-JP')}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-lg font-black text-gray-900">
+                      <p className="text-lg font-black text-white">
                         {item.amount.toLocaleString()} P
                       </p>
-                      <p className="text-xs font-bold text-gray-800">
+                      <p className="text-xs font-black text-gray-300">
                         {item.status === 'active' ? '返済中' :
                          item.status === 'completed' ? '完済' :
                          item.status === '申込中' ? '承認待ち' :
