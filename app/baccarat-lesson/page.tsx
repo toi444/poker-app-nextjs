@@ -357,9 +357,10 @@ const BaccaratSimulator = () => {
   )
 }
 
-// 罫線シミュレーター（3つ同時表示版）
+// 罫線シミュレーター（タブ切り替え版）
 const RoadmapSimulator = () => {
   const [results, setResults] = useState<('B' | 'P' | 'T')[]>([])
+  const [activeRoadmap, setActiveRoadmap] = useState<'bead' | 'big' | 'bigeye'>('bead')
 
   const addResult = (result: 'B' | 'P' | 'T') => {
     setResults([...results, result])
@@ -468,6 +469,7 @@ const RoadmapSimulator = () => {
 
   return (
     <div className="space-y-4">
+      {/* 入力ボタン */}
       <div className="grid grid-cols-3 gap-3">
         {[
           { label: 'バンカー', val: 'B', color: 'bg-gradient-to-r from-red-600 to-red-700' },
@@ -486,6 +488,7 @@ const RoadmapSimulator = () => {
         ))}
       </div>
 
+      {/* 操作ボタン */}
       <div className="grid grid-cols-2 gap-3">
         <button
           onClick={undoLast}
@@ -504,124 +507,160 @@ const RoadmapSimulator = () => {
         </button>
       </div>
 
-      {/* 珠盤路 */}
+      {/* タブ切り替え */}
       <div className="relative group">
-        <div className="absolute inset-0 bg-cyan-600 rounded-xl blur-lg opacity-30" />
-        <div className="relative bg-black/60 backdrop-blur-sm rounded-xl p-4 border-2 border-cyan-500/50">
-          <h3 className="font-black text-cyan-300 mb-3">珠盤路（チューチャイロ）</h3>
-          <div className="min-h-64 overflow-x-auto">
-            {results.length > 0 ? (
-              <div className="inline-flex gap-1">
-                {beadRoad.map((col, colIdx) => (
-                  <div key={colIdx} className="flex flex-col gap-1">
-                    {Array.from({ length: 6 }).map((_, rowIdx) => {
-                      const result = col[rowIdx]
-                      const isTie = result === 'T'
-                      return (
-                        <div
-                          key={rowIdx}
-                          className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm border-2 ${
-                            isTie
-                              ? 'bg-green-600 text-white border-green-400'
-                              : result === 'B'
-                              ? 'bg-red-600 text-white border-red-400'
-                              : result === 'P'
-                              ? 'bg-blue-600 text-white border-blue-400'
-                              : 'bg-transparent border-white/10'
-                          }`}
-                        >
-                          {result === 'T' ? 'T' : result || ''}
-                        </div>
-                      )
-                    })}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-full text-gray-500">
-                <p className="font-bold">結果を入力してください</p>
-              </div>
-            )}
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl blur-lg opacity-50" />
+        <div className="relative bg-black/60 backdrop-blur-sm rounded-xl p-2 border-2 border-purple-500/30">
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { id: 'bead', label: '珠盤路', color: 'cyan' },
+              { id: 'big', label: '大路', color: 'purple' },
+              { id: 'bigeye', label: '大眼仔', color: 'indigo' }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveRoadmap(tab.id as typeof activeRoadmap)}
+                className={`relative py-3 px-2 rounded-lg text-sm font-black transition-all ${
+                  activeRoadmap === tab.id
+                    ? `bg-gradient-to-r from-${tab.color}-600 to-${tab.color}-700 text-white shadow-xl scale-105`
+                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                {activeRoadmap === tab.id && (
+                  <div className={`absolute inset-0 bg-${tab.color}-600 blur-lg opacity-75 rounded-lg`} />
+                )}
+                <span className="relative font-mono">{tab.label}</span>
+              </button>
+            ))}
           </div>
         </div>
       </div>
+
+      {/* 珠盤路 */}
+      {activeRoadmap === 'bead' && (
+        <div className="relative group animate-fadeIn">
+          <div className="absolute inset-0 bg-cyan-600 rounded-xl blur-lg opacity-30" />
+          <div className="relative bg-black/60 backdrop-blur-sm rounded-xl p-4 border-2 border-cyan-500/50">
+            <h3 className="font-black text-cyan-300 mb-3">珠盤路（チューチャイロ）</h3>
+            <div className="min-h-64 overflow-x-auto">
+              {results.length > 0 ? (
+                <div className="inline-flex gap-1">
+                  {beadRoad.map((col, colIdx) => (
+                    <div key={colIdx} className="flex flex-col gap-1">
+                      {Array.from({ length: 6 }).map((_, rowIdx) => {
+                        const result = col[rowIdx]
+                        const isTie = result === 'T'
+                        return (
+                          <div
+                            key={rowIdx}
+                            className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm border-2 ${
+                              isTie
+                                ? 'bg-green-600 text-white border-green-400'
+                                : result === 'B'
+                                ? 'bg-red-600 text-white border-red-400'
+                                : result === 'P'
+                                ? 'bg-blue-600 text-white border-blue-400'
+                                : 'bg-transparent border-white/10'
+                            }`}
+                          >
+                            {result === 'T' ? 'T' : result || ''}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  <p className="font-bold">結果を入力してください</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 大路 */}
-      <div className="relative group">
-        <div className="absolute inset-0 bg-purple-600 rounded-xl blur-lg opacity-30" />
-        <div className="relative bg-black/60 backdrop-blur-sm rounded-xl p-4 border-2 border-purple-500/50">
-          <h3 className="font-black text-purple-300 mb-3">大路（ダイロ）</h3>
-          <div className="min-h-64 overflow-x-auto">
-            {bigRoad.length > 0 ? (
-              <div className="inline-flex gap-1">
-                {bigRoad.map((col, colIdx) => (
-                  <div key={colIdx} className="flex flex-col gap-1">
-                    {Array.from({ length: 6 }).map((_, rowIdx) => {
-                      const result = col[rowIdx]
-                      return (
-                        <div
-                          key={rowIdx}
-                          className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm ${
-                            result === 'B'
-                              ? 'bg-red-600 text-white border-2 border-red-400'
-                              : result === 'P'
-                              ? 'bg-blue-600 text-white border-2 border-blue-400'
-                              : 'bg-transparent border border-white/10'
-                          }`}
-                        >
-                          {result || ''}
-                        </div>
-                      )
-                    })}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-full text-gray-500">
-                <p className="font-bold">結果を入力してください</p>
-              </div>
-            )}
+      {activeRoadmap === 'big' && (
+        <div className="relative group animate-fadeIn">
+          <div className="absolute inset-0 bg-purple-600 rounded-xl blur-lg opacity-30" />
+          <div className="relative bg-black/60 backdrop-blur-sm rounded-xl p-4 border-2 border-purple-500/50">
+            <h3 className="font-black text-purple-300 mb-3">大路（ダイロ）</h3>
+            <div className="min-h-64 overflow-x-auto">
+              {bigRoad.length > 0 ? (
+                <div className="inline-flex gap-1">
+                  {bigRoad.map((col, colIdx) => (
+                    <div key={colIdx} className="flex flex-col gap-1">
+                      {Array.from({ length: 6 }).map((_, rowIdx) => {
+                        const result = col[rowIdx]
+                        return (
+                          <div
+                            key={rowIdx}
+                            className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm ${
+                              result === 'B'
+                                ? 'bg-red-600 text-white border-2 border-red-400'
+                                : result === 'P'
+                                ? 'bg-blue-600 text-white border-2 border-blue-400'
+                                : 'bg-transparent border border-white/10'
+                            }`}
+                          >
+                            {result || ''}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  <p className="font-bold">結果を入力してください</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* 大眼仔 */}
-      <div className="relative group">
-        <div className="absolute inset-0 bg-indigo-600 rounded-xl blur-lg opacity-30" />
-        <div className="relative bg-black/60 backdrop-blur-sm rounded-xl p-4 border-2 border-indigo-500/50">
-          <h3 className="font-black text-indigo-300 mb-3">大眼仔（ダイガンチャイ）</h3>
-          <div className="min-h-64 overflow-x-auto">
-            {bigEyeRoad.length > 0 ? (
-              <div className="inline-flex gap-1">
-                {bigEyeRoad.map((col, colIdx) => (
-                  <div key={colIdx} className="flex flex-col gap-1">
-                    {Array.from({ length: 6 }).map((_, rowIdx) => {
-                      const mark = col[rowIdx]
-                      return (
-                        <div
-                          key={rowIdx}
-                          className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                            mark === 'R'
-                              ? 'border-2 border-red-500'
-                              : mark === 'B'
-                              ? 'border-2 border-blue-500 bg-blue-500'
-                              : 'border border-white/10'
-                          }`}
-                        />
-                      )
-                    })}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-full text-gray-500">
-                <p className="font-bold text-sm">大路が2列以上必要です</p>
-              </div>
-            )}
+      {activeRoadmap === 'bigeye' && (
+        <div className="relative group animate-fadeIn">
+          <div className="absolute inset-0 bg-indigo-600 rounded-xl blur-lg opacity-30" />
+          <div className="relative bg-black/60 backdrop-blur-sm rounded-xl p-4 border-2 border-indigo-500/50">
+            <h3 className="font-black text-indigo-300 mb-3">大眼仔（ダイガンチャイ）</h3>
+            <div className="min-h-64 overflow-x-auto">
+              {bigEyeRoad.length > 0 ? (
+                <div className="inline-flex gap-1">
+                  {bigEyeRoad.map((col, colIdx) => (
+                    <div key={colIdx} className="flex flex-col gap-1">
+                      {Array.from({ length: 6 }).map((_, rowIdx) => {
+                        const mark = col[rowIdx]
+                        return (
+                          <div
+                            key={rowIdx}
+                            className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                              mark === 'R'
+                                ? 'border-2 border-red-500'
+                                : mark === 'B'
+                                ? 'border-2 border-blue-500 bg-blue-500'
+                                : 'border border-white/10'
+                            }`}
+                          />
+                        )
+                      })}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  <p className="font-bold text-sm">大路が2列以上必要です</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
+      {/* 統計 */}
       {results.length > 0 && (
         <div className="relative group">
           <div className="absolute inset-0 bg-gradient-to-r from-red-600 via-blue-600 to-green-600 rounded-xl blur-lg opacity-30" />

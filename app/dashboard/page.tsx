@@ -631,7 +631,7 @@ export default function DashboardV2() {
             </h2>
 
             {/* キーヴィジュアル */}
-            <div className="relative overflow-hidden rounded-3xl" style={{ height: '280px' }}>
+            <div className="relative overflow-hidden rounded-3xl" style={{ height: '320px' }}>
               {/* 背景アニメーション */}
               <div className="absolute inset-0 bg-gradient-to-br from-orange-600 via-red-600 to-pink-600 animate-gradient" />
               
@@ -650,6 +650,15 @@ export default function DashboardV2() {
                 <div className="absolute top-1/3 right-1/3 w-3 h-3 bg-pink-300 rounded-full animate-particle-2 shadow-lg shadow-pink-300/50" />
                 <div className="absolute bottom-1/4 left-1/3 w-2 h-2 bg-orange-300 rounded-full animate-particle-3 shadow-lg shadow-orange-300/50" />
                 <div className="absolute top-1/2 right-1/4 w-3 h-3 bg-red-300 rounded-full animate-particle-4 shadow-lg shadow-red-300/50" />
+                <div className="absolute top-2/3 left-1/2 w-2 h-2 bg-yellow-400 rounded-full animate-particle-1 shadow-lg shadow-yellow-400/50" style={{ animationDelay: '1s' }} />
+                <div className="absolute bottom-1/3 right-1/2 w-3 h-3 bg-pink-400 rounded-full animate-particle-2 shadow-lg shadow-pink-400/50" style={{ animationDelay: '1.5s' }} />
+              </div>
+
+              {/* 追加の光線エフェクト */}
+              <div className="absolute inset-0">
+                <div className="absolute top-0 left-1/4 w-1 h-full bg-gradient-to-b from-yellow-400/0 via-yellow-400/30 to-yellow-400/0 animate-light-beam" />
+                <div className="absolute top-0 left-1/2 w-1 h-full bg-gradient-to-b from-orange-400/0 via-orange-400/30 to-orange-400/0 animate-light-beam" style={{ animationDelay: '0.5s' }} />
+                <div className="absolute top-0 left-3/4 w-1 h-full bg-gradient-to-b from-pink-400/0 via-pink-400/30 to-pink-400/0 animate-light-beam" style={{ animationDelay: '1s' }} />
               </div>
 
               {/* グロー効果 */}
@@ -657,38 +666,77 @@ export default function DashboardV2() {
               
               {/* メインタイポグラフィ */}
               <div className="relative h-full flex flex-col items-center justify-center px-6">
-                <div className="text-center">
-                  <div className="relative mb-4">
-                    <div className="absolute inset-0 blur-3xl bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 opacity-60 animate-pulse" />
-                    <h3 className="relative text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-orange-200 to-red-200 drop-shadow-2xl animate-neon-flicker"
+                <div className="text-center space-y-6">
+                  {/* ポーカー・スロット・競馬など */}
+                  <div className="relative">
+                    <div className="absolute inset-0 blur-2xl bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 opacity-60 animate-pulse" />
+                    <div className="relative">
+                      <p className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-orange-200 to-red-200 drop-shadow-2xl tracking-wider"
                         style={{ 
-                          textShadow: '0 0 30px rgba(251, 191, 36, 0.8), 0 0 60px rgba(249, 115, 22, 0.6), 0 0 90px rgba(239, 68, 68, 0.4)',
-                          WebkitTextStroke: '2px rgba(251, 191, 36, 0.3)',
+                          textShadow: '0 0 20px rgba(251, 191, 36, 0.8), 0 0 40px rgba(249, 115, 22, 0.6)',
+                          WebkitTextStroke: '1px rgba(251, 191, 36, 0.3)',
                           letterSpacing: '0.05em'
                         }}>
-                      ALL
-                    </h3>
-                  </div>
-                  
-                  <div className="relative">
-                    <div className="absolute inset-0 blur-3xl bg-gradient-to-r from-pink-400 via-red-400 to-orange-400 opacity-60 animate-pulse" style={{ animationDelay: '0.5s' }} />
-                    <h3 className="relative text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-200 via-red-200 to-orange-200 drop-shadow-2xl animate-neon-flicker"
-                        style={{ 
-                          textShadow: '0 0 30px rgba(236, 72, 153, 0.8), 0 0 60px rgba(239, 68, 68, 0.6), 0 0 90px rgba(249, 115, 22, 0.4)',
-                          WebkitTextStroke: '2px rgba(236, 72, 153, 0.3)',
-                          letterSpacing: '0.05em',
-                          animationDelay: '0.3s'
-                        }}>
-                      GAMBLE
-                    </h3>
+                        ポーカー・スロット・競馬など
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="mt-6 relative">
-                    <div className="absolute inset-0 bg-white/20 blur-xl animate-pulse" />
-                    <p className="relative text-xl font-black text-white/90 tracking-widest drop-shadow-lg"
-                       style={{ textShadow: '0 0 20px rgba(255, 255, 255, 0.5)' }}>
-                      ポーカー・パチンコ・競馬など<br></br>すべてのギャンブルを記録
-                    </p>
+                  {/* すべてのギャンブルの収支を記録 */}
+                  <div className="relative">
+                    <div className="absolute inset-0 blur-3xl bg-gradient-to-r from-pink-400 via-red-400 to-orange-400 opacity-70 animate-pulse" style={{ animationDelay: '0.5s' }} />
+                    <div className="relative space-y-3">
+                      <p className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-200 via-red-200 to-orange-200 drop-shadow-2xl leading-tight"
+                        style={{ 
+                          textShadow: '0 0 30px rgba(236, 72, 153, 0.9), 0 0 60px rgba(239, 68, 68, 0.7), 0 0 90px rgba(249, 115, 22, 0.5)',
+                          WebkitTextStroke: '2px rgba(236, 72, 153, 0.3)',
+                          letterSpacing: '0.08em',
+                          animation: 'neon-flicker 2s ease-in-out infinite'
+                        }}>
+                        すべてのギャンブルの
+                      </p>
+                      <p className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-200 via-yellow-200 to-pink-200 drop-shadow-2xl"
+                        style={{ 
+                          textShadow: '0 0 30px rgba(249, 115, 22, 0.9), 0 0 60px rgba(251, 191, 36, 0.7), 0 0 90px rgba(236, 72, 153, 0.5)',
+                          WebkitTextStroke: '2px rgba(249, 115, 22, 0.3)',
+                          letterSpacing: '0.08em',
+                          animation: 'neon-flicker 2s ease-in-out infinite',
+                          animationDelay: '0.3s'
+                        }}>
+                        収支を記録
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* LED風の装飾ライン */}
+                  <div className="relative flex items-center justify-center gap-4 mt-8">
+                    <div className="flex gap-2">
+                      {[...Array(5)].map((_, i) => (
+                        <div 
+                          key={`left-${i}`}
+                          className="w-2 h-2 rounded-full bg-gradient-to-r from-yellow-400 to-orange-400 shadow-lg shadow-orange-400/50"
+                          style={{ 
+                            animation: 'led-blink 1.5s ease-in-out infinite',
+                            animationDelay: `${i * 0.1}s`
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-pink-500 to-red-500 shadow-xl shadow-red-500/50 flex items-center justify-center animate-pulse">
+                      <Coins className="w-5 h-5 text-white drop-shadow-glow" />
+                    </div>
+                    <div className="flex gap-2">
+                      {[...Array(5)].map((_, i) => (
+                        <div 
+                          key={`right-${i}`}
+                          className="w-2 h-2 rounded-full bg-gradient-to-r from-pink-400 to-red-400 shadow-lg shadow-red-400/50"
+                          style={{ 
+                            animation: 'led-blink 1.5s ease-in-out infinite',
+                            animationDelay: `${(i + 5) * 0.1}s`
+                          }}
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -697,8 +745,15 @@ export default function DashboardV2() {
               <div className="absolute inset-0 pointer-events-none">
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/5 to-transparent animate-scan-line" />
               </div>
+
+              {/* 四隅の光エフェクト */}
+              <div className="absolute top-0 left-0 w-32 h-32 bg-gradient-to-br from-yellow-500/30 to-transparent blur-2xl animate-pulse" />
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-pink-500/30 to-transparent blur-2xl animate-pulse" style={{ animationDelay: '0.5s' }} />
+              <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-orange-500/30 to-transparent blur-2xl animate-pulse" style={{ animationDelay: '1s' }} />
+              <div className="absolute bottom-0 right-0 w-32 h-32 bg-gradient-to-tl from-red-500/30 to-transparent blur-2xl animate-pulse" style={{ animationDelay: '1.5s' }} />
             </div>
 
+            {/* 収支管理ボタン */}
             <div className="relative group">
               <div className="absolute inset-0 bg-gradient-to-r from-orange-600 to-red-600 rounded-3xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity animate-pulse" />
               <button
@@ -777,21 +832,10 @@ export default function DashboardV2() {
         {/* Lesson Section */}
         {activeSection === 'lesson' && (
           <div className="space-y-5 animate-slide-in">
-            <h2 className="text-3xl font-black text-white flex items-center gap-3">
-              <div className="relative">
-                <div className="absolute inset-0 bg-pink-600 blur-xl animate-pulse" />
-                <BookOpen className="relative w-8 h-8 text-pink-400" />
-              </div>
-              Lesson
-            </h2>
-
-            <p className="text-sm text-pink-200 bg-black/60 backdrop-blur-sm rounded-2xl p-4 border-2 border-pink-500/50">
-              ギャンブルの勝率やルール、歴史、戦術など、楽しさを知るためのコンテンツ。<br />
-              投資法の説明や、ルールがわかりづらいカジノのマニアックなゲームも解説します。
-            </p>
+            {/* ... 既存のヘッダー部分 ... */}
 
             <div className="grid grid-cols-2 gap-4">
-              {/* アクティブ1 */}
+              {/* 1. ポーカーレッスン - そのまま */}
               <button
                 onClick={() => router.push('/lesson')}
                 className="relative group overflow-hidden rounded-2xl aspect-[3/4]"
@@ -808,7 +852,7 @@ export default function DashboardV2() {
                 <div className="absolute inset-0 border-4 border-pink-400/50 rounded-2xl" />
               </button>
 
-              {/* バカラ - 2番目 */}
+              {/* 2. バカラレッスン - そのまま */}
               <button
                 onClick={() => router.push('/baccarat-lesson')}
                 className="relative group overflow-hidden rounded-2xl aspect-[3/4]"
@@ -823,6 +867,23 @@ export default function DashboardV2() {
                   </div>
                 </div>
                 <div className="absolute inset-0 border-4 border-red-400/50 rounded-2xl" />
+              </button>
+
+              {/* 3. 投資法シミュレーター - 新規追加！ */}
+              <button
+                onClick={() => router.push('/betting-simulator')}
+                className="relative group overflow-hidden rounded-2xl aspect-[3/4]"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-orange-600 via-red-600 to-pink-600 animate-gradient" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                <div className="relative h-full flex flex-col items-center justify-center p-5 text-white">
+                  <span className="text-7xl drop-shadow-glow animate-float mb-6">📊</span>
+                  <div className="text-center">
+                    <p className="font-black text-lg drop-shadow-glow" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>投資法</p>
+                    <p className="text-sm opacity-90 mt-1" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 700 }}>シミュレーター</p>
+                  </div>
+                </div>
+                <div className="absolute inset-0 border-4 border-orange-400/50 rounded-2xl" />
               </button>
 
               {/* Coming Soon - 基本ルール */}
@@ -1010,6 +1071,31 @@ export default function DashboardV2() {
       </div>
 
       <style jsx global>{`
+        @keyframes led-blink {
+          0%, 100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.3;
+            transform: scale(0.8);
+          }
+        }
+
+        @keyframes light-beam {
+          0%, 100% {
+            opacity: 0.3;
+            transform: translateY(-100%);
+          }
+          50% {
+            opacity: 0.6;
+            transform: translateY(100%);
+          }
+        }
+
+        .animate-light-beam {
+          animation: light-beam 3s ease-in-out infinite;
+        }
         @keyframes slide-in {
           from {
             opacity: 0;
