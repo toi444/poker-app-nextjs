@@ -136,11 +136,12 @@ export default function BettingSimulator() {
       return { probability: 0, losses: 0 }
     }
     
-    const winRate = 1 / payout
-    const loseRate = 1 - winRate
+    const winRate = 0.5 // 2倍配当なので50%固定
+    const loseRate = 0.5
     const initialBet = getInitialBet(activeSystem, unitBet)
     
     if (activeSystem === 'martingale') {
+      // マーチンゲール：予算内で何連敗できるかを計算
       let bet = initialBet
       let totalNeeded = 0
       let losses = 0
@@ -151,16 +152,31 @@ export default function BettingSimulator() {
         losses++
       }
       
+      // n連敗する確率
       const bankruptcyProb = Math.pow(loseRate, losses) * 100
       return { probability: bankruptcyProb, losses }
+      
     } else if (activeSystem === 'paroli') {
-      return { probability: loseRate * 100, losses: 1 }
-    } else if (activeSystem === 'montecarlo') {
-      const avgBet = unitBet * 3
-      const maxLosses = Math.floor(budget / avgBet)
+      // パーレー：予算を使い切るまでの連敗回数を計算
+      const maxLosses = Math.floor(budget / initialBet)
       const bankruptcyProb = Math.pow(loseRate, maxLosses) * 100
       return { probability: bankruptcyProb, losses: maxLosses }
+      
+    } else if (activeSystem === 'montecarlo') {
+      // モンテカルロ：簡易計算（平均的なケース）
+      // 数列が[1,2,3]の場合、最初のベットは4単位
+      // 負け続けると数列が伸びるが、簡易的に平均ベット額で計算
+      const avgBetMultiplier = 4 // 初期ベットの倍率
+      const avgBet = unitBet * avgBetMultiplier
+      const estimatedLosses = Math.floor(budget / avgBet)
+      
+      // モンテカルロは複雑なので、保守的に見積もる
+      // 実際には勝ち負けの組み合わせで変わるため、やや高めに設定
+      const bankruptcyProb = Math.pow(loseRate, Math.floor(estimatedLosses * 0.7)) * 100
+      return { probability: Math.max(bankruptcyProb, 0.01), losses: estimatedLosses }
+      
     } else if (activeSystem === 'cocomo') {
+      // ココモ：フィボナッチ数列的増加
       let bet1 = unitBet
       let bet2 = unitBet
       let totalNeeded = bet1 + bet2
@@ -177,7 +193,9 @@ export default function BettingSimulator() {
       
       const bankruptcyProb = Math.pow(loseRate, losses) * 100
       return { probability: bankruptcyProb, losses }
+      
     } else if (activeSystem === 'dalembert') {
+      // ダランベール：1単位ずつ増加
       let currentBet = unitBet
       let totalNeeded = 0
       let losses = 0
@@ -190,13 +208,36 @@ export default function BettingSimulator() {
       
       const bankruptcyProb = Math.pow(loseRate, losses) * 100
       return { probability: bankruptcyProb, losses }
+      
     } else if (activeSystem === 'system31') {
-      const maxLoss = unitBet * 31
-      if (budget < maxLoss) {
-        return { probability: 99, losses: 9 }
-      }
-      return { probability: 5, losses: 9 }
+    // 31システム：各ステップまでの累計必要額を計算
+    const system31Bets = [1, 1, 1, 2, 2, 4, 4, 8, 8]
+    let cumulativeCost = 0
+    let affordableSteps = 0
+    
+    for (let i = 0; i < system31Bets.length; i++) {
+        const stepCost = system31Bets[i] * unitBet
+        if (cumulativeCost + stepCost <= budget) {
+        cumulativeCost += stepCost
+        affordableSteps++
+        } else {
+        break
+        }
     }
+    
+    if (affordableSteps < 9) {
+        // 9ステップ全てをプレイできない場合
+        // そのステップまでに2連勝できない確率を概算
+        // 簡易計算：各ステップで2連勝できない確率の近似
+        const no2WinProb = Math.pow(0.75, affordableSteps) * 100 // 2連勝できない確率の近似
+        return { probability: Math.min(99, no2WinProb), losses: affordableSteps }
+    }
+    
+    // 9ステップ全て可能な場合：一度も2連勝できない確率
+    // 非常に低い確率（実際の計算は複雑なので簡易版）
+    const allLoseProbability = Math.pow(0.5, 9) * 100
+    return { probability: allLoseProbability, losses: 9 }
+}
     
     return { probability: 0, losses: 0 }
   }
@@ -675,13 +716,13 @@ export default function BettingSimulator() {
               </div>
             )}
 
-            {/* 予算 */}
+            {/* 予算 - 修正版 */}
             <div className="mb-4">
               <label className="text-sm font-black text-blue-300 mb-2 block">予算</label>
               <div className="flex gap-2 items-center">
                 <button
                   onClick={() => setBudget(Math.max(unitBet, budget - 1000))}
-                  className="w-12 h-12 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-xl font-black hover:shadow-lg hover:shadow-red-500/50 transition-all active:scale-95 flex items-center justify-center border-2 border-red-400"
+                  className="w-12 h-12 flex-shrink-0 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-xl font-black hover:shadow-lg hover:shadow-red-500/50 transition-all active:scale-95 flex items-center justify-center border-2 border-red-400"
                 >
                   <span className="text-2xl">−</span>
                 </button>
@@ -704,13 +745,13 @@ export default function BettingSimulator() {
                       setBudget(Math.max(unitBet, 1000))
                     }
                   }}
-                  className="flex-1 px-4 py-3 rounded-xl border-2 border-blue-500/50 bg-black/60 text-white text-center font-black text-2xl focus:outline-none focus:border-blue-500"
+                  className="flex-1 min-w-0 px-3 py-3 rounded-xl border-2 border-blue-500/50 bg-black/60 text-white text-center font-black text-xl focus:outline-none focus:border-blue-500"
                   placeholder="30000"
                   min="1"
                 />
                 <button
                   onClick={() => setBudget(budget + 1000)}
-                  className="w-12 h-12 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-black hover:shadow-lg hover:shadow-green-500/50 transition-all active:scale-95 flex items-center justify-center border-2 border-green-400"
+                  className="w-12 h-12 flex-shrink-0 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-black hover:shadow-lg hover:shadow-green-500/50 transition-all active:scale-95 flex items-center justify-center border-2 border-green-400"
                 >
                   <span className="text-2xl">＋</span>
                 </button>
@@ -726,7 +767,7 @@ export default function BettingSimulator() {
               <p className="text-xs text-gray-400 mt-1 text-center">バカラ・ルーレット赤黒・ブラックジャック等</p>
             </div>
 
-            {/* 破産確率表示 */}
+            {/* 破産確率表示 - 修正版 */}
             {bankruptcyData.probability > 0 && (
               <div className="relative group/risk">
                 <div className={`absolute inset-0 ${
@@ -746,7 +787,7 @@ export default function BettingSimulator() {
                       bankruptcyData.probability > 5 ? 'text-orange-400' :
                       'text-yellow-400'
                     } drop-shadow-glow`}>
-                      {bankruptcyData.probability.toFixed(2)}%
+                      {Math.max(0.01, bankruptcyData.probability).toFixed(2)}%
                     </p>
                     <p className="text-xs text-white/70 mt-2">
                       約{bankruptcyData.losses}連敗で破産

@@ -619,220 +619,250 @@ export default function DashboardV2() {
           </div>
         )}
 
+
         {/* All-Gamble Section */}
         {activeSection === 'all-gamble' && (
-          <div className="space-y-8 animate-slide-in">
-            <h2 className="text-3xl font-black text-white flex items-center gap-3">
-              <div className="relative">
-                <div className="absolute inset-0 bg-orange-600 blur-xl animate-pulse" />
-                <Coins className="relative w-8 h-8 text-orange-400" />
-              </div>
-              All-Gamble
-            </h2>
+          <>
+            <div className="space-y-8 animate-slide-in">
+              <h2 className="text-3xl font-black text-white flex items-center gap-3">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-orange-600 blur-xl animate-pulse" />
+                  <Coins className="relative w-8 h-8 text-orange-400" />
+                </div>
+                All-Gamble
+              </h2>
+            </div>
 
-            {/* キーヴィジュアル */}
-            <div className="relative overflow-hidden rounded-3xl" style={{ height: '320px' }}>
-              {/* 背景アニメーション */}
-              <div className="absolute inset-0 bg-gradient-to-br from-orange-600 via-red-600 to-pink-600 animate-gradient" />
+            {/* KVを全幅表示 */}
+            <div className="relative overflow-hidden" style={{ height: '450px', margin: '0 -1rem' }}>
+              <div className="absolute inset-0 bg-black" />
               
-              {/* ネオングリッド */}
-              <div className="absolute inset-0 opacity-20">
+              <div className="absolute inset-0 opacity-10">
                 <div className="absolute inset-0" style={{
-                  backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
-                  backgroundSize: '50px 50px',
-                  animation: 'grid-move 20s linear infinite'
+                  backgroundImage: `linear-gradient(90deg, #3b82f6 1px, transparent 1px), linear-gradient(0deg, #3b82f6 1px, transparent 1px)`,
+                  backgroundSize: '30px 30px'
                 }} />
               </div>
-
-              {/* 光るパーティクル */}
-              <div className="absolute inset-0">
-                <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-yellow-300 rounded-full animate-particle-1 shadow-lg shadow-yellow-300/50" />
-                <div className="absolute top-1/3 right-1/3 w-3 h-3 bg-pink-300 rounded-full animate-particle-2 shadow-lg shadow-pink-300/50" />
-                <div className="absolute bottom-1/4 left-1/3 w-2 h-2 bg-orange-300 rounded-full animate-particle-3 shadow-lg shadow-orange-300/50" />
-                <div className="absolute top-1/2 right-1/4 w-3 h-3 bg-red-300 rounded-full animate-particle-4 shadow-lg shadow-red-300/50" />
-                <div className="absolute top-2/3 left-1/2 w-2 h-2 bg-yellow-400 rounded-full animate-particle-1 shadow-lg shadow-yellow-400/50" style={{ animationDelay: '1s' }} />
-                <div className="absolute bottom-1/3 right-1/2 w-3 h-3 bg-pink-400 rounded-full animate-particle-2 shadow-lg shadow-pink-400/50" style={{ animationDelay: '1.5s' }} />
-              </div>
-
-              {/* 追加の光線エフェクト */}
-              <div className="absolute inset-0">
-                <div className="absolute top-0 left-1/4 w-1 h-full bg-gradient-to-b from-yellow-400/0 via-yellow-400/30 to-yellow-400/0 animate-light-beam" />
-                <div className="absolute top-0 left-1/2 w-1 h-full bg-gradient-to-b from-orange-400/0 via-orange-400/30 to-orange-400/0 animate-light-beam" style={{ animationDelay: '0.5s' }} />
-                <div className="absolute top-0 left-3/4 w-1 h-full bg-gradient-to-b from-pink-400/0 via-pink-400/30 to-pink-400/0 animate-light-beam" style={{ animationDelay: '1s' }} />
-              </div>
-
-              {/* グロー効果 */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
               
-              {/* メインタイポグラフィ */}
+              <div className="absolute inset-0 opacity-20">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: `linear-gradient(90deg, #8b5cf6 1px, transparent 1px), linear-gradient(0deg, #8b5cf6 1px, transparent 1px)`,
+                  backgroundSize: '60px 60px',
+                  animation: 'grid-drift 20s linear infinite'
+                }} />
+              </div>
+              
+              <div className="absolute top-0 left-0 w-96 h-96 bg-purple-600/30 rounded-full blur-[120px] animate-pulse" />
+              <div className="absolute bottom-0 right-0 w-96 h-96 bg-blue-600/30 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '1s' }} />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-cyan-500/20 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '0.5s' }} />
+              
+              <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-500/10 to-transparent h-32 animate-scan-line-slow" />
+              </div>
+              
+              <div className="absolute inset-0 opacity-5">
+                <div className="w-full h-full bg-repeat animate-noise" style={{
+                  backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' /%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\' /%3E%3C/svg%3E")',
+                  backgroundSize: '200px 200px'
+                }} />
+              </div>
+              
               <div className="relative h-full flex flex-col items-center justify-center px-6">
-                <div className="text-center space-y-6">
-                  {/* ポーカー・スロット・競馬など */}
+                <div className="text-center space-y-10">
                   <div className="relative">
-                    <div className="absolute inset-0 blur-2xl bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 opacity-60 animate-pulse" />
+                    <div className="absolute inset-0 blur-xl bg-cyan-500/40 animate-pulse" />
+                    <p className="relative text-sm font-black tracking-[0.3em] text-cyan-300/80 drop-shadow-lg uppercase"
+                      style={{ 
+                        textShadow: '0 0 10px rgba(6, 182, 212, 0.8), 0 0 20px rgba(6, 182, 212, 0.4)',
+                        fontFamily: 'monospace',
+                        letterSpacing: '0.3em'
+                      }}>
+                      ALL GAMBLE MANAGER
+                    </p>
+                  </div>
+                  
+                  <div className="relative space-y-6">
+                    <div className="absolute inset-0 blur-3xl bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-500 opacity-50 animate-pulse" />
+                    
                     <div className="relative">
-                      <p className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-orange-200 to-red-200 drop-shadow-2xl tracking-wider"
+                      <p className="absolute inset-0 text-4xl font-black text-red-500/20 blur-sm"
+                        style={{ transform: 'translate(-2px, -2px)', animation: 'glitch-1 3s infinite' }}>
+                        あらゆるギャンブル、
+                      </p>
+                      <p className="absolute inset-0 text-4xl font-black text-blue-500/20 blur-sm"
+                        style={{ transform: 'translate(2px, 2px)', animation: 'glitch-2 3s infinite' }}>
+                        あらゆるギャンブル、
+                      </p>
+                      <p className="relative text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-200 via-blue-200 to-cyan-200 leading-tight whitespace-nowrap"
                         style={{ 
-                          textShadow: '0 0 20px rgba(251, 191, 36, 0.8), 0 0 40px rgba(249, 115, 22, 0.6)',
-                          WebkitTextStroke: '1px rgba(251, 191, 36, 0.3)',
-                          letterSpacing: '0.05em'
+                          textShadow: '0 0 30px rgba(147, 51, 234, 0.9), 0 0 60px rgba(59, 130, 246, 0.6), 0 0 90px rgba(6, 182, 212, 0.4)',
+                          WebkitTextStroke: '1px rgba(147, 51, 234, 0.3)',
+                          letterSpacing: '0.05em',
+                          animation: 'neon-pulse 2s ease-in-out infinite'
                         }}>
-                        ポーカー・スロット・競馬など
+                        あらゆるギャンブル、
                       </p>
                     </div>
-                  </div>
-
-                  {/* すべてのギャンブルの収支を記録 */}
-                  <div className="relative">
-                    <div className="absolute inset-0 blur-3xl bg-gradient-to-r from-pink-400 via-red-400 to-orange-400 opacity-70 animate-pulse" style={{ animationDelay: '0.5s' }} />
-                    <div className="relative space-y-3">
-                      <p className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-200 via-red-200 to-orange-200 drop-shadow-2xl leading-tight"
-                        style={{ 
-                          textShadow: '0 0 30px rgba(236, 72, 153, 0.9), 0 0 60px rgba(239, 68, 68, 0.7), 0 0 90px rgba(249, 115, 22, 0.5)',
-                          WebkitTextStroke: '2px rgba(236, 72, 153, 0.3)',
-                          letterSpacing: '0.08em',
-                          animation: 'neon-flicker 2s ease-in-out infinite'
-                        }}>
-                        すべてのギャンブルの
+                    
+                    <div className="relative">
+                      <p className="absolute inset-0 text-6xl font-black text-red-500/20 blur-sm"
+                        style={{ transform: 'translate(-2px, -2px)', animation: 'glitch-1 3s infinite', animationDelay: '0.15s' }}>
+                        一元管理
                       </p>
-                      <p className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-200 via-yellow-200 to-pink-200 drop-shadow-2xl"
+                      <p className="absolute inset-0 text-6xl font-black text-blue-500/20 blur-sm"
+                        style={{ transform: 'translate(2px, 2px)', animation: 'glitch-2 3s infinite', animationDelay: '0.15s' }}>
+                        一元管理
+                      </p>
+                      <p className="relative text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 via-blue-200 to-purple-200 leading-tight whitespace-nowrap"
                         style={{ 
-                          textShadow: '0 0 30px rgba(249, 115, 22, 0.9), 0 0 60px rgba(251, 191, 36, 0.7), 0 0 90px rgba(236, 72, 153, 0.5)',
-                          WebkitTextStroke: '2px rgba(249, 115, 22, 0.3)',
+                          textShadow: '0 0 30px rgba(6, 182, 212, 0.9), 0 0 60px rgba(59, 130, 246, 0.6), 0 0 90px rgba(147, 51, 234, 0.4)',
+                          WebkitTextStroke: '1.5px rgba(6, 182, 212, 0.3)',
                           letterSpacing: '0.08em',
-                          animation: 'neon-flicker 2s ease-in-out infinite',
+                          animation: 'neon-pulse 2s ease-in-out infinite',
                           animationDelay: '0.3s'
                         }}>
-                        収支を記録
+                        一元管理
                       </p>
                     </div>
                   </div>
-
-                  {/* LED風の装飾ライン */}
-                  <div className="relative flex items-center justify-center gap-4 mt-8">
-                    <div className="flex gap-2">
-                      {[...Array(5)].map((_, i) => (
+                  
+                  <div className="relative flex items-center justify-center gap-3 mt-8">
+                    <div className="flex gap-1.5">
+                      {[...Array(4)].map((_, i) => (
                         <div 
                           key={`left-${i}`}
-                          className="w-2 h-2 rounded-full bg-gradient-to-r from-yellow-400 to-orange-400 shadow-lg shadow-orange-400/50"
-                          style={{ 
-                            animation: 'led-blink 1.5s ease-in-out infinite',
-                            animationDelay: `${i * 0.1}s`
-                          }}
+                          className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-purple-400 to-blue-500 shadow-lg shadow-purple-400/50"
+                          style={{ animation: 'led-flow 2s ease-in-out infinite', animationDelay: `${i * 0.15}s` }}
                         />
                       ))}
                     </div>
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-pink-500 to-red-500 shadow-xl shadow-red-500/50 flex items-center justify-center animate-pulse">
-                      <Coins className="w-5 h-5 text-white drop-shadow-glow" />
+                    
+                    <div className="relative w-10 h-10">
+                      <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 rounded-full blur-md animate-pulse" />
+                      <div className="relative w-full h-full rounded-full bg-gradient-to-r from-purple-500 via-blue-500 to-cyan-500 flex items-center justify-center border-2 border-cyan-400/50 shadow-lg shadow-blue-500/50">
+                        <Coins className="w-5 h-5 text-white drop-shadow-glow" />
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      {[...Array(5)].map((_, i) => (
+                    
+                    <div className="flex gap-1.5">
+                      {[...Array(4)].map((_, i) => (
                         <div 
                           key={`right-${i}`}
-                          className="w-2 h-2 rounded-full bg-gradient-to-r from-pink-400 to-red-400 shadow-lg shadow-red-400/50"
-                          style={{ 
-                            animation: 'led-blink 1.5s ease-in-out infinite',
-                            animationDelay: `${(i + 5) * 0.1}s`
-                          }}
+                          className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-blue-500 to-cyan-400 shadow-lg shadow-cyan-400/50"
+                          style={{ animation: 'led-flow 2s ease-in-out infinite', animationDelay: `${(i + 4) * 0.15}s` }}
                         />
                       ))}
                     </div>
                   </div>
                 </div>
               </div>
+              
+              <div className="absolute top-0 left-0 w-20 h-20 border-t-2 border-l-2 border-purple-500/50" />
+              <div className="absolute top-0 right-0 w-20 h-20 border-t-2 border-r-2 border-cyan-500/50" />
+              <div className="absolute bottom-0 left-0 w-20 h-20 border-b-2 border-l-2 border-blue-500/50" />
+              <div className="absolute bottom-0 right-0 w-20 h-20 border-b-2 border-r-2 border-purple-500/50" />
+              
+              <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                <div className="absolute w-full h-0.5 bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent"
+                  style={{ top: '30%', animation: 'scan-horizontal 4s ease-in-out infinite' }} />
+                <div className="absolute w-full h-0.5 bg-gradient-to-r from-transparent via-purple-400/50 to-transparent"
+                  style={{ top: '70%', animation: 'scan-horizontal 5s ease-in-out infinite', animationDelay: '1s' }} />
+              </div>
+            </div>
 
-              {/* スキャンライン効果 */}
-              <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/5 to-transparent animate-scan-line" />
+            <div className="space-y-8 mt-8">
+              <div className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-600 to-red-600 rounded-3xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity animate-pulse" />
+                <button
+                  onClick={() => router.push('/all-gamble')}
+                  className="relative w-full bg-gradient-to-br from-orange-600 to-red-600 rounded-3xl p-1 shadow-2xl"
+                >
+                  <div className="bg-black/40 backdrop-blur-sm rounded-3xl p-6 border-2 border-white/20">
+                    <div className="flex items-center justify-between text-white">
+                      <div className="flex items-center gap-4">
+                        <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border-2 border-white/30">
+                          <DollarSign className="w-12 h-12 drop-shadow-glow" />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-2xl font-black drop-shadow-glow">収支管理</p>
+                          <p className="text-sm opacity-90 mt-1">All Gamble Manager</p>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-7 h-7 opacity-70 group-hover:opacity-100 group-hover:translate-x-2 transition-all" />
+                    </div>
+                  </div>
+                </button>
               </div>
 
-              {/* 四隅の光エフェクト */}
-              <div className="absolute top-0 left-0 w-32 h-32 bg-gradient-to-br from-yellow-500/30 to-transparent blur-2xl animate-pulse" />
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-pink-500/30 to-transparent blur-2xl animate-pulse" style={{ animationDelay: '0.5s' }} />
-              <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-orange-500/30 to-transparent blur-2xl animate-pulse" style={{ animationDelay: '1s' }} />
-              <div className="absolute bottom-0 right-0 w-32 h-32 bg-gradient-to-tl from-red-500/30 to-transparent blur-2xl animate-pulse" style={{ animationDelay: '1.5s' }} />
-            </div>
-
-            {/* 収支管理ボタン */}
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-orange-600 to-red-600 rounded-3xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity animate-pulse" />
-              <button
-                onClick={() => router.push('/all-gamble')}
-                className="relative w-full bg-gradient-to-br from-orange-600 to-red-600 rounded-3xl p-1 shadow-2xl"
-              >
-                <div className="bg-black/40 backdrop-blur-sm rounded-3xl p-6 border-2 border-white/20">
-                  <div className="flex items-center justify-between text-white">
-                    <div className="flex items-center gap-4">
-                      <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border-2 border-white/30">
-                        <DollarSign className="w-12 h-12 drop-shadow-glow" />
-                      </div>
-                      <div className="text-left">
-                        <p className="text-2xl font-black drop-shadow-glow">収支管理</p>
-                        <p className="text-sm opacity-90 mt-1">All Gamble Manager</p>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-7 h-7 opacity-70 group-hover:opacity-100 group-hover:translate-x-2 transition-all" />
-                  </div>
-                </div>
-              </button>
-            </div>
-
-            {/* リンク集 */}
-            <div className="relative">
-              <div className="absolute inset-0 bg-orange-600 blur-xl opacity-50" />
-              <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-2 border-orange-500/50">
-                <h3 className="font-bold text-white mb-4 flex items-center gap-2 text-lg">
-                  <Link2 className="w-6 h-6 text-orange-400" />
-                  役立つリンク集
-                </h3>
-
-                {[
-                  { category: '🎴 ポーカー関連', color: 'purple', links: [
-                    { name: 'ポーカーギルド', desc: '国内トーナメント情報', url: 'https://pokerguild.jp/tourneys' },
-                    { name: 'ポーカースター', desc: '国際トーナメント情報', url: 'https://www.pokerstarslive.com/ja/?&no_redirect=1' }
-                  ]},
-                  { category: '🎰 スロット関連', color: 'red', links: [
-                    { name: '一撃', desc: 'スロット情報サイト', url: 'https://1geki.jp/' },
-                    { name: '台データオンライン', desc: 'スロットデータサイト', url: 'https://daidata.goraggio.com/' }
-                  ]},
-                  { category: '🏇 競馬関連', color: 'green', links: [
-                    { name: 'ネットケイバ', desc: '競馬情報サイト', url: 'https://www.netkeiba.com/' },
-                    { name: '即PAT・A-PAT', desc: '中央競馬ネット投票', url: 'https://www.ipat.jra.go.jp/sp/' },
-                    { name: '地方競馬ネット投票', desc: '地方競馬', url: 'https://gn.ipat.jra.go.jp/' }
-                  ]}
-                ].map((section, idx) => (
-                  <div key={idx} className="mb-5 last:mb-0">
-                    <p className="text-sm font-bold text-orange-300 mb-3">{section.category}</p>
-                    <div className="space-y-2">
-                      {section.links.map((link, linkIdx) => (
-                        <a
-                          key={linkIdx}
-                          href={link.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={`block bg-${section.color}-950/30 rounded-xl p-4 border-2 border-${section.color}-500/30 hover:border-${section.color}-400 hover:bg-${section.color}-950/50 transition-all group`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-base font-bold text-white">{link.name}</p>
-                              <p className="text-xs text-gray-400 mt-1">{link.desc}</p>
+              <div className="relative">
+                <div className="absolute inset-0 bg-orange-600 blur-xl opacity-50" />
+                <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-2 border-orange-500/50">
+                  <h3 className="font-bold text-white mb-4 flex items-center gap-2 text-lg">
+                    <Link2 className="w-6 h-6 text-orange-400" />
+                    役立つリンク集
+                  </h3>
+                  {[
+                    { category: '🎴 ポーカー関連', color: 'purple', links: [
+                      { name: 'ポーカーギルド', desc: '国内トーナメント情報', url: 'https://pokerguild.jp/tourneys' },
+                      { name: 'ポーカースター', desc: '国際トーナメント情報', url: 'https://www.pokerstarslive.com/ja/?&no_redirect=1' }
+                    ]},
+                    { category: '🎰 スロット関連', color: 'red', links: [
+                      { name: '一撃', desc: 'スロット情報サイト', url: 'https://1geki.jp/' },
+                      { name: '台データオンライン', desc: 'スロットデータサイト', url: 'https://daidata.goraggio.com/' }
+                    ]},
+                    { category: '🏇 競馬関連', color: 'green', links: [
+                      { name: 'ネットケイバ', desc: '競馬情報サイト', url: 'https://www.netkeiba.com/' },
+                      { name: '即PAT・A-PAT', desc: '中央競馬ネット投票', url: 'https://www.ipat.jra.go.jp/sp/' },
+                      { name: '地方競馬ネット投票', desc: '地方競馬', url: 'https://gn.ipat.jra.go.jp/' }
+                    ]}
+                  ].map((section, idx) => (
+                    <div key={idx} className="mb-5 last:mb-0">
+                      <p className="text-sm font-bold text-orange-300 mb-3">{section.category}</p>
+                      <div className="space-y-2">
+                        {section.links.map((link, linkIdx) => (
+                          <a 
+                            key={linkIdx}
+                            href={link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`block rounded-xl p-4 border-2 transition-all group ${
+                              section.color === 'purple' ? 'bg-purple-950/30 border-purple-500/30 hover:border-purple-400 hover:bg-purple-950/50' :
+                              section.color === 'red' ? 'bg-red-950/30 border-red-500/30 hover:border-red-400 hover:bg-red-950/50' :
+                              'bg-green-950/30 border-green-500/30 hover:border-green-400 hover:bg-green-950/50'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-base font-bold text-white">{link.name}</p>
+                                <p className="text-xs text-gray-400 mt-1">{link.desc}</p>
+                              </div>
+                              <ArrowRight className={`w-5 h-5 group-hover:translate-x-1 transition-transform ${
+                                section.color === 'purple' ? 'text-purple-400' :
+                                section.color === 'red' ? 'text-red-400' :
+                                'text-green-400'
+                              }`} />
                             </div>
-                            <ArrowRight className={`w-5 h-5 text-${section.color}-400 group-hover:translate-x-1 transition-transform`} />
-                          </div>
-                        </a>
-                      ))}
+                          </a>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
+          </>
         )}
 
         {/* Lesson Section */}
         {activeSection === 'lesson' && (
           <div className="space-y-5 animate-slide-in">
-            {/* ... 既存のヘッダー部分 ... */}
+            <h2 className="text-3xl font-black text-white flex items-center gap-3">
+              <div className="relative">
+                <div className="absolute inset-0 bg-pink-600 blur-xl animate-pulse" />
+                <BookOpen className="relative w-8 h-8 text-pink-400" />
+              </div>
+              Lesson
+            </h2>
 
             <div className="grid grid-cols-2 gap-4">
               {/* 1. ポーカーレッスン - そのまま */}
@@ -1041,31 +1071,73 @@ export default function DashboardV2() {
               { id: 'all-gamble', icon: Coins, label: 'ALL-Gamble', color: 'orange', big: true },
               { id: 'lesson', icon: BookOpen, label: 'Lesson', color: 'pink' },
               { id: 'pbank', icon: DollarSign, label: 'P-BANK', color: 'emerald' }
-            ].map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setActiveSection(item.id as Section)}
-                className={`flex flex-col items-center transition-all ${item.big ? '-mt-6' : ''} ${
-                  activeSection === item.id ? `text-${item.color}-400` : 'text-gray-500'
-                }`}
-              >
-                <div className="relative">
-                  {activeSection === item.id && (
-                    <div className={`absolute inset-0 bg-${item.color}-600 blur-xl animate-pulse`} />
-                  )}
-                  <div className={`relative ${item.big ? 'w-20 h-20' : 'w-14 h-14'} rounded-3xl flex items-center justify-center transition-all ${
-                    activeSection === item.id
-                      ? `bg-gradient-to-br from-${item.color}-600 to-${item.color}-700 shadow-2xl shadow-${item.color}-500/50 scale-110 border-2 border-${item.color}-400`
-                      : 'bg-gray-800/50 border-2 border-gray-700/50'
-                  }`}>
-                    <item.icon className={`${item.big ? 'w-10 h-10' : 'w-7 h-7'} ${activeSection === item.id ? 'text-white drop-shadow-glow' : 'text-gray-500'}`} />
+            ].map((item) => {
+              const isActive = activeSection === item.id
+              const colorClasses = {
+                violet: {
+                  text: 'text-violet-400',
+                  bg: 'bg-violet-600',
+                  gradient: 'from-violet-600 to-violet-700',
+                  shadow: 'shadow-violet-500/50',
+                  border: 'border-violet-400'
+                },
+                blue: {
+                  text: 'text-blue-400',
+                  bg: 'bg-blue-600',
+                  gradient: 'from-blue-600 to-blue-700',
+                  shadow: 'shadow-blue-500/50',
+                  border: 'border-blue-400'
+                },
+                orange: {
+                  text: 'text-orange-400',
+                  bg: 'bg-orange-600',
+                  gradient: 'from-orange-600 to-orange-700',
+                  shadow: 'shadow-orange-500/50',
+                  border: 'border-orange-400'
+                },
+                pink: {
+                  text: 'text-pink-400',
+                  bg: 'bg-pink-600',
+                  gradient: 'from-pink-600 to-pink-700',
+                  shadow: 'shadow-pink-500/50',
+                  border: 'border-pink-400'
+                },
+                emerald: {
+                  text: 'text-emerald-400',
+                  bg: 'bg-emerald-600',
+                  gradient: 'from-emerald-600 to-emerald-700',
+                  shadow: 'shadow-emerald-500/50',
+                  border: 'border-emerald-400'
+                }
+              }
+              const colors = colorClasses[item.color as keyof typeof colorClasses]
+              
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveSection(item.id as Section)}
+                  className={`flex flex-col items-center transition-all ${item.big ? '-mt-6' : ''} ${
+                    isActive ? colors.text : 'text-gray-500'
+                  }`}
+                >
+                  <div className="relative">
+                    {isActive && (
+                      <div className={`absolute inset-0 ${colors.bg} blur-xl animate-pulse`} />
+                    )}
+                    <div className={`relative ${item.big ? 'w-20 h-20' : 'w-14 h-14'} rounded-3xl flex items-center justify-center transition-all ${
+                      isActive
+                        ? `bg-gradient-to-br ${colors.gradient} shadow-2xl ${colors.shadow} scale-110 border-2 ${colors.border}`
+                        : 'bg-gray-800/50 border-2 border-gray-700/50'
+                    }`}>
+                      <item.icon className={`${item.big ? 'w-10 h-10' : 'w-7 h-7'} ${isActive ? 'text-white drop-shadow-glow' : 'text-gray-500'}`} />
+                    </div>
                   </div>
-                </div>
-                <span className={`text-xs font-bold mt-2 ${activeSection === item.id ? 'text-white' : 'text-gray-500'}`}>
-                  {item.label}
-                </span>
-              </button>
-            ))}
+                  <span className={`text-xs font-bold mt-2 ${isActive ? 'text-white' : 'text-gray-500'}`}>
+                    {item.label}
+                  </span>
+                </button>
+              )
+            })}
           </div>
         </div>
       </div>
@@ -1281,6 +1353,131 @@ export default function DashboardV2() {
         .drop-shadow-glow {
           filter: drop-shadow(0 0 8px currentColor);
         }
+
+        @keyframes grid-drift {
+          0% {
+            transform: translate(0, 0);
+          }
+          100% {
+            transform: translate(60px, 60px);
+          }
+        }
+
+        @keyframes scan-line-slow {
+          0% {
+            transform: translateY(-100%);
+          }
+          100% {
+            transform: translateY(400%);
+          }
+        }
+
+        @keyframes noise {
+          0%, 100% {
+            transform: translate(0, 0);
+          }
+          10% {
+            transform: translate(-5%, -5%);
+          }
+          20% {
+            transform: translate(-10%, 5%);
+          }
+          30% {
+            transform: translate(5%, -10%);
+          }
+          40% {
+            transform: translate(-5%, 15%);
+          }
+          50% {
+            transform: translate(-10%, 5%);
+          }
+          60% {
+            transform: translate(15%, 0);
+          }
+          70% {
+            transform: translate(0, 10%);
+          }
+          80% {
+            transform: translate(-15%, 0);
+          }
+          90% {
+            transform: translate(10%, 5%);
+          }
+        }
+
+        @keyframes glitch-1 {
+          0%, 100% {
+            transform: translate(0, 0);
+            opacity: 0.2;
+          }
+          33% {
+            transform: translate(-3px, -2px);
+            opacity: 0.3;
+          }
+          66% {
+            transform: translate(3px, 2px);
+            opacity: 0.1;
+          }
+        }
+
+        @keyframes glitch-2 {
+          0%, 100% {
+            transform: translate(0, 0);
+            opacity: 0.2;
+          }
+          33% {
+            transform: translate(2px, 3px);
+            opacity: 0.1;
+          }
+          66% {
+            transform: translate(-2px, -3px);
+            opacity: 0.3;
+          }
+        }
+
+        @keyframes neon-pulse {
+          0%, 100% {
+            opacity: 1;
+            filter: brightness(1);
+          }
+          50% {
+            opacity: 0.95;
+            filter: brightness(1.2);
+          }
+        }
+
+        @keyframes led-flow {
+          0%, 100% {
+            opacity: 0.3;
+            transform: scale(0.8);
+          }
+          50% {
+            opacity: 1;
+            transform: scale(1.2);
+          }
+        }
+
+        @keyframes scan-horizontal {
+          0%, 100% {
+            left: -100%;
+            opacity: 0;
+          }
+          50% {
+            left: 50%;
+            opacity: 1;
+          }
+          100% {
+            left: 200%;
+            opacity: 0;
+          }
+        }
+
+        .animate-noise {
+          animation: noise 0.5s steps(10) infinite;
+        }
+
+
+
       `}</style>
     </div>
   )
