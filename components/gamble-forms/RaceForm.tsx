@@ -204,10 +204,9 @@ export default function RaceForm({ raceType, onSuccess, onCancel }: RaceFormProp
                 </label>
                 <input
                   type="date"
-                  required
                   value={playedDate}
                   onChange={(e) => setPlayedDate(e.target.value)}
-                  className={`w-full px-4 py-3 rounded-xl border-2 border-white/10 bg-black/40 text-white ${info.focusBorder} focus:outline-none transition-all backdrop-blur-sm`}
+                  className="w-full px-3 py-3 rounded-xl text-sm ..."
                 />
               </div>
 
@@ -336,7 +335,7 @@ export default function RaceForm({ raceType, onSuccess, onCancel }: RaceFormProp
                 </label>
                 <input
                   type="number"
-                  step="1000"
+                  step="1"
                   min="0"
                   required
                   value={totalBets || ''}
@@ -365,7 +364,7 @@ export default function RaceForm({ raceType, onSuccess, onCancel }: RaceFormProp
                 </label>
                 <input
                   type="number"
-                  step="1000"
+                  step="1"
                   min="0"
                   required
                   value={totalPayout || ''}
@@ -392,7 +391,7 @@ export default function RaceForm({ raceType, onSuccess, onCancel }: RaceFormProp
                   <label className="block text-sm font-bold text-gray-300 mb-2">最高配当</label>
                   <input
                     type="number"
-                    step="1000"
+                    step="1"
                     min="0"
                     value={biggestWin || ''}
                     onChange={(e) => setBiggestWin(Number(e.target.value) || 0)}

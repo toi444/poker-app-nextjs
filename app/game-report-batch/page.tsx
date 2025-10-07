@@ -349,7 +349,7 @@ export default function BatchGameReportPage() {
               onClick={() => step === 1 ? router.push('/dashboard') : setStep(step - 1)}
               className="w-10 h-10 rounded-full bg-white/5 border-2 border-purple-500/30 flex items-center justify-center hover:bg-white/10 hover:border-purple-500/50 transition-all hover:scale-110"
             >
-              <ArrowLeft className="w-5 h-5 text-purple-400" />
+              <ArrowLeft className="w-4 h-4 text-purple-400" />
             </button>
             
             <div className="flex items-center gap-3">
@@ -416,7 +416,7 @@ export default function BatchGameReportPage() {
                     <div className={`absolute inset-0 bg-${tab.glow}-600 blur-xl opacity-50 rounded-xl`} />
                   )}
                   <div className="relative flex items-center justify-center gap-2">
-                    <tab.icon className={`w-5 h-5 ${step === tab.id ? 'drop-shadow-glow' : ''}`} />
+                    <tab.icon className={`w-4 h-4 ${step === tab.id ? 'drop-shadow-glow' : ''}`} />
                     {tab.label}
                   </div>
                 </button>
@@ -434,7 +434,7 @@ export default function BatchGameReportPage() {
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-2">
                     <Users className="w-6 h-6 text-purple-500 drop-shadow-glow" />
-                    <h2 className="text-xl font-black text-white">参加プレイヤー選択</h2>
+                    <h2 className="text-lg font-black text-white">参加プレイヤー選択</h2>
                   </div>
                   <div className="relative">
                     <div className="absolute inset-0 bg-cyan-600 blur-lg opacity-50" />
@@ -469,7 +469,7 @@ export default function BatchGameReportPage() {
                           {player.username}
                         </span>
                         {selectedPlayerIds.has(player.id) && (
-                          <CheckCircle className="w-5 h-5 flex-shrink-0 text-white drop-shadow-glow" />
+                          <CheckCircle className="w-4 h-4 flex-shrink-0 text-white drop-shadow-glow" />
                         )}
                       </div>
                     </button>
@@ -490,7 +490,7 @@ export default function BatchGameReportPage() {
                 }`}
               >
                 <span className="relative">次へ：共通情報入力</span>
-                <ArrowRight className="relative w-5 h-5" />
+                <ArrowRight className="relative w-4 h-4" />
               </button>
             </div>
           </div>
@@ -505,7 +505,7 @@ export default function BatchGameReportPage() {
               <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-6 border-2 border-cyan-500/30 shadow-2xl">
                 <div className="flex items-center gap-2 mb-6">
                   <Calendar className="w-6 h-6 text-cyan-500 drop-shadow-glow" />
-                  <h2 className="text-xl font-black text-white">共通情報</h2>
+                  <h2 className="text-lg font-black text-white">共通情報</h2>
                 </div>
                 
                 <div className="space-y-4">
@@ -515,7 +515,7 @@ export default function BatchGameReportPage() {
                       type="date"
                       value={date}
                       onChange={(e) => setDate(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl bg-black/40 border-2 border-cyan-500/30 text-white focus:border-cyan-500 focus:outline-none transition-all backdrop-blur-sm font-mono"
+                      className="w-full px-3 py-2.5 rounded-xl bg-black/40 border-2 border-cyan-500/30 text-white text-sm focus:border-cyan-500 focus:outline-none transition-all backdrop-blur-sm font-mono"
                     />
                   </div>
                   
@@ -526,7 +526,7 @@ export default function BatchGameReportPage() {
                         type="time"
                         value={startTime}
                         onChange={(e) => setStartTime(e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl bg-black/40 border-2 border-cyan-500/30 text-white focus:border-cyan-500 focus:outline-none transition-all backdrop-blur-sm font-mono"
+                        className="w-full px-3 py-2.5 rounded-xl bg-black/40 border-2 border-cyan-500/30 text-white text-sm focus:border-cyan-500 focus:outline-none transition-all backdrop-blur-sm font-mono"
                       />
                     </div>
                     <div>
@@ -535,7 +535,7 @@ export default function BatchGameReportPage() {
                         type="time"
                         value={endTime}
                         onChange={(e) => setEndTime(e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl bg-black/40 border-2 border-cyan-500/30 text-white focus:border-cyan-500 focus:outline-none transition-all backdrop-blur-sm font-mono"
+                        className="w-full px-3 py-2.5 rounded-xl bg-black/40 border-2 border-cyan-500/30 text-white text-sm focus:border-cyan-500 focus:outline-none transition-all backdrop-blur-sm font-mono"
                       />
                     </div>
                   </div>
@@ -579,13 +579,13 @@ export default function BatchGameReportPage() {
                       {/* バイイン */}
                       <div>
                         <label className="block text-xs font-bold text-gray-400 mb-2 font-mono">バイイン (P)</label>
-                        <div className="flex gap-2">
+                        <div className="flex gap-1.5">
                           <button
                             onClick={() => adjustValue(idx, 'buyIn', -1000)}
-                            className="relative group px-4 py-3 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-xl font-black hover:shadow-lg hover:shadow-red-500/50 transition-all active:scale-95 border-2 border-red-400/50"
+                            className="relative group px-3 py-2.5 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-xl font-black hover:shadow-lg hover:shadow-red-500/50 transition-all active:scale-95 border-2 border-red-400/50"
                           >
                             <div className="absolute inset-0 bg-red-600 blur-lg opacity-0 group-hover:opacity-50 rounded-xl transition-opacity" />
-                            <Minus className="relative w-5 h-5 drop-shadow-glow" />
+                            <Minus className="relative w-4 h-4 drop-shadow-glow" />
                           </button>
                           <input
                             type="number"
@@ -593,15 +593,15 @@ export default function BatchGameReportPage() {
                             min="0"
                             value={player.buyIn || ''}
                             onChange={(e) => updatePlayerInput(idx, 'buyIn', Number(e.target.value) || 0)}
-                            className="flex-1 px-4 py-3 border-2 border-purple-500/30 rounded-xl text-center font-black text-white text-xl bg-black/40 focus:outline-none focus:border-purple-500 transition-all backdrop-blur-sm font-mono"
+                            className="flex-1 min-w-0 px-2 py-2.5 border-2 border-purple-500/30 rounded-xl text-center font-black text-white text-base bg-black/40 focus:outline-none focus:border-purple-500 transition-all backdrop-blur-sm font-mono"
                             placeholder="0"
                           />
                           <button
                             onClick={() => adjustValue(idx, 'buyIn', 1000)}
-                            className="relative group px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-black hover:shadow-lg hover:shadow-green-500/50 transition-all active:scale-95 border-2 border-green-400/50"
+                            className="relative group px-3 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-black hover:shadow-lg hover:shadow-green-500/50 transition-all active:scale-95 border-2 border-green-400/50"
                           >
                             <div className="absolute inset-0 bg-green-600 blur-lg opacity-0 group-hover:opacity-50 rounded-xl transition-opacity" />
-                            <Plus className="relative w-5 h-5 drop-shadow-glow" />
+                            <Plus className="relative w-4 h-4 drop-shadow-glow" />
                           </button>
                         </div>
                       </div>
@@ -609,13 +609,13 @@ export default function BatchGameReportPage() {
                       {/* 最終チップ */}
                       <div>
                         <label className="block text-xs font-bold text-gray-400 mb-2 font-mono">最終チップ (P)</label>
-                        <div className="flex gap-2">
+                        <div className="flex gap-1.5">
                           <button
                             onClick={() => adjustValue(idx, 'finalChips', -1000)}
-                            className="relative group px-4 py-3 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-xl font-black hover:shadow-lg hover:shadow-red-500/50 transition-all active:scale-95 border-2 border-red-400/50"
+                            className="relative group px-3 py-2.5 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-xl font-black hover:shadow-lg hover:shadow-red-500/50 transition-all active:scale-95 border-2 border-red-400/50"
                           >
                             <div className="absolute inset-0 bg-red-600 blur-lg opacity-0 group-hover:opacity-50 rounded-xl transition-opacity" />
-                            <Minus className="relative w-5 h-5 drop-shadow-glow" />
+                            <Minus className="relative w-4 h-4 drop-shadow-glow" />
                           </button>
                           <input
                             type="number"
@@ -623,15 +623,15 @@ export default function BatchGameReportPage() {
                             min="0"
                             value={player.finalChips || ''}
                             onChange={(e) => updatePlayerInput(idx, 'finalChips', Number(e.target.value) || 0)}
-                            className="flex-1 px-4 py-3 border-2 border-purple-500/30 rounded-xl text-center font-black text-white text-xl bg-black/40 focus:outline-none focus:border-purple-500 transition-all backdrop-blur-sm font-mono"
+                            className="flex-1 min-w-0 px-2 py-2.5 border-2 border-purple-500/30 rounded-xl text-center font-black text-white text-base bg-black/40 focus:outline-none focus:border-purple-500 transition-all backdrop-blur-sm font-mono"
                             placeholder="0"
                           />
                           <button
                             onClick={() => adjustValue(idx, 'finalChips', 1000)}
-                            className="relative group px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-black hover:shadow-lg hover:shadow-green-500/50 transition-all active:scale-95 border-2 border-green-400/50"
+                            className="relative group px-3 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-black hover:shadow-lg hover:shadow-green-500/50 transition-all active:scale-95 border-2 border-green-400/50"
                           >
                             <div className="absolute inset-0 bg-green-600 blur-lg opacity-0 group-hover:opacity-50 rounded-xl transition-opacity" />
-                            <Plus className="relative w-5 h-5 drop-shadow-glow" />
+                            <Plus className="relative w-4 h-4 drop-shadow-glow" />
                           </button>
                         </div>
                       </div>
@@ -639,13 +639,13 @@ export default function BatchGameReportPage() {
                       {/* エアー貸出 */}
                       <div>
                         <label className="block text-xs font-bold text-gray-400 mb-2 font-mono">エアー貸出 (P)</label>
-                        <div className="flex gap-2">
+                        <div className="flex gap-1.5">
                           <button
                             onClick={() => adjustValue(idx, 'airLent', -1000)}
-                            className="relative group px-4 py-3 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-xl font-black hover:shadow-lg hover:shadow-red-500/50 transition-all active:scale-95 border-2 border-red-400/50"
+                            className="relative group px-3 py-2.5 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-xl font-black hover:shadow-lg hover:shadow-red-500/50 transition-all active:scale-95 border-2 border-red-400/50"
                           >
                             <div className="absolute inset-0 bg-red-600 blur-lg opacity-0 group-hover:opacity-50 rounded-xl transition-opacity" />
-                            <Minus className="relative w-5 h-5 drop-shadow-glow" />
+                            <Minus className="relative w-4 h-4 drop-shadow-glow" />
                           </button>
                           <input
                             type="number"
@@ -653,15 +653,15 @@ export default function BatchGameReportPage() {
                             min="0"
                             value={player.airLent || ''}
                             onChange={(e) => updatePlayerInput(idx, 'airLent', Number(e.target.value) || 0)}
-                            className="flex-1 px-4 py-3 border-2 border-purple-500/30 rounded-xl text-center font-black text-white text-xl bg-black/40 focus:outline-none focus:border-purple-500 transition-all backdrop-blur-sm font-mono"
+                            className="flex-1 min-w-0 px-2 py-2.5 border-2 border-purple-500/30 rounded-xl text-center font-black text-white text-base bg-black/40 focus:outline-none focus:border-purple-500 transition-all backdrop-blur-sm font-mono"
                             placeholder="0"
                           />
                           <button
                             onClick={() => adjustValue(idx, 'airLent', 1000)}
-                            className="relative group px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-black hover:shadow-lg hover:shadow-green-500/50 transition-all active:scale-95 border-2 border-green-400/50"
+                            className="relative group px-3 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-black hover:shadow-lg hover:shadow-green-500/50 transition-all active:scale-95 border-2 border-green-400/50"
                           >
                             <div className="absolute inset-0 bg-green-600 blur-lg opacity-0 group-hover:opacity-50 rounded-xl transition-opacity" />
-                            <Plus className="relative w-5 h-5 drop-shadow-glow" />
+                            <Plus className="relative w-4 h-4 drop-shadow-glow" />
                           </button>
                         </div>
                       </div>
@@ -669,13 +669,13 @@ export default function BatchGameReportPage() {
                       {/* エアー借入 */}
                       <div>
                         <label className="block text-xs font-bold text-gray-400 mb-2 font-mono">エアー借入 (P)</label>
-                        <div className="flex gap-2">
+                        <div className="flex gap-1.5">
                           <button
                             onClick={() => adjustValue(idx, 'airBorrowed', -1000)}
-                            className="relative group px-4 py-3 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-xl font-black hover:shadow-lg hover:shadow-red-500/50 transition-all active:scale-95 border-2 border-red-400/50"
+                            className="relative group px-3 py-2.5 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-xl font-black hover:shadow-lg hover:shadow-red-500/50 transition-all active:scale-95 border-2 border-red-400/50"
                           >
                             <div className="absolute inset-0 bg-red-600 blur-lg opacity-0 group-hover:opacity-50 rounded-xl transition-opacity" />
-                            <Minus className="relative w-5 h-5 drop-shadow-glow" />
+                            <Minus className="relative w-4 h-4 drop-shadow-glow" />
                           </button>
                           <input
                             type="number"
@@ -683,15 +683,15 @@ export default function BatchGameReportPage() {
                             min="0"
                             value={player.airBorrowed || ''}
                             onChange={(e) => updatePlayerInput(idx, 'airBorrowed', Number(e.target.value) || 0)}
-                            className="flex-1 px-4 py-3 border-2 border-purple-500/30 rounded-xl text-center font-black text-white text-xl bg-black/40 focus:outline-none focus:border-purple-500 transition-all backdrop-blur-sm font-mono"
+                            className="flex-1 min-w-0 px-2 py-2.5 border-2 border-purple-500/30 rounded-xl text-center font-black text-white text-base bg-black/40 focus:outline-none focus:border-purple-500 transition-all backdrop-blur-sm font-mono"
                             placeholder="0"
                           />
                           <button
                             onClick={() => adjustValue(idx, 'airBorrowed', 1000)}
-                            className="relative group px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-black hover:shadow-lg hover:shadow-green-500/50 transition-all active:scale-95 border-2 border-green-400/50"
+                            className="relative group px-3 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-black hover:shadow-lg hover:shadow-green-500/50 transition-all active:scale-95 border-2 border-green-400/50"
                           >
                             <div className="absolute inset-0 bg-green-600 blur-lg opacity-0 group-hover:opacity-50 rounded-xl transition-opacity" />
-                            <Plus className="relative w-5 h-5 drop-shadow-glow" />
+                            <Plus className="relative w-4 h-4 drop-shadow-glow" />
                           </button>
                         </div>
                       </div>
@@ -789,7 +789,7 @@ export default function BatchGameReportPage() {
                     <div className="relative bg-gradient-to-r from-yellow-600 to-amber-600 p-4 rounded-xl border-2 border-yellow-400/50 shadow-lg">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-bold text-white flex items-center gap-2 font-mono">
-                          <Sparkles className="w-5 h-5 drop-shadow-glow" />
+                          <Sparkles className="w-4 h-4 drop-shadow-glow" />
                           JP自動積立
                         </span>
                         <span className="text-2xl font-black text-white drop-shadow-glow font-mono">
@@ -843,7 +843,7 @@ export default function BatchGameReportPage() {
                 <div className="p-6 border-b border-pink-500/20">
                   <div className="flex items-center gap-2">
                     <Eye className="w-6 h-6 text-pink-500 drop-shadow-glow" />
-                    <h2 className="text-xl font-black text-white">一括登録履歴</h2>
+                    <h2 className="text-lg font-black text-white">一括登録履歴</h2>
                   </div>
                 </div>
 
@@ -874,7 +874,7 @@ export default function BatchGameReportPage() {
                                   className="relative group p-3 hover:bg-red-600/20 rounded-xl transition-all border-2 border-red-500/20 hover:border-red-500/50"
                                 >
                                   <div className="absolute inset-0 bg-red-600 blur-lg opacity-0 group-hover:opacity-50 rounded-xl transition-opacity" />
-                                  <Trash2 className="relative w-5 h-5 text-red-500" />
+                                  <Trash2 className="relative w-4 h-4 text-red-500" />
                                 </button>
                               </div>
 

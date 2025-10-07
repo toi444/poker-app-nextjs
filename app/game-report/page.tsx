@@ -342,7 +342,7 @@ export default function GameReportPage() {
                 <div className={`absolute inset-0 ${totalProfit >= 0 ? 'bg-green-600' : 'bg-red-600'} rounded-xl blur-lg opacity-30`} />
                 <div className="relative bg-black/40 backdrop-blur-sm rounded-xl p-4 border-2 border-purple-500/30">
                   <div className="flex items-center justify-between mb-2">
-                    <Trophy className="w-5 h-5 text-purple-400 drop-shadow-glow" />
+                    <Trophy className="w-4 h-4 text-purple-400 drop-shadow-glow" />
                     {totalProfit >= 0 ? (
                       <ArrowUp className="w-4 h-4 text-green-400" />
                     ) : (
@@ -360,7 +360,7 @@ export default function GameReportPage() {
               <div className="relative group">
                 <div className="absolute inset-0 bg-cyan-600 rounded-xl blur-lg opacity-30" />
                 <div className="relative bg-black/40 backdrop-blur-sm rounded-xl p-4 border-2 border-cyan-500/30">
-                  <Target className="w-5 h-5 text-cyan-400 drop-shadow-glow mb-2" />
+                  <Target className="w-4 h-4 text-cyan-400 drop-shadow-glow mb-2" />
                   <p className="text-xs font-bold text-gray-400 mb-1 font-mono">勝率</p>
                   <p className="text-2xl font-black text-white font-mono drop-shadow-glow">{winRate}%</p>
                   <div className="mt-2 bg-black/40 rounded-full h-1.5 overflow-hidden border border-cyan-500/30">
@@ -377,7 +377,7 @@ export default function GameReportPage() {
                 <div className={`absolute inset-0 ${hourlyRate >= 0 ? 'bg-green-600' : 'bg-red-600'} rounded-xl blur-lg opacity-30`} />
                 <div className="relative bg-black/40 backdrop-blur-sm rounded-xl p-4 border-2 border-purple-500/30">
                   <div className="flex items-center justify-between mb-2">
-                    <Timer className="w-5 h-5 text-purple-400 drop-shadow-glow" />
+                    <Timer className="w-4 h-4 text-purple-400 drop-shadow-glow" />
                     <span className="text-xs font-bold text-gray-500 font-mono">{totalPlayHours.toFixed(1)}h</span>
                   </div>
                   <p className="text-xs font-bold text-gray-400 mb-1 font-mono">時給</p>
@@ -392,7 +392,7 @@ export default function GameReportPage() {
                 <div className="absolute inset-0 bg-gradient-to-r from-yellow-600 to-amber-600 rounded-xl blur-lg opacity-50 animate-pulse" />
                 <div className="relative bg-black/40 backdrop-blur-sm rounded-xl p-4 border-2 border-yellow-500/30">
                   <div className="flex items-center justify-between mb-2">
-                    <Sparkles className="w-5 h-5 text-yellow-400 drop-shadow-glow" />
+                    <Sparkles className="w-4 h-4 text-yellow-400 drop-shadow-glow" />
                     <Zap className="w-4 h-4 text-yellow-400 animate-pulse drop-shadow-glow" />
                   </div>
                   <p className="text-xs font-bold text-gray-400 mb-1 font-mono">JP積立</p>
@@ -427,7 +427,7 @@ export default function GameReportPage() {
                   <div className="relative flex-shrink-0">
                     <div className="absolute inset-0 bg-yellow-600 blur-lg opacity-50" />
                     <div className="relative w-10 h-10 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-xl flex items-center justify-center border-2 border-yellow-400">
-                      <Zap className="w-5 h-5 text-white drop-shadow-glow" />
+                      <Zap className="w-4 h-4 text-white drop-shadow-glow" />
                     </div>
                   </div>
                   <div className="flex-1">
@@ -442,7 +442,7 @@ export default function GameReportPage() {
 
             {/* 日付 */}
             <div className="mb-4">
-              <label className="block text-xs font-bold text-gray-400 mb-2 font-mono flex items-center gap-2">
+              <label className="block text-xs font-bold text-gray-400 mb-2 font-mono flex items-center gap-1.5">
                 <Calendar className="w-4 h-4 text-cyan-500" />
                 日付
               </label>
@@ -450,14 +450,14 @@ export default function GameReportPage() {
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-black/40 border-2 border-cyan-500/30 text-white focus:border-cyan-500 focus:outline-none transition-all backdrop-blur-sm font-mono"
+                className="w-full px-3 py-2.5 rounded-xl bg-black/40 border-2 border-cyan-500/30 text-white text-sm focus:border-cyan-500 focus:outline-none transition-all backdrop-blur-sm font-mono"
               />
             </div>
 
             {/* 時間 */}
-            <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="grid grid-cols-2 gap-1.5 mb-4">
               <div>
-                <label className="block text-xs font-bold text-gray-400 mb-2 font-mono flex items-center gap-2">
+                <label className="block text-xs font-bold text-gray-400 mb-2 font-mono flex items-center gap-1.5">
                   <Clock className="w-4 h-4 text-cyan-500" />
                   開始
                 </label>
@@ -465,11 +465,11 @@ export default function GameReportPage() {
                   type="time"
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-black/40 border-2 border-cyan-500/30 text-white focus:border-cyan-500 focus:outline-none transition-all backdrop-blur-sm font-mono"
+                  className="w-full px-3 py-2.5 rounded-xl bg-black/40 border-2 border-cyan-500/30 text-white text-sm focus:border-cyan-500 focus:outline-none transition-all backdrop-blur-sm font-mono"
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-400 mb-2 font-mono flex items-center gap-2">
+                <label className="block text-xs font-bold text-gray-400 mb-2 font-mono flex items-center gap-1.5">
                   <Clock className="w-4 h-4 text-cyan-500" />
                   終了
                 </label>
@@ -477,7 +477,7 @@ export default function GameReportPage() {
                   type="time"
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-black/40 border-2 border-cyan-500/30 text-white focus:border-cyan-500 focus:outline-none transition-all backdrop-blur-sm font-mono"
+                  className="w-full px-3 py-2.5 rounded-xl bg-black/40 border-2 border-cyan-500/30 text-white text-sm focus:border-cyan-500 focus:outline-none transition-all backdrop-blur-sm font-mono"
                 />
               </div>
             </div>
@@ -487,12 +487,12 @@ export default function GameReportPage() {
               <div className="absolute inset-0 bg-cyan-600 blur-lg opacity-50" />
               <div className="relative bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl p-4 text-center border-2 border-cyan-400/50 shadow-lg">
                 <div className="flex items-center justify-center gap-3">
-                  <Timer className="w-5 h-5 text-white drop-shadow-glow" />
+                  <Timer className="w-4 h-4 text-white drop-shadow-glow" />
                   <span className="font-bold text-white/80 font-mono">プレイ時間:</span>
                   <span className="text-2xl font-black text-white drop-shadow-glow font-mono">{playHours}h</span>
                 </div>
                 {playHours > 8 && (
-                  <div className="mt-2 flex items-center justify-center gap-2 text-sm">
+                  <div className="mt-2 flex items-center justify-center gap-1.5 text-sm">
                     <AlertCircle className="w-4 h-4 text-orange-300 drop-shadow-glow" />
                     <span className="font-semibold text-orange-300 font-mono">長時間プレイです。休憩を忘れずに！</span>
                   </div>
@@ -502,7 +502,7 @@ export default function GameReportPage() {
 
             {/* バイイン */}
             <div className="mb-4">
-              <label className="block text-xs font-bold text-gray-400 mb-2 font-mono flex items-center gap-2">
+              <label className="block text-xs font-bold text-gray-400 mb-2 font-mono flex items-center gap-1.5">
                 <DollarSign className="w-4 h-4 text-purple-500" />
                 バイイン (P)
               </label>
@@ -515,25 +515,25 @@ export default function GameReportPage() {
                   const value = e.target.value
                   setBuyIn(value === '' ? 0 : Math.max(0, Number(value)))
                 }}
-                className="w-full px-4 py-3 border-2 border-purple-500/30 rounded-xl text-center font-black text-white text-xl bg-black/40 focus:outline-none focus:border-purple-500 transition-all backdrop-blur-sm font-mono"
+                className="w-full px-3 py-2.5 border-2 border-purple-500/30 rounded-xl text-center font-black text-white text-lg bg-black/40 focus:outline-none focus:border-purple-500 transition-all backdrop-blur-sm font-mono"
                 placeholder="20000"
               />
             </div>
             
             {/* 最終チップ */}
             <div className="mb-4">
-              <label className="block text-xs font-bold text-gray-400 mb-2 font-mono flex items-center gap-2">
+              <label className="block text-xs font-bold text-gray-400 mb-2 font-mono flex items-center gap-1.5">
                 <Coins className="w-4 h-4 text-purple-500" />
                 最終チップ (P)
               </label>
-              <div className="flex gap-2">
+              <div className="flex gap-1.5">
                 <button
                   type="button"
                   onClick={() => setFinalChips(Math.max(0, finalChips - 1000))}
-                  className="relative group px-4 py-3 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-xl font-black hover:shadow-lg hover:shadow-red-500/50 transition-all active:scale-95 border-2 border-red-400/50"
+                  className="relative group px-2 py-2.5 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-xl font-black hover:shadow-lg hover:shadow-red-500/50 transition-all active:scale-95 border-2 border-red-400/50 flex-shrink-0"
                 >
                   <div className="absolute inset-0 bg-red-600 blur-lg opacity-0 group-hover:opacity-50 rounded-xl transition-opacity" />
-                  <Minus className="relative w-5 h-5 drop-shadow-glow" />
+                  <Minus className="relative w-4 h-4 drop-shadow-glow" />
                 </button>
                 <input
                   type="number"
@@ -544,16 +544,16 @@ export default function GameReportPage() {
                     const value = e.target.value
                     setFinalChips(value === '' ? 0 : Math.max(0, Number(value)))
                   }}
-                  className="flex-1 px-4 py-3 border-2 border-purple-500/30 rounded-xl text-center font-black text-white text-xl bg-black/40 focus:outline-none focus:border-purple-500 transition-all backdrop-blur-sm font-mono"
+                  className="flex-1 min-w-0 px-2 py-2.5 border-2 border-purple-500/30 rounded-xl text-center font-black text-white text-lg bg-black/40 focus:outline-none focus:border-purple-500 transition-all backdrop-blur-sm font-mono"
                   placeholder="23456"
                 />
                 <button
                   type="button"
                   onClick={() => setFinalChips(finalChips + 1000)}
-                  className="relative group px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-black hover:shadow-lg hover:shadow-green-500/50 transition-all active:scale-95 border-2 border-green-400/50"
+                  className="relative group px-2 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-black hover:shadow-lg hover:shadow-green-500/50 transition-all active:scale-95 border-2 border-green-400/50 flex-shrink-0"
                 >
                   <div className="absolute inset-0 bg-green-600 blur-lg opacity-0 group-hover:opacity-50 rounded-xl transition-opacity" />
-                  <Plus className="relative w-5 h-5 drop-shadow-glow" />
+                  <Plus className="relative w-4 h-4 drop-shadow-glow" />
                 </button>
               </div>
             </div>
@@ -573,7 +573,7 @@ export default function GameReportPage() {
                       <div className="relative group">
                         <div className="absolute inset-0 bg-gradient-to-r from-yellow-600 to-amber-600 rounded-lg blur-lg opacity-50" />
                         <div className="relative flex justify-between items-center bg-gradient-to-r from-yellow-600/30 to-amber-600/30 px-3 py-2 rounded-lg border border-yellow-500/30">
-                          <span className="text-sm font-bold text-yellow-300 flex items-center gap-2 font-mono">
+                          <span className="text-sm font-bold text-yellow-300 flex items-center gap-1.5 font-mono">
                             <Zap className="w-4 h-4 drop-shadow-glow" />
                             JP自動積立
                           </span>
@@ -595,19 +595,19 @@ export default function GameReportPage() {
                     <div className="relative pt-3 border-t border-purple-500/30">
                       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-purple-500 to-transparent" />
                       <div className="flex justify-between items-center">
-                        <span className="font-black text-white font-mono flex items-center gap-2">
+                        <span className="font-black text-white font-mono flex items-center gap-1.5">
                           {profit >= 0 ? (
-                            <Trophy className="w-5 h-5 text-green-400 drop-shadow-glow" />
+                            <Trophy className="w-4 h-4 text-green-400 drop-shadow-glow" />
                           ) : (
-                            <AlertCircle className="w-5 h-5 text-red-400 drop-shadow-glow" />
+                            <AlertCircle className="w-4 h-4 text-red-400 drop-shadow-glow" />
                           )}
                           収支
                         </span>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5">
                           {profit >= 0 ? (
-                            <ArrowUp className="w-5 h-5 text-green-400" />
+                            <ArrowUp className="w-4 h-4 text-green-400" />
                           ) : (
-                            <ArrowDown className="w-5 h-5 text-red-400" />
+                            <ArrowDown className="w-4 h-4 text-red-400" />
                           )}
                           <div className="relative">
                             <div className={`absolute inset-0 ${profit >= 0 ? 'bg-green-600' : 'bg-red-600'} blur-lg opacity-50`} />
@@ -641,7 +641,7 @@ export default function GameReportPage() {
                   type="checkbox"
                   checked={confirmSave}
                   onChange={(e) => setConfirmSave(e.target.checked)}
-                  className="mr-3 w-5 h-5 text-purple-600 border-gray-600 rounded focus:ring-purple-600 bg-black/40"
+                  className="mr-3 w-4 h-4 text-purple-600 border-gray-600 rounded focus:ring-purple-600 bg-black/40"
                 />
                 <div className="flex-1">
                   <span className="text-sm font-bold text-white font-mono">
@@ -666,7 +666,7 @@ export default function GameReportPage() {
               <button
                 onClick={handleSingleSubmit}
                 disabled={!confirmSave || saving || buyIn < 0}
-                className={`relative w-full py-4 rounded-xl font-black transition-all flex items-center justify-center gap-2 border-2 ${
+                className={`relative w-full py-4 rounded-xl font-black transition-all flex items-center justify-center gap-1.5 border-2 ${
                   confirmSave && !saving && buyIn >= 0
                     ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-400 shadow-2xl hover:scale-105 active:scale-95'
                     : 'bg-gray-800 text-gray-600 border-gray-700 cursor-not-allowed'
@@ -674,12 +674,12 @@ export default function GameReportPage() {
               >
                 {saving ? (
                   <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     <span className="font-mono">保存中...</span>
                   </>
                 ) : (
                   <>
-                    <Save className="w-5 h-5 drop-shadow-glow" />
+                    <Save className="w-4 h-4 drop-shadow-glow" />
                     <span className="drop-shadow-glow font-mono">記録を保存</span>
                     {jpContribution > 0 && (
                       <span className="flex items-center gap-1 px-2 py-0.5 bg-white/20 rounded-full text-sm font-mono">
@@ -699,8 +699,8 @@ export default function GameReportPage() {
           <div className="absolute inset-0 bg-gradient-to-r from-pink-600 to-purple-600 rounded-2xl blur-xl opacity-50" />
           <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl overflow-hidden border-2 border-pink-500/30 shadow-2xl">
             <div className="p-6 border-b border-pink-500/20">
-              <h2 className="text-lg font-black text-white flex items-center gap-2">
-                <Clock className="w-5 h-5 text-pink-500 drop-shadow-glow" />
+              <h2 className="text-lg font-black text-white flex items-center gap-1.5">
+                <Clock className="w-4 h-4 text-pink-500 drop-shadow-glow" />
                 最近の記録
               </h2>
             </div>
@@ -794,7 +794,7 @@ export default function GameReportPage() {
                           className="relative group ml-4 p-2.5 hover:bg-red-600/20 rounded-xl transition-all active:scale-95 border-2 border-red-500/20 hover:border-red-500/50"
                         >
                           <div className="absolute inset-0 bg-red-600 blur-lg opacity-0 group-hover:opacity-50 rounded-xl transition-opacity" />
-                          <Trash2 className="relative w-5 h-5 text-red-500" />
+                          <Trash2 className="relative w-4 h-4 text-red-500" />
                         </button>
                       </div>
                     </div>

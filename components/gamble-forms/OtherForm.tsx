@@ -143,10 +143,9 @@ export default function OtherForm({ onSuccess, onCancel }: OtherFormProps) {
                 </label>
                 <input
                   type="date"
-                  required
                   value={playedDate}
                   onChange={(e) => setPlayedDate(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-white/10 bg-black/40 text-white focus:border-gray-500 focus:outline-none transition-all backdrop-blur-sm"
+                  className="w-full px-3 py-3 rounded-xl text-sm ..."
                 />
               </div>
 
@@ -203,7 +202,7 @@ export default function OtherForm({ onSuccess, onCancel }: OtherFormProps) {
                 </label>
                 <input
                   type="number"
-                  step="1000"
+                  step="1"
                   min="0"
                   required
                   value={investment || ''}
@@ -219,7 +218,7 @@ export default function OtherForm({ onSuccess, onCancel }: OtherFormProps) {
                 </label>
                 <input
                   type="number"
-                  step="1000"
+                  step="1"
                   min="0"
                   required
                   value={payout || ''}

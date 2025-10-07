@@ -30,7 +30,9 @@ interface RecordItem {
 export default function AllGamblePage() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
-  const [period, setPeriod] = useState<'today' | 'week' | 'month' | 'total'>('month')
+  const [period, setPeriod] = useState<'today' | 'week' | 'month' | 'total' | 'custom'>('month')
+  const [customStartDate, setCustomStartDate] = useState('')
+  const [customEndDate, setCustomEndDate] = useState('')
   const [periodStats, setPeriodStats] = useState<PeriodStats>({
     profit: 0, count: 0, winRate: 0, avgProfit: 0
   })
@@ -47,7 +49,7 @@ export default function AllGamblePage() {
       fetchStats()
       fetchBudget()
     }
-  }, [user, period])
+  }, [user, period, customStartDate, customEndDate])
 
   const checkUser = async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -190,6 +192,14 @@ export default function AllGamblePage() {
       case 'total':
         startDate = new Date(2000, 0, 1)
         break
+      case 'custom':
+        if (customStartDate && customEndDate) {
+          startDate = new Date(customStartDate)
+          endDate = new Date(customEndDate)
+        } else {
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1)
+        }
+        break
       default:
         startDate = now
     }
@@ -213,6 +223,14 @@ export default function AllGamblePage() {
       case 'week': return '今週'
       case 'month': return '今月'
       case 'total': return '累計'
+      case 'custom': {
+        if (customStartDate && customEndDate) {
+          const start = new Date(customStartDate)
+          const end = new Date(customEndDate)
+          return `${start.getMonth() + 1}/${start.getDate()}～${end.getMonth() + 1}/${end.getDate()}`
+        }
+        return 'カスタム'
+      }
     }
   }
 
@@ -238,13 +256,28 @@ export default function AllGamblePage() {
 
   const shouldShowBudget = () => {
     if (!budget) return false
-    if (period === 'total') return false
+    if (period === 'total' || period === 'custom') return false
     
     const { startDate, endDate } = getPeriodDates()
     const budgetStart = budget.period_start
     const budgetEnd = budget.period_end
     
     return startDate <= budgetEnd && endDate >= budgetStart
+  }
+
+  const handleCustomDateChange = (type: 'start' | 'end', value: string) => {
+    if (type === 'start') {
+      setCustomStartDate(value)
+      if (customEndDate && value > customEndDate) {
+        setCustomEndDate(value)
+      }
+    } else {
+      if (customStartDate && value < customStartDate) {
+        alert('終了日は開始日より後の日付を選択してください')
+        return
+      }
+      setCustomEndDate(value)
+    }
   }
 
   if (loading) {
@@ -406,12 +439,12 @@ export default function AllGamblePage() {
         <div className="relative mb-6">
           <div className="absolute inset-0 bg-purple-600 blur-xl opacity-50" />
           <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-2 border-2 border-purple-500/50">
-            <div className="flex gap-2">
-              {(['today', 'week', 'month', 'total'] as const).map((p) => (
+            <div className="flex gap-2 mb-2">
+              {(['today', 'week', 'month', 'total', 'custom'] as const).map((p) => (
                 <button
                   key={p}
                   onClick={() => setPeriod(p)}
-                  className={`flex-1 py-3 rounded-xl font-black text-sm transition-all ${
+                  className={`flex-1 py-3 rounded-xl font-black text-xs transition-all ${
                     period === p
                       ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-lg scale-105'
                       : 'text-purple-200 hover:bg-white/10'
@@ -421,9 +454,45 @@ export default function AllGamblePage() {
                   {p === 'week' && '今週'}
                   {p === 'month' && '今月'}
                   {p === 'total' && '累計'}
+                  {p === 'custom' && 'カスタム'}
                 </button>
               ))}
             </div>
+
+            {period === 'custom' && (
+              <div className="mt-3 space-y-3 bg-black/40 rounded-xl p-4">
+                <div>
+                  <label className="block text-xs font-black text-purple-200 mb-2">
+                    開始日
+                  </label>
+                  <input
+                    type="date"
+                    value={customStartDate}
+                    onChange={(e) => handleCustomDateChange('start', e.target.value)}
+                    max={new Date().toISOString().split('T')[0]}
+                    className="w-full px-3 py-2 rounded-lg bg-white/10 border-2 border-purple-400/30 focus:border-purple-400 text-white text-sm focus:outline-none transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-purple-200 mb-2">
+                    終了日
+                  </label>
+                  <input
+                    type="date"
+                    value={customEndDate}
+                    onChange={(e) => handleCustomDateChange('end', e.target.value)}
+                    min={customStartDate}
+                    max={new Date().toISOString().split('T')[0]}
+                    className="w-full px-3 py-2 rounded-lg bg-white/10 border-2 border-purple-400/30 focus:border-purple-400 text-white text-sm focus:outline-none transition-all"
+                  />
+                </div>
+                {customStartDate && customEndDate && (
+                  <p className="text-xs text-purple-200 text-center font-semibold">
+                    {getPeriodLabel()}の期間を集計中
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

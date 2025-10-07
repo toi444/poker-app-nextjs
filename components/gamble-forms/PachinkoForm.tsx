@@ -129,8 +129,7 @@ export default function PachinkoForm({ onSuccess, onCancel }: PachinkoFormProps)
                 type="date"
                 value={playedDate}
                 onChange={(e) => setPlayedDate(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 focus:border-pink-400 text-white focus:outline-none transition-all"
-                style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 600 }}
+                className="w-full px-3 py-3 rounded-xl text-sm ..."
               />
             </div>
 
@@ -191,7 +190,7 @@ export default function PachinkoForm({ onSuccess, onCancel }: PachinkoFormProps)
                 type="text"
                 value={machineName}
                 onChange={(e) => setMachineName(e.target.value)}
-                placeholder="P大海物語5"
+                placeholder="e牙狼12黄金騎士極限"
                 className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 focus:border-rose-400 text-white placeholder-white/50 focus:outline-none transition-all"
                 style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 600 }}
               />
@@ -241,14 +240,14 @@ export default function PachinkoForm({ onSuccess, onCancel }: PachinkoFormProps)
                   min="0"
                   value={firstHitCount || ''}
                   onChange={(e) => setFirstHitCount(Number(e.target.value) || 0)}
-                  placeholder="3"
+                  placeholder="2"
                   className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 focus:border-orange-400 text-white placeholder-white/50 focus:outline-none transition-all text-lg font-black"
                   style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}
                 />
               </div>
               <div>
                 <label className="block text-sm font-black text-white mb-2" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>
-                  確変回数
+                  大当たり回数
                 </label>
                 <input
                   type="number"
@@ -256,7 +255,7 @@ export default function PachinkoForm({ onSuccess, onCancel }: PachinkoFormProps)
                   min="0"
                   value={probabilityChange || ''}
                   onChange={(e) => setProbabilityChange(Number(e.target.value) || 0)}
-                  placeholder="2"
+                  placeholder="3"
                   className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 focus:border-blue-400 text-white placeholder-white/50 focus:outline-none transition-all text-lg font-black"
                   style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}
                 />
@@ -282,7 +281,7 @@ export default function PachinkoForm({ onSuccess, onCancel }: PachinkoFormProps)
               </label>
               <input
                 type="number"
-                step="1000"
+                step="1"
                 min="0"
                 value={investment || ''}
                 onChange={(e) => setInvestment(Number(e.target.value) || 0)}
@@ -298,7 +297,7 @@ export default function PachinkoForm({ onSuccess, onCancel }: PachinkoFormProps)
               </label>
               <input
                 type="number"
-                step="1000"
+                step="1"
                 min="0"
                 value={payout || ''}
                 onChange={(e) => setPayout(Number(e.target.value) || 0)}

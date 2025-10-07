@@ -262,7 +262,7 @@ export default function SlotForm({ onSuccess, onCancel }: SlotFormProps) {
                 </label>
                 <input
                   type="number"
-                  step="1000"
+                  step="1"
                   min="0"
                   required
                   value={investment || ''}
@@ -278,7 +278,7 @@ export default function SlotForm({ onSuccess, onCancel }: SlotFormProps) {
                 </label>
                 <input
                   type="number"
-                  step="1000"
+                  step="1"
                   min="0"
                   required
                   value={payout || ''}

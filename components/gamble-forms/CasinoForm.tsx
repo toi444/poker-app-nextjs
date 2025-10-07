@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Save, X, Plus, Trash2, MapPin, Sparkles, TrendingUp, DollarSign } from 'lucide-react'
+import { Save, X, Plus, Trash2, MapPin, Sparkles, TrendingUp, DollarSign, Clock } from 'lucide-react'
 
 interface CasinoFormProps {
   onSuccess: () => void
@@ -22,6 +22,8 @@ export default function CasinoForm({ onSuccess, onCancel }: CasinoFormProps) {
   const [casinoName, setCasinoName] = useState('')
   const [country, setCountry] = useState('')
   const [playedDate, setPlayedDate] = useState(new Date().toISOString().split('T')[0])
+  const [startTime, setStartTime] = useState('')
+  const [endTime, setEndTime] = useState('')
   
   const [games, setGames] = useState<CasinoGame[]>([
     { game_type: 'baccarat', buy_in: 0, cash_out: 0, note: '' }
@@ -29,6 +31,15 @@ export default function CasinoForm({ onSuccess, onCancel }: CasinoFormProps) {
   
   const [feeling, setFeeling] = useState<'excellent' | 'good' | 'normal' | 'bad' | 'terrible'>('normal')
   const [memo, setMemo] = useState('')
+
+  const calculateDuration = () => {
+    if (!startTime || !endTime) return null
+    const start = new Date(`2000-01-01T${startTime}`)
+    const end = new Date(`2000-01-01T${endTime}`)
+    let diff = (end.getTime() - start.getTime()) / (1000 * 60)
+    if (diff < 0) diff += 24 * 60
+    return Math.round(diff)
+  }
 
   const addGame = () => {
     setGames([...games, { game_type: 'baccarat', buy_in: 0, cash_out: 0, note: '' }])
@@ -90,6 +101,7 @@ export default function CasinoForm({ onSuccess, onCancel }: CasinoFormProps) {
       const totalProfit = calculateTotalProfit()
       const totalBuyIn = calculateTotalBuyIn()
       const totalCashOut = calculateTotalCashOut()
+      const duration = calculateDuration()
 
       const casinoDetails = {
         casino_name: casinoName,
@@ -110,9 +122,9 @@ export default function CasinoForm({ onSuccess, onCancel }: CasinoFormProps) {
           category: 'casino',
           location: casinoName,
           played_date: playedDate,
-          start_time: null,
-          end_time: null,
-          play_duration: null,
+          start_time: startTime || null,
+          end_time: endTime || null,
+          play_duration: duration,
           buy_in: totalBuyIn,
           cash_out: totalCashOut,
           profit: totalProfit,
@@ -183,6 +195,46 @@ export default function CasinoForm({ onSuccess, onCancel }: CasinoFormProps) {
                 style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 600 }}
               />
             </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-black text-white mb-2" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>
+                  <Clock className="w-4 h-4 inline mr-1" />
+                  開始時刻
+                </label>
+                <input
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 focus:border-yellow-400 text-white focus:outline-none transition-all"
+                  style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 600 }}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-black text-white mb-2" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>
+                  <Clock className="w-4 h-4 inline mr-1" />
+                  終了時刻
+                </label>
+                <input
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 focus:border-yellow-400 text-white focus:outline-none transition-all"
+                  style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 600 }}
+                />
+              </div>
+            </div>
+
+            {calculateDuration() && (
+              <div className="bg-gradient-to-r from-yellow-600 to-amber-600 rounded-xl p-4 shadow-lg">
+                <p className="text-white text-sm mb-1" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 600 }}>
+                  プレイ時間
+                </p>
+                <p className="text-white text-2xl font-black" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>
+                  {calculateDuration()}分
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -247,7 +299,7 @@ export default function CasinoForm({ onSuccess, onCancel }: CasinoFormProps) {
                         </label>
                         <input
                           type="number"
-                          step="1000"
+                          step="1"
                           min="0"
                           value={game.buy_in || ''}
                           onChange={(e) => updateGame(index, 'buy_in', Number(e.target.value) || 0)}
@@ -262,7 +314,7 @@ export default function CasinoForm({ onSuccess, onCancel }: CasinoFormProps) {
                         </label>
                         <input
                           type="number"
-                          step="1000"
+                          step="1"
                           min="0"
                           value={game.cash_out || ''}
                           onChange={(e) => updateGame(index, 'cash_out', Number(e.target.value) || 0)}

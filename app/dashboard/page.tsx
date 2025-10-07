@@ -11,6 +11,14 @@ import {
 
 type Section = 'game-report' | 'data' | 'all-gamble' | 'lesson' | 'pbank'
 
+interface LoanUser {
+  userId: string
+  username: string
+  avatarUrl: string | null
+  equippedBadge: any
+  amount: number
+}
+
 export default function DashboardV2() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
@@ -20,8 +28,11 @@ export default function DashboardV2() {
   const [allGamble30Days, setAllGamble30Days] = useState(0)
   const [currentJackpot, setCurrentJackpot] = useState(0)
   const [weeklyRanking, setWeeklyRanking] = useState<any[]>([])
+  const [allGambleRanking, setAllGambleRanking] = useState<any[]>([])
   const [roastComment, setRoastComment] = useState('')
   const [pbankData, setPbankData] = useState({ lent: 0, borrowed: 0, interest: 0, nextInterest: 0 })
+  const [lendingUsers, setLendingUsers] = useState<LoanUser[]>([])
+  const [borrowingUsers, setBorrowingUsers] = useState<LoanUser[]>([])
 
   useEffect(() => {
     checkUser()
@@ -58,6 +69,9 @@ export default function DashboardV2() {
       })
       
       await loadAllGamble30Days(authUser.id)
+
+      await loadDataSectionOnInit()
+
       setLoading(false)
     } catch (error) {
       console.error('User check error:', error)
@@ -96,6 +110,102 @@ export default function DashboardV2() {
     const totalProfit = allData.reduce((sum, r) => sum + r.profit, 0)
     setAllGamble30Days(totalProfit)
   }
+  const loadDataSectionOnInit = async () => {
+    const sevenDaysAgo = new Date()
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+    
+    console.log('🔍 7日前の日付:', sevenDaysAgo.toISOString().split('T')[0])
+
+    // gamble_recordsからデータ取得（profilesとの結合なし）
+    const { data: allGambleData, error: gambleError } = await supabase
+      .from('gamble_records')
+      .select('user_id, profit, played_date')
+      .gte('played_date', sevenDaysAgo.toISOString().split('T')[0])
+
+    if (gambleError) {
+      console.error('❌ gamble_recordsエラー:', gambleError)
+    }
+
+    console.log('📊 gamble_recordsから取得:', allGambleData)
+    console.log('📊 gamble_records件数:', allGambleData?.length || 0)
+
+    // game_sessionsからデータ取得
+    const { data: gameData, error: gameError } = await supabase
+      .from('game_sessions')
+      .select(`
+        user_id,
+        profit,
+        played_at,
+        profiles(username, avatar_url, equipped_badge(*))
+      `)
+      .gte('played_at', sevenDaysAgo.toISOString())
+
+    if (gameError) {
+      console.error('❌ game_sessionsエラー:', gameError)
+    }
+
+    console.log('🎮 game_sessionsから取得:', gameData)
+
+    // game_sessionsのデータを変換
+    const prettyCureData = gameData?.map(g => {
+      const playedDate = new Date(g.played_at)
+      const jstDate = new Date(playedDate.getTime() + 9 * 60 * 60 * 1000)
+      const dateStr = jstDate.toISOString().split('T')[0]
+      return {
+        user_id: g.user_id,
+        profit: g.profit,
+        played_date: dateStr,
+        profiles: g.profiles
+      }
+    }).filter(g => g.played_date >= sevenDaysAgo.toISOString().split('T')[0]) || []
+
+    // 全データを結合
+    const combinedData = [...(allGambleData || []), ...prettyCureData]
+    
+    console.log('🔥 結合後の全データ件数:', combinedData.length)
+
+    if (combinedData.length > 0) {
+      // ユニークなuser_idを取得
+      const userIds = [...new Set(combinedData.map(r => r.user_id))]
+      
+      // profilesデータを一括取得
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url, equipped_badge(*)')
+        .in('id', userIds)
+
+      // user_id → profilesのマップを作成
+      const profilesMap = new Map()
+      profilesData?.forEach(profile => {
+        profilesMap.set(profile.id, profile)
+      })
+
+      // 統計を計算
+      const allGambleStats = new Map()
+      combinedData.forEach((record: any) => {
+        const profile = profilesMap.get(record.user_id)
+        const username = profile?.username || 'Unknown'
+        const avatarUrl = profile?.avatar_url || null
+        const equippedBadge = profile?.equipped_badge || null
+        
+        const current = allGambleStats.get(record.user_id) || {
+          profit: 0,
+          username,
+          avatarUrl,
+          equippedBadge
+        }
+        current.profit += record.profit || 0
+        allGambleStats.set(record.user_id, current)
+      })
+
+      const allGambleRankings = Array.from(allGambleStats.values())
+        .sort((a, b) => b.profit - a.profit)
+        .slice(0, 3)
+
+      console.log('🏆 最終ランキング:', allGambleRankings)
+      setAllGambleRanking(allGambleRankings)
+    }
+  }
 
   const loadDataSection = async () => {
     const { data: jpData } = await supabase
@@ -107,6 +217,7 @@ export default function DashboardV2() {
     const sevenDaysAgo = new Date()
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
 
+    // ホームゲームポーカーのランキング
     const { data: rankData } = await supabase
       .from('game_sessions')
       .select(`
@@ -180,8 +291,6 @@ export default function DashboardV2() {
           "{{player}}お前、最近調子ええやんけ！"
         ]
 
-        // 5%の確率で上位3名を褒める（プラスの場合のみ）
-        // 95%の確率で下位3名を罵る（マイナスの場合のみ）
         const shouldPraise = Math.random() < 0.05
 
         if (shouldPraise && topThree.length > 0) {
@@ -195,6 +304,73 @@ export default function DashboardV2() {
         }
       }
     }
+
+    // オールギャンブルのランキング（gamble_recordsとgame_sessionsを結合）
+    const { data: allGambleDataForRanking } = await supabase
+      .from('gamble_records')
+      .select('user_id, profit, played_date')
+      .gte('played_date', sevenDaysAgo.toISOString().split('T')[0])
+
+    const { data: gameDataForRanking } = await supabase
+      .from('game_sessions')
+      .select(`
+        user_id,
+        profit,
+        played_at,
+        profiles(username, avatar_url, equipped_badge(*))
+      `)
+      .gte('played_at', sevenDaysAgo.toISOString())
+
+    const prettyCureDataForRanking = gameDataForRanking?.map(g => {
+      const playedDate = new Date(g.played_at)
+      const jstDate = new Date(playedDate.getTime() + 9 * 60 * 60 * 1000)
+      const dateStr = jstDate.toISOString().split('T')[0]
+      return {
+        user_id: g.user_id,
+        profit: g.profit,
+        played_date: dateStr,
+        profiles: g.profiles
+      }
+    }).filter(g => g.played_date >= sevenDaysAgo.toISOString().split('T')[0]) || []
+
+    const combinedDataForRanking = [...(allGambleDataForRanking || []), ...prettyCureDataForRanking]
+
+    if (combinedDataForRanking.length > 0) {
+      const userIdsForRanking = [...new Set(combinedDataForRanking.map((r: any) => r.user_id))]
+      
+      const { data: profilesDataForRanking } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url, equipped_badge(*)')
+        .in('id', userIdsForRanking)
+
+      const profilesMapForRanking = new Map()
+      profilesDataForRanking?.forEach((profile: any) => {
+        profilesMapForRanking.set(profile.id, profile)
+      })
+
+      const allGambleStats = new Map()
+      combinedDataForRanking.forEach((record: any) => {
+        const profile = profilesMapForRanking.get(record.user_id)
+        const username = profile?.username || 'Unknown'
+        const avatarUrl = profile?.avatar_url || null
+        const equippedBadge = profile?.equipped_badge || null
+        
+        const current = allGambleStats.get(record.user_id) || {
+          profit: 0,
+          username,
+          avatarUrl,
+          equippedBadge
+        }
+        current.profit += record.profit || 0
+        allGambleStats.set(record.user_id, current)
+      })
+
+      const allGambleRankings = Array.from(allGambleStats.values())
+        .sort((a, b) => b.profit - a.profit)
+        .slice(0, 3)
+
+      setAllGambleRanking(allGambleRankings)
+    }
   }
 
   const loadPBankData = async () => {
@@ -202,16 +378,22 @@ export default function DashboardV2() {
 
     const { data: loansData } = await supabase
       .from('loans')
-      .select('*')
+      .select(`
+        *,
+        lender:profiles!loans_lender_id_fkey(username, avatar_url, equipped_badge(*)),
+        borrower:profiles!loans_borrower_id_fkey(username, avatar_url, equipped_badge(*))
+      `)
       .or(`lender_id.eq.${user.id},borrower_id.eq.${user.id}`)
+      .eq('status', 'active')
+      .gt('remaining', 0)
 
     if (loansData) {
       const lent = loansData
-        .filter(l => l.lender_id === user.id && l.status === 'active')
+        .filter(l => l.lender_id === user.id)
         .reduce((sum, l) => sum + l.remaining, 0)
       
       const borrowed = loansData
-        .filter(l => l.borrower_id === user.id && l.status === 'active')
+        .filter(l => l.borrower_id === user.id)
         .reduce((sum, l) => sum + l.remaining, 0)
 
       const nextInterestLent = Math.floor(lent * 0.1)
@@ -232,6 +414,54 @@ export default function DashboardV2() {
         interest: earnedInterest - paidInterest,
         nextInterest: netNextInterest
       })
+
+      // 貸している人のリスト
+      const lendingMap = new Map<string, number>()
+      loansData
+        .filter(l => l.lender_id === user.id)
+        .forEach(l => {
+          const current = lendingMap.get(l.borrower_id) || 0
+          lendingMap.set(l.borrower_id, current + l.remaining)
+        })
+
+      const lendingList: LoanUser[] = []
+      for (const [userId, amount] of lendingMap.entries()) {
+        const loan = loansData.find(l => l.borrower_id === userId && l.lender_id === user.id)
+        if (loan && loan.borrower) {
+          lendingList.push({
+            userId,
+            username: loan.borrower.username || 'Unknown',
+            avatarUrl: loan.borrower.avatar_url || null,
+            equippedBadge: loan.borrower.equipped_badge || null,
+            amount
+          })
+        }
+      }
+      setLendingUsers(lendingList)
+
+      // 借りている人のリスト
+      const borrowingMap = new Map<string, number>()
+      loansData
+        .filter(l => l.borrower_id === user.id)
+        .forEach(l => {
+          const current = borrowingMap.get(l.lender_id) || 0
+          borrowingMap.set(l.lender_id, current + l.remaining)
+        })
+
+      const borrowingList: LoanUser[] = []
+      for (const [userId, amount] of borrowingMap.entries()) {
+        const loan = loansData.find(l => l.lender_id === userId && l.borrower_id === user.id)
+        if (loan && loan.lender) {
+          borrowingList.push({
+            userId,
+            username: loan.lender.username || 'Unknown',
+            avatarUrl: loan.lender.avatar_url || null,
+            equippedBadge: loan.lender.equipped_badge || null,
+            amount
+          })
+        }
+      }
+      setBorrowingUsers(borrowingList)
     }
   }
 
@@ -297,7 +527,6 @@ export default function DashboardV2() {
                     )}
                   </div>
                   
-                  {/* バッジアイコン */}
                   {user?.equipped_badge && (
                     <div className={`absolute -bottom-1 -right-1 w-4 h-4 ${
                       `bg-gradient-to-r ${user.equipped_badge.badge_gradient}`
@@ -441,17 +670,116 @@ export default function DashboardV2() {
               Data & Analytics
             </h2>
 
+            {/* オールギャンブルデータエリア */}
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-orange-600 to-red-600 blur-xl opacity-50" />
+              <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-2 border-orange-500/50">
+                <h3 className="font-bold text-white mb-4 flex items-center gap-2 text-lg">
+                  <Coins className="w-6 h-6 text-orange-400 drop-shadow-glow" />
+                  みんなのオールギャンブルデータ
+                  <span className="text-xs text-orange-300 ml-2">（直近7日間）</span>
+                </h3>
+
+                {allGambleRanking.length > 0 ? (
+                  <div className="space-y-3 mb-4">
+                    {allGambleRanking.map((rank, idx) => (
+                      <div key={idx} className="flex items-center gap-3 bg-gradient-to-r from-orange-950/40 to-red-950/40 rounded-xl p-4 border border-orange-500/30 backdrop-blur-sm">
+                        <div className="flex-shrink-0">
+                          {idx === 0 && (
+                            <div className="relative">
+                              <div className="absolute inset-0 bg-yellow-500 blur-lg animate-pulse" />
+                              <Crown className="relative w-8 h-8 text-yellow-400 drop-shadow-glow" />
+                            </div>
+                          )}
+                          {idx === 1 && (
+                            <div className="relative">
+                              <div className="absolute inset-0 bg-gray-400 blur-lg animate-pulse" />
+                              <Award className="relative w-8 h-8 text-gray-300 drop-shadow-glow" />
+                            </div>
+                          )}
+                          {idx === 2 && (
+                            <div className="relative">
+                              <div className="absolute inset-0 bg-orange-500 blur-lg animate-pulse" />
+                              <Trophy className="relative w-8 h-8 text-orange-400 drop-shadow-glow" />
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="relative flex-shrink-0">
+                          <div className={`w-12 h-12 rounded-full p-0.5 ${
+                            rank.equippedBadge 
+                              ? `bg-gradient-to-r ${rank.equippedBadge.badge_gradient}`
+                              : 'bg-gradient-to-r from-orange-500 to-red-500'
+                          }`}>
+                            {rank.avatarUrl ? (
+                              <img 
+                                src={rank.avatarUrl} 
+                                alt={rank.username}
+                                className="w-full h-full rounded-full object-cover bg-black"
+                              />
+                            ) : (
+                              <div className="w-full h-full rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
+                                <User className="w-6 h-6 text-white" />
+                              </div>
+                            )}
+                          </div>
+                          
+                          {rank.equippedBadge && (
+                            <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-lg bg-gradient-to-r ${rank.equippedBadge.badge_gradient}`}>
+                              {(() => {
+                                const iconMap: { [key: string]: any } = {
+                                  Trophy, Crown, Target, Zap, Award, Sparkles
+                                }
+                                const IconComponent = iconMap[rank.equippedBadge.icon] || Trophy
+                                return <IconComponent className="w-2.5 h-2.5 text-white" />
+                              })()}
+                            </div>
+                          )}
+                        </div>
+
+                        <p className="font-bold text-white text-lg flex-1 truncate">{rank.username}</p>
+
+                        <p className={`font-black text-xl ${rank.profit >= 0 ? 'text-green-400' : 'text-red-400'} drop-shadow-glow flex-shrink-0`}>
+                          {rank.profit >= 0 ? '+' : ''}{rank.profit.toLocaleString()}P
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-center text-gray-400 py-4 text-sm">データがありません</p>
+                )}
+
+                <button
+                  onClick={() => router.push('/all-gamble-community')}
+                  className="w-full mt-4 py-3 rounded-xl bg-gradient-to-r from-orange-600 to-red-600 text-white font-black hover:shadow-lg hover:scale-105 transition-all flex items-center justify-center gap-2"
+                >
+                  <Coins className="w-5 h-5" />
+                  みんなのオールギャンブルデータを見る
+                </button>
+              </div>
+            </div>
+
+            {/* 区切り */}
+            <div className="relative">
+              <div className="absolute inset-0 bg-purple-600 blur-xl opacity-30" />
+              <div className="relative bg-black/40 backdrop-blur-sm rounded-xl p-4 border-2 border-purple-500/30">
+                <p className="text-center text-purple-200 font-bold text-sm">
+                  📊 ここから下はホームゲーム限定データ
+                </p>
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <button
                 onClick={() => router.push('/community')}
                 className="relative group overflow-hidden rounded-2xl"
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-orange-600 to-red-600 animate-gradient" />
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-600 to-pink-600 animate-gradient" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                 <div className="relative p-6 text-white">
                   <Users className="w-12 h-12 mb-3 drop-shadow-glow animate-float" />
                   <p className="font-black text-lg drop-shadow-glow">みんなの記録</p>
-                  <p className="text-xs opacity-90 mt-1">Community</p>
+                  <p className="text-xs opacity-90 mt-1">ホームゲームポーカーのみ</p>
                 </div>
               </button>
 
@@ -459,12 +787,12 @@ export default function DashboardV2() {
                 onClick={() => router.push('/stats')}
                 className="relative group overflow-hidden rounded-2xl"
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-cyan-600 animate-gradient" />
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 to-purple-600 animate-gradient" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                 <div className="relative p-6 text-white">
                   <BarChart3 className="w-12 h-12 mb-3 drop-shadow-glow animate-float" />
                   <p className="font-black text-lg drop-shadow-glow">自分の記録</p>
-                  <p className="text-xs opacity-90 mt-1">Statistics</p>
+                  <p className="text-xs opacity-90 mt-1">ホームゲームポーカーのみ</p>
                 </div>
               </button>
             </div>
@@ -520,7 +848,6 @@ export default function DashboardV2() {
                   <div className="space-y-3">
                     {weeklyRanking.slice(0, 5).map((rank, idx) => (
                       <div key={idx} className="flex items-center gap-3 bg-white/5 rounded-xl p-4 border border-white/10 backdrop-blur-sm">
-                        {/* 順位アイコン */}
                         <div className="flex-shrink-0">
                           {idx === 0 && (
                             <div className="relative">
@@ -547,7 +874,6 @@ export default function DashboardV2() {
                           )}
                         </div>
 
-                        {/* アバター + バッジ */}
                         <div className="relative flex-shrink-0">
                           <div className={`w-12 h-12 rounded-full p-0.5 ${
                             rank.equippedBadge 
@@ -567,7 +893,6 @@ export default function DashboardV2() {
                             )}
                           </div>
                           
-                          {/* バッジアイコン */}
                           {rank.equippedBadge && (
                             <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-lg bg-gradient-to-r ${rank.equippedBadge.badge_gradient}`}>
                               {(() => {
@@ -581,10 +906,8 @@ export default function DashboardV2() {
                           )}
                         </div>
 
-                        {/* ユーザー名 */}
                         <p className="font-bold text-white text-lg flex-1 truncate">{rank.username}</p>
 
-                        {/* 収支 */}
                         <p className={`font-black text-xl ${rank.profit >= 0 ? 'text-green-400' : 'text-red-400'} drop-shadow-glow flex-shrink-0`}>
                           {rank.profit >= 0 ? '+' : ''}{rank.profit.toLocaleString()}P
                         </p>
@@ -599,8 +922,6 @@ export default function DashboardV2() {
             <div className="space-y-3">
               {[
                 { icon: BarChart3, title: 'トーナメントデータ', desc: 'Coming Soon' },
-                { icon: Users, title: 'みんなのAll-Gambleデータ', desc: 'Coming Soon（公開設定した記録を閲覧）' },
-                { icon: Trophy, title: '記念写真ギャラリー', desc: 'Coming Soon（大勝ち・珍演出をシェア）' }
               ].map((item, idx) => (
                 <div key={idx} className="bg-black/40 backdrop-blur-sm rounded-2xl p-4 border border-white/10 opacity-50">
                   <div className="flex items-center justify-between">
@@ -687,11 +1008,11 @@ export default function DashboardV2() {
                     <div className="relative">
                       <p className="absolute inset-0 text-4xl font-black text-red-500/20 blur-sm"
                         style={{ transform: 'translate(-2px, -2px)', animation: 'glitch-1 3s infinite' }}>
-                        あらゆるギャンブル、
+                        あらゆるギャンブル
                       </p>
                       <p className="absolute inset-0 text-4xl font-black text-blue-500/20 blur-sm"
                         style={{ transform: 'translate(2px, 2px)', animation: 'glitch-2 3s infinite' }}>
-                        あらゆるギャンブル、
+                        あらゆるギャンブル
                       </p>
                       <p className="relative text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-200 via-blue-200 to-cyan-200 leading-tight whitespace-nowrap"
                         style={{ 
@@ -700,7 +1021,7 @@ export default function DashboardV2() {
                           letterSpacing: '0.05em',
                           animation: 'neon-pulse 2s ease-in-out infinite'
                         }}>
-                        あらゆるギャンブル、
+                        あらゆるギャンブル
                       </p>
                     </div>
                     
@@ -865,7 +1186,6 @@ export default function DashboardV2() {
             </h2>
 
             <div className="grid grid-cols-2 gap-4">
-              {/* 1. ポーカーレッスン - そのまま */}
               <button
                 onClick={() => router.push('/lesson')}
                 className="relative group overflow-hidden rounded-2xl aspect-[3/4]"
@@ -882,7 +1202,6 @@ export default function DashboardV2() {
                 <div className="absolute inset-0 border-4 border-pink-400/50 rounded-2xl" />
               </button>
 
-              {/* 2. バカラレッスン - そのまま */}
               <button
                 onClick={() => router.push('/baccarat-lesson')}
                 className="relative group overflow-hidden rounded-2xl aspect-[3/4]"
@@ -899,7 +1218,6 @@ export default function DashboardV2() {
                 <div className="absolute inset-0 border-4 border-red-400/50 rounded-2xl" />
               </button>
 
-              {/* 3. 投資法シミュレーター - 新規追加！ */}
               <button
                 onClick={() => router.push('/betting-simulator')}
                 className="relative group overflow-hidden rounded-2xl aspect-[3/4]"
@@ -916,7 +1234,6 @@ export default function DashboardV2() {
                 <div className="absolute inset-0 border-4 border-orange-400/50 rounded-2xl" />
               </button>
 
-              {/* Coming Soon - 基本ルール */}
               <div className="relative overflow-hidden rounded-2xl aspect-[3/4] bg-black/40 backdrop-blur-sm border-2 border-white/10 opacity-50">
                 <div className="h-full flex flex-col items-center justify-center p-5 text-center">
                   <span className="text-6xl mb-6">📖</span>
@@ -928,7 +1245,6 @@ export default function DashboardV2() {
                 </div>
               </div>
 
-              {/* Coming Soon */}
               {[
                 { icon: '🎲', name: 'パチンコ' },
                 { icon: '🎰', name: 'スロット' },
@@ -978,7 +1294,6 @@ export default function DashboardV2() {
               P-BANK
             </h2>
 
-            {/* 筆文字風 */}
             <div className="text-center py-8 relative">
               <div className="absolute inset-0 bg-red-600 blur-2xl opacity-30 animate-pulse" />
               <p className="relative text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 drop-shadow-2xl" 
@@ -991,7 +1306,6 @@ export default function DashboardV2() {
               </p>
             </div>
 
-            {/* 4分割 */}
             <div className="grid grid-cols-2 gap-4 mb-8">
               <div className="relative group">
                 <div className="absolute inset-0 bg-green-600 blur-lg opacity-50" />
@@ -1034,7 +1348,6 @@ export default function DashboardV2() {
               </div>
             </div>
 
-            {/* P-BANKへ */}
             <div className="relative group">
               <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-green-600 rounded-3xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity animate-pulse" />
               <button
@@ -1057,6 +1370,116 @@ export default function DashboardV2() {
                 </div>
               </button>
             </div>
+
+            {/* 貸出中リスト */}
+            {lendingUsers.length > 0 && (
+              <div className="relative">
+                <div className="absolute inset-0 bg-blue-600 blur-xl opacity-50" />
+                <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-2 border-blue-500/50">
+                  <h3 className="font-bold text-white mb-4 flex items-center gap-2 text-lg">
+                    <DollarSign className="w-6 h-6 text-blue-400" />
+                    貸出中
+                  </h3>
+                  <div className="space-y-3">
+                    {lendingUsers.map((loanUser, idx) => (
+                      <div key={idx} className="flex items-center gap-3 bg-blue-950/30 rounded-xl p-4 border border-blue-500/30">
+                        <div className="relative flex-shrink-0">
+                          <div className={`w-12 h-12 rounded-full p-0.5 ${
+                            loanUser.equippedBadge 
+                              ? `bg-gradient-to-r ${loanUser.equippedBadge.badge_gradient}`
+                              : 'bg-gradient-to-r from-blue-500 to-cyan-500'
+                          }`}>
+                            {loanUser.avatarUrl ? (
+                              <img 
+                                src={loanUser.avatarUrl} 
+                                alt={loanUser.username}
+                                className="w-full h-full rounded-full object-cover bg-black"
+                              />
+                            ) : (
+                              <div className="w-full h-full rounded-full bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center">
+                                <User className="w-6 h-6 text-white" />
+                              </div>
+                            )}
+                          </div>
+                          
+                          {loanUser.equippedBadge && (
+                            <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-lg bg-gradient-to-r ${loanUser.equippedBadge.badge_gradient}`}>
+                              {(() => {
+                                const iconMap: { [key: string]: any } = {
+                                  Trophy, Crown, Target, Zap, Award, Sparkles
+                                }
+                                const IconComponent = iconMap[loanUser.equippedBadge.icon] || Trophy
+                                return <IconComponent className="w-2.5 h-2.5 text-white" />
+                              })()}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex-1">
+                          <p className="font-bold text-white text-base">{loanUser.username}さんに</p>
+                          <p className="text-blue-300 text-sm mt-1">{loanUser.amount.toLocaleString()}P 貸付中</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 借入中リスト */}
+            {borrowingUsers.length > 0 && (
+              <div className="relative">
+                <div className="absolute inset-0 bg-red-600 blur-xl opacity-50" />
+                <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-2 border-red-500/50">
+                  <h3 className="font-bold text-white mb-4 flex items-center gap-2 text-lg">
+                    <DollarSign className="w-6 h-6 text-red-400" />
+                    借入中
+                  </h3>
+                  <div className="space-y-3">
+                    {borrowingUsers.map((loanUser, idx) => (
+                      <div key={idx} className="flex items-center gap-3 bg-red-950/30 rounded-xl p-4 border border-red-500/30">
+                        <div className="relative flex-shrink-0">
+                          <div className={`w-12 h-12 rounded-full p-0.5 ${
+                            loanUser.equippedBadge 
+                              ? `bg-gradient-to-r ${loanUser.equippedBadge.badge_gradient}`
+                              : 'bg-gradient-to-r from-red-500 to-pink-500'
+                          }`}>
+                            {loanUser.avatarUrl ? (
+                              <img 
+                                src={loanUser.avatarUrl} 
+                                alt={loanUser.username}
+                                className="w-full h-full rounded-full object-cover bg-black"
+                              />
+                            ) : (
+                              <div className="w-full h-full rounded-full bg-gradient-to-br from-red-500 to-pink-600 flex items-center justify-center">
+                                <User className="w-6 h-6 text-white" />
+                              </div>
+                            )}
+                          </div>
+                          
+                          {loanUser.equippedBadge && (
+                            <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-lg bg-gradient-to-r ${loanUser.equippedBadge.badge_gradient}`}>
+                              {(() => {
+                                const iconMap: { [key: string]: any } = {
+                                  Trophy, Crown, Target, Zap, Award, Sparkles
+                                }
+                                const IconComponent = iconMap[loanUser.equippedBadge.icon] || Trophy
+                                return <IconComponent className="w-2.5 h-2.5 text-white" />
+                              })()}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex-1">
+                          <p className="font-bold text-white text-base">{loanUser.username}さんから</p>
+                          <p className="text-red-300 text-sm mt-1">{loanUser.amount.toLocaleString()}P 借入中</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -168,8 +168,7 @@ export default function PokerForm({ onSuccess, onCancel }: PokerFormProps) {
                 type="date"
                 value={playedDate}
                 onChange={(e) => setPlayedDate(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 focus:border-purple-400 text-white focus:outline-none transition-all"
-                style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 600 }}
+                className="w-full px-3 py-3 rounded-xl text-sm ..."
               />
             </div>
 
@@ -215,8 +214,8 @@ export default function PokerForm({ onSuccess, onCancel }: PokerFormProps) {
               </label>
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { value: 'other_store', label: '他店舗' },
-                  { value: 'home_game', label: 'ホーム' },
+                  { value: 'other_store', label: 'アミューズ' },
+                  { value: 'home_game', label: 'カジノ' },
                   { value: 'online', label: 'オンライン' }
                 ].map((option) => (
                   <button
@@ -327,7 +326,7 @@ export default function PokerForm({ onSuccess, onCancel }: PokerFormProps) {
                   </label>
                   <input
                     type="number"
-                    step="1000"
+                    step="1"
                     min="0"
                     value={tournamentBuyIn || ''}
                     onChange={(e) => setTournamentBuyIn(Number(e.target.value) || 0)}
@@ -376,7 +375,7 @@ export default function PokerForm({ onSuccess, onCancel }: PokerFormProps) {
                   </label>
                   <input
                     type="number"
-                    step="1000"
+                    step="1"
                     min="0"
                     value={prize || ''}
                     onChange={(e) => setPrize(Number(e.target.value) || 0)}
@@ -408,7 +407,7 @@ export default function PokerForm({ onSuccess, onCancel }: PokerFormProps) {
                 </label>
                 <input
                   type="number"
-                  step="1000"
+                  step="1"
                   min="0"
                   value={buyIn || ''}
                   onChange={(e) => setBuyIn(Number(e.target.value) || 0)}
@@ -424,7 +423,7 @@ export default function PokerForm({ onSuccess, onCancel }: PokerFormProps) {
                 </label>
                 <input
                   type="number"
-                  step="1000"
+                  step="1"
                   min="0"
                   value={cashOut || ''}
                   onChange={(e) => setCashOut(Number(e.target.value) || 0)}
