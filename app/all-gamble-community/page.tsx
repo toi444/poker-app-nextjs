@@ -807,8 +807,8 @@ export default function AllGambleCommunity() {
                       <img 
                         src={photo.imageUrl} 
                         alt="gamble photo"
-                        className="w-full h-64 object-cover rounded-xl mb-3 border-2 border-yellow-500/30"
-                      />
+                        className="w-full max-h-96 object-contain rounded-xl mb-3 border-2 border-yellow-500/30 bg-black/30"
+                        />
 
                       <p className="text-yellow-100 text-base leading-relaxed bg-black/30 rounded-lg p-3 border border-yellow-500/20">
                         {photo.comment}
