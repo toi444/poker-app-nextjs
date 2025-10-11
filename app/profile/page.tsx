@@ -4,41 +4,14 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { 
-  ArrowLeft, 
-  User, 
-  Mail, 
-  Trophy, 
-  TrendingUp,
-  Clock,
-  Calendar,
-  Camera,
-  Check,
-  X,
-  Edit2,
-  Save,
-  LogOut,
-  Sparkles,
-  Crown,
-  Target,
-  Zap,
-  Award,
-  DollarSign,
-  Coins,
-  Gem,
-  TrendingDown,
-  AlertTriangle,
-  Flame,
-  Skull,
-  CloudRain,
-  CloudOff,
-  HeartCrack,
-  Timer,
-  Watch,
-  Infinity,
-  Shield,
-  Moon,
-  Lock,
-  Star
+  ArrowLeft, User, Mail, Trophy, TrendingUp, Clock, Calendar, Camera,
+  Check, X, Edit2, Save, LogOut, Sparkles, Crown, Target, Zap, Award,
+  DollarSign, Coins, Gem, TrendingDown, AlertTriangle, Flame, Skull,
+  CloudRain, CloudOff, HeartCrack, Timer, Watch, Infinity, Shield, Moon,
+  Lock, Star,
+  FileText, Book, BookOpen, Library, Image, Dices, Gamepad2,
+  HandCoins, Banknote, Landmark, Wallet, CreditCard, AlertCircle,
+  Sunrise, Hourglass, CalendarCheck, Sun
 } from 'lucide-react'
 
 interface GameSession {
@@ -69,27 +42,145 @@ interface Achievement {
 }
 
 const GAME_ICONS: { [key: string]: string } = {
+  // ポーカー
   poker: '🃏',
+  
+  // 競技系ギャンブル
   horse_racing: '🏇',
   boat_racing: '🚤',
   bicycle_racing: '🚴',
+  auto_racing: '🏎️',
+  
+  // カジノゲーム
+  blackjack: '🎴',
+  baccarat: '💎',
+  roulette: '🎡',
+  craps: '🎲',
   slot: '🎰',
-  other: '🎲'
+  video_poker: '🖥️',
+  keno: '🔢',
+  sic_bo: '🎲',
+  wheel_of_fortune: '🎪',
+  three_card_poker: '🃏',
+  caribbean_stud: '🏝️',
+  pai_gow: '🀄',
+  
+  // パチンコ・パチスロ
+  pachinko: '🎱',
+  pachislot: '🎰',
+  
+  // 宝くじ・くじ
+  lottery: '🎫',
+  scratch: '🔖',
+  numbers: '🔢',
+  toto: '⚽',
+  mini_loto: '🎟️',
+  loto6: '🎫',
+  loto7: '🎰',
+  
+  // 麻雀
+  mahjong: '🀄',
+  
+  // スポーツベッティング
+  sports_betting: '⚽',
+  baseball_betting: '⚾',
+  basketball_betting: '🏀',
+  soccer_betting: '⚽',
+  tennis_betting: '🎾',
+  
+  // オンラインカジノ特有
+  live_casino: '📹',
+  crash_game: '💥',
+  dice_game: '🎲',
+  mines: '💣',
+  plinko: '🎯',
+  
+  // その他
+  bingo: '🎰',
+  fantasy_sports: '🏆',
+  esports_betting: '🎮',
+  other: '❓'
 }
 
 const GAME_NAMES: { [key: string]: string } = {
+  // ポーカー
   poker: 'ポーカー',
+  
+  // 競技系ギャンブル
   horse_racing: '競馬',
   boat_racing: '競艇',
   bicycle_racing: '競輪',
+  auto_racing: 'オートレース',
+  
+  // カジノゲーム
+  blackjack: 'ブラックジャック',
+  baccarat: 'バカラ',
+  roulette: 'ルーレット',
+  craps: 'クラップス',
   slot: 'スロット',
+  video_poker: 'ビデオポーカー',
+  keno: 'キノ',
+  sic_bo: 'シックボー',
+  wheel_of_fortune: 'ホイールオブフォーチュン',
+  three_card_poker: 'スリーカードポーカー',
+  caribbean_stud: 'カリビアンスタッド',
+  pai_gow: 'パイゴウ',
+  
+  // パチンコ・パチスロ
+  pachinko: 'パチンコ',
+  pachislot: 'パチスロ',
+  
+  // 宝くじ・くじ
+  lottery: '宝くじ',
+  scratch: 'スクラッチ',
+  numbers: 'ナンバーズ',
+  toto: 'toto',
+  mini_loto: 'ミニロト',
+  loto6: 'ロト6',
+  loto7: 'ロト7',
+  
+  // 麻雀
+  mahjong: '麻雀',
+  
+  // スポーツベッティング
+  sports_betting: 'スポーツベット',
+  baseball_betting: '野球ベット',
+  basketball_betting: 'バスケベット',
+  soccer_betting: 'サッカーベット',
+  tennis_betting: 'テニスベット',
+  
+  // オンラインカジノ特有
+  live_casino: 'ライブカジノ',
+  crash_game: 'クラッシュ',
+  dice_game: 'ダイス',
+  mines: 'マインズ',
+  plinko: 'プリンコ',
+  
+  // その他
+  bingo: 'ビンゴ',
+  fantasy_sports: 'ファンタジースポーツ',
+  esports_betting: 'eスポーツベット',
   other: 'その他'
+}
+
+const GAME_CATEGORIES = {
+  'カジノテーブル': ['poker', 'blackjack', 'baccarat', 'roulette', 'craps', 'three_card_poker', 'caribbean_stud', 'pai_gow'],
+  'カジノマシン': ['slot', 'video_poker', 'keno', 'sic_bo', 'wheel_of_fortune'],
+  'パチンコ・パチスロ': ['pachinko', 'pachislot'],
+  '公営競技': ['horse_racing', 'boat_racing', 'bicycle_racing', 'auto_racing'],
+  '宝くじ': ['lottery', 'scratch', 'numbers', 'toto', 'mini_loto', 'loto6', 'loto7'],
+  '麻雀': ['mahjong'],
+  'スポーツベット': ['sports_betting', 'baseball_betting', 'basketball_betting', 'soccer_betting', 'tennis_betting', 'esports_betting'],
+  'オンラインカジノ': ['live_casino', 'crash_game', 'dice_game', 'mines', 'plinko', 'bingo'],
+  'その他': ['fantasy_sports', 'other']
 }
 
 const iconComponents: { [key: string]: any } = {
   Trophy, DollarSign, Coins, Gem, Crown, TrendingDown, AlertTriangle, Flame, Skull,
   Zap, Sparkles, CloudRain, CloudOff, HeartCrack, Clock, Timer, Watch, Infinity,
-  Target, Shield, Moon, TrendingUp, Star
+  Target, Shield, Moon, TrendingUp, Star, FileText, Book, BookOpen, Library, Camera, 
+  Image, Dices, Gamepad2, HandCoins, Banknote, Landmark, Wallet, CreditCard, AlertCircle,
+  Sunrise, Hourglass, CalendarCheck, Sun
 }
 
 export default function ProfilePage() {
@@ -225,6 +316,110 @@ export default function ProfilePage() {
     }
   }
 
+  // アチーブメント説明を生成する関数
+  const generateAchievementDescription = (achievement: Achievement): string => {
+    const value = achievement.condition_value
+    
+    switch (achievement.condition_type) {
+      case 'total_profit':
+        return `累計収支が+${value.toLocaleString()}P以上`
+      case 'total_loss':
+        return `累計収支が${value.toLocaleString()}P以下`
+      case 'win_streak':
+        return `${value}連勝を達成`
+      case 'loss_streak':
+        return `${value}連敗を記録`
+      case 'play_hours':
+        return `累計${value}時間以上プレイ`
+      case 'jackpot':
+        return value === 1 ? 'ストレートフラッシュを獲得' : 'ロイヤルフラッシュを獲得'
+      case 'perfect_winrate':
+        return `${value}ゲーム以上プレイして勝率100%`
+      case 'comeback':
+        return '10連敗から勝利で復活'
+      case 'night_owl':
+        return '深夜2時〜5時にプレイ'
+      case 'stable_profit':
+        return '10ゲーム連続で収支±5000P以内'
+      case 'total_records':
+        return `${value}回以上の記録を達成`
+      case 'photo_count':
+        return `${value}枚以上の写真を投稿`
+      case 'gamble_variety':
+        return `${value}種類以上のギャンブルをプレイ`
+      case 'pbank_lent':
+        return `P-BANKで累計${value.toLocaleString()}P以上貸出`
+      case 'pbank_borrowed':
+        return `P-BANKで累計${value.toLocaleString()}P以上借入`
+      case 'early_bird':
+        return '朝5時〜7時にプレイ'
+      case 'long_session':
+        return `${value}分以上の長時間セッション`
+      case 'daily_profit':
+        return `1日で+${value.toLocaleString()}P以上の収支`
+      case 'daily_loss':
+        return `1日で${value.toLocaleString()}P以下の収支`
+      case 'stable_range':
+        return '30ゲーム連続で収支±10000P以内'
+      case 'comeback_next_day':
+        return '3万円以上の大負けの翌日にプラス収支'
+      case 'monthly_rank':
+        return '月間ランキング1位を獲得'
+      case 'top_win_rank':
+        return '歴代大勝ちTOP3入り'
+      case 'top_loss_rank':
+        return '歴代大負けTOP3入り'
+      case 'daily_streak':
+        return `${value}日連続でプレイ`
+      case 'monthly_comeback':
+        return '前月マイナス収支から当月プラス収支に転換'
+      case 'phoenix_rise':
+        return '累計-10万Pから+10万Pまで復活'
+      default:
+        return achievement.description || '条件未設定'
+    }
+  }
+
+  // アチーブメント進捗を計算する関数
+  const calculateAchievementProgress = (achievement: Achievement): { current: number; target: number; percentage: number } | null => {
+    const value = achievement.condition_value
+    
+    switch (achievement.condition_type) {
+      case 'total_profit':
+        return {
+          current: stats.totalProfit,
+          target: value,
+          percentage: Math.min((stats.totalProfit / value) * 100, 100)
+        }
+      case 'win_streak':
+        return {
+          current: stats.winStreak,
+          target: value,
+          percentage: Math.min((stats.winStreak / value) * 100, 100)
+        }
+      case 'loss_streak':
+        return {
+          current: stats.lossStreak,
+          target: value,
+          percentage: Math.min((stats.lossStreak / value) * 100, 100)
+        }
+      case 'play_hours':
+        return {
+          current: stats.totalPlayHours,
+          target: value,
+          percentage: Math.min((stats.totalPlayHours / value) * 100, 100)
+        }
+      case 'total_records':
+        return {
+          current: stats.totalGames,
+          target: value,
+          percentage: Math.min((stats.totalGames / value) * 100, 100)
+        }
+      default:
+        return null
+    }
+  }
+
   const checkAndUnlockAchievements = async (
     userId: string, 
     allGames: any[], 
@@ -235,11 +430,12 @@ export default function ProfilePage() {
       const unlockedIds = currentUnlocked.map(u => u.achievement_id)
       const newUnlocks: string[] = []
 
-      // 統計計算
+      // 基本統計計算
       const totalProfit = allGames.reduce((sum, game) => sum + (game.profit || 0), 0)
       const totalPlayHours = allGames.reduce((sum, game) => sum + (game.play_hours || 0), 0)
       const wins = allGames.filter(game => game.profit > 0).length
       const winRate = allGames.length > 0 ? (wins / allGames.length) * 100 : 0
+      const totalRecords = allGames.length
 
       // 連勝・連敗計算
       let maxWinStreak = 0
@@ -259,7 +455,7 @@ export default function ProfilePage() {
         }
       }
 
-      // 不屈の精神: 10連敗から復活（10連敗後に勝利）
+      // 不屈の精神: 10連敗から復活
       let hasComeback = false
       let tempLossStreak = 0
       for (const game of allGames) {
@@ -274,7 +470,7 @@ export default function ProfilePage() {
         }
       }
 
-      // 夜更かし: 深夜2-5時にプレイ（played_atをチェック）
+      // 夜更かし: 深夜2-5時
       let hasNightOwl = false
       for (const game of allGames) {
         if (game.played_at) {
@@ -282,6 +478,19 @@ export default function ProfilePage() {
           const hour = playedDate.getHours()
           if (hour >= 2 && hour < 5) {
             hasNightOwl = true
+            break
+          }
+        }
+      }
+
+      // 早起き鳥: 朝5-7時
+      let hasEarlyBird = false
+      for (const game of allGames) {
+        if (game.played_at) {
+          const playedDate = new Date(game.played_at)
+          const hour = playedDate.getHours()
+          if (hour >= 5 && hour < 7) {
+            hasEarlyBird = true
             break
           }
         }
@@ -300,6 +509,23 @@ export default function ProfilePage() {
         }
       }
 
+      // ブレない心: 30ゲーム連続で収支±10000円以内
+      let hasStableRange = false
+      if (allGames.length >= 30) {
+        for (let i = 0; i <= allGames.length - 30; i++) {
+          const slice = allGames.slice(i, i + 30)
+          const allStable = slice.every(game => Math.abs(game.profit || 0) <= 10000)
+          if (allStable) {
+            hasStableRange = true
+            break
+          }
+        }
+      }
+
+      // 長時間セッション
+      const maxSessionHours = Math.max(...allGames.map(g => g.play_hours || 0), 0)
+      const maxSessionMinutes = maxSessionHours * 60
+
       // ジャックポット取得チェック
       const { data: jackpots } = await supabase
         .from('jackpot_winners')
@@ -309,6 +535,186 @@ export default function ProfilePage() {
       const hasStraightFlush = jackpots?.some(j => j.hand_type === 'straight_flush')
       const hasRoyalFlush = jackpots?.some(j => j.hand_type === 'royal_flush')
 
+      // 写真投稿数チェック
+      const { data: photos } = await supabase
+        .from('gamble_photos')
+        .select('id')
+        .eq('user_id', userId)
+      const photoCount = photos?.length || 0
+
+      // ギャンブル種類チェック（gamble_recordsのみ）
+      const { data: gambleRecords } = await supabase
+        .from('gamble_records')
+        .select('gamble_type')
+        .eq('user_id', userId)
+      const uniqueGambleTypes = new Set(gambleRecords?.map(r => r.gamble_type) || [])
+      const gambleVariety = uniqueGambleTypes.size
+
+      // P-BANK累計額チェック
+      const { data: loansAsLender } = await supabase
+        .from('loans')
+        .select('amount')
+        .eq('lender_id', userId)
+      const totalLent = loansAsLender?.reduce((sum, loan) => sum + loan.amount, 0) || 0
+
+      const { data: loansAsBorrower } = await supabase
+        .from('loans')
+        .select('amount')
+        .eq('borrower_id', userId)
+      const totalBorrowed = loansAsBorrower?.reduce((sum, loan) => sum + loan.amount, 0) || 0
+
+      // 1日の最大収支チェック
+      const dailyProfits: { [date: string]: number } = {}
+      for (const game of allGames) {
+        const date = game.played_at ? new Date(game.played_at).toISOString().split('T')[0] : 'unknown'
+        dailyProfits[date] = (dailyProfits[date] || 0) + (game.profit || 0)
+      }
+      const maxDailyProfit = Math.max(...Object.values(dailyProfits), 0)
+      const minDailyProfit = Math.min(...Object.values(dailyProfits), 0)
+
+      // 大負け後の翌日プラス収支チェック
+      let hasComebackNextDay = false
+      const sortedGames = [...allGames].sort((a, b) => 
+        new Date(a.played_at || 0).getTime() - new Date(b.played_at || 0).getTime()
+      )
+      for (let i = 0; i < sortedGames.length - 1; i++) {
+        const currentGame = sortedGames[i]
+        const nextGame = sortedGames[i + 1]
+        
+        if (currentGame.profit <= -30000 && nextGame.profit > 0) {
+          const currentDate = new Date(currentGame.played_at || 0)
+          const nextDate = new Date(nextGame.played_at || 0)
+          const dayDiff = (nextDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24)
+          
+          if (dayDiff >= 1 && dayDiff < 2) {
+            hasComebackNextDay = true
+            break
+          }
+        }
+      }
+
+      // 連続プレイ日数（daily_streak）
+      let maxDailyStreak = 0
+      if (allGames.length > 0) {
+        const uniqueDates = Array.from(new Set(
+          allGames
+            .filter(g => g.played_at)
+            .map(g => {
+              const date = new Date(g.played_at)
+              return date.toISOString().split('T')[0]
+            })
+        )).sort()
+
+        if (uniqueDates.length > 0) {
+          let currentStreak = 1
+          maxDailyStreak = 1  // 最低でも1日はプレイしている
+          
+          for (let i = 1; i < uniqueDates.length; i++) {
+            const prevDate = new Date(uniqueDates[i - 1])
+            const currDate = new Date(uniqueDates[i])
+            const diffDays = Math.floor((currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24))
+            
+            if (diffDays === 1) {
+              currentStreak++
+              maxDailyStreak = Math.max(maxDailyStreak, currentStreak)
+            } else {
+              currentStreak = 1
+            }
+          }
+        }
+      }
+
+      // 月間カムバック（monthly_comeback）
+      let hasMonthlyComeback = false
+      if (allGames.length > 0) {
+        const monthlyProfits: { [month: string]: number } = {}
+        
+        allGames.forEach(game => {
+          if (game.played_at) {
+            const date = new Date(game.played_at)
+            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+            monthlyProfits[monthKey] = (monthlyProfits[monthKey] || 0) + (game.profit || 0)
+          }
+        })
+        
+        const sortedMonths = Object.keys(monthlyProfits).sort()
+        
+        for (let i = 1; i < sortedMonths.length; i++) {
+          const prevMonth = sortedMonths[i - 1]
+          const currMonth = sortedMonths[i]
+          
+          if (monthlyProfits[prevMonth] < 0 && monthlyProfits[currMonth] > 0) {
+            hasMonthlyComeback = true
+            break
+          }
+        }
+      }
+
+      // フェニックス復活（phoenix_rise）
+      let hasPhoenixRise = false
+      if (allGames.length > 0) {
+        const timeOrderedGames = [...allGames].sort((a, b) => {
+          const dateA = new Date(a.played_at || 0).getTime()
+          const dateB = new Date(b.played_at || 0).getTime()
+          return dateA - dateB
+        })
+        
+        let cumulativeProfit = 0
+        let reachedMinus100k = false
+        
+        for (const game of timeOrderedGames) {
+          cumulativeProfit += (game.profit || 0)
+          
+          if (cumulativeProfit <= -100000) {
+            reachedMinus100k = true
+          }
+          
+          if (reachedMinus100k && cumulativeProfit >= 100000) {
+            hasPhoenixRise = true
+            break
+          }
+        }
+      }
+
+      // 大勝ち・大負けTOP3チェック（game_sessions + gamble_records）
+      const { data: allProfitGameSessions } = await supabase
+        .from('game_sessions')
+        .select('user_id, profit')
+        .order('profit', { ascending: false })
+        .limit(100)  // TOP100を取得して後で絞る
+      
+      const { data: allProfitGambleRecords } = await supabase
+        .from('gamble_records')
+        .select('user_id, profit')
+        .order('profit', { ascending: false })
+        .limit(100)
+
+      const allProfits = [
+        ...(allProfitGameSessions || []),
+        ...(allProfitGambleRecords || [])
+      ].sort((a, b) => b.profit - a.profit).slice(0, 3)
+      
+      const isTopWinner = allProfits.some(g => g.user_id === userId)
+
+      const { data: allLossGameSessions } = await supabase
+        .from('game_sessions')
+        .select('user_id, profit')
+        .order('profit', { ascending: true })
+        .limit(100)
+      
+      const { data: allLossGambleRecords } = await supabase
+        .from('gamble_records')
+        .select('user_id, profit')
+        .order('profit', { ascending: true })
+        .limit(100)
+
+      const allLosses = [
+        ...(allLossGameSessions || []),
+        ...(allLossGambleRecords || [])
+      ].sort((a, b) => a.profit - b.profit).slice(0, 3)
+      
+      const isTopLoser = allLosses.some(g => g.user_id === userId)
+
       // 各アチーブメントをチェック
       for (const achievement of allAchievements) {
         if (unlockedIds.includes(achievement.id)) continue
@@ -316,6 +722,7 @@ export default function ProfilePage() {
         let shouldUnlock = false
 
         switch (achievement.condition_type) {
+          // 既存の条件
           case 'total_profit':
             shouldUnlock = totalProfit >= achievement.condition_value
             break
@@ -346,6 +753,56 @@ export default function ProfilePage() {
             break
           case 'stable_profit':
             shouldUnlock = hasStableProfit
+            break
+
+          // 新規条件
+          case 'total_records':
+            shouldUnlock = totalRecords >= achievement.condition_value
+            break
+          case 'photo_count':
+            shouldUnlock = photoCount >= achievement.condition_value
+            break
+          case 'gamble_variety':
+            shouldUnlock = gambleVariety >= achievement.condition_value
+            break
+          case 'pbank_lent':
+            shouldUnlock = totalLent >= achievement.condition_value
+            break
+          case 'pbank_borrowed':
+            shouldUnlock = totalBorrowed >= achievement.condition_value
+            break
+          case 'early_bird':
+            shouldUnlock = hasEarlyBird
+            break
+          case 'long_session':
+            shouldUnlock = maxSessionMinutes >= achievement.condition_value
+            break
+          case 'daily_profit':
+            shouldUnlock = maxDailyProfit >= achievement.condition_value
+            break
+          case 'daily_loss':
+            shouldUnlock = minDailyProfit <= achievement.condition_value
+            break
+          case 'stable_range':
+            shouldUnlock = hasStableRange
+            break
+          case 'comeback_next_day':
+            shouldUnlock = hasComebackNextDay
+            break
+          case 'top_win_rank':
+            shouldUnlock = isTopWinner
+            break
+          case 'top_loss_rank':
+            shouldUnlock = isTopLoser
+            break
+          case 'daily_streak':
+            shouldUnlock = maxDailyStreak >= achievement.condition_value
+            break
+          case 'monthly_comeback':
+            shouldUnlock = hasMonthlyComeback
+            break
+          case 'phoenix_rise':
+            shouldUnlock = hasPhoenixRise
             break
         }
 
@@ -543,11 +1000,21 @@ export default function ProfilePage() {
   }
 
   const toggleGame = (gameType: string) => {
-    setSelectedGames(prev => 
-      prev.includes(gameType)
-        ? prev.filter(g => g !== gameType)
-        : [...prev, gameType]
-    )
+    setSelectedGames(prev => {
+      if (prev.includes(gameType)) {
+        // 既に選択されている場合は削除
+        return prev.filter(g => g !== gameType)
+      } else {
+        // 新規選択の場合、3個未満なら追加
+        if (prev.length < 3) {
+          return [...prev, gameType]
+        } else {
+          // 3個以上選択しようとした場合は警告
+          alert('お気に入りゲームは最大3個までです')
+          return prev
+        }
+      }
+    })
   }
 
   const handleGamesSave = async () => {
@@ -845,95 +1312,118 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* お気に入りゲーム */}
+        {/* お気に入りゲーム編集セクション */}
         <div className="relative group mb-6">
-          <div className="absolute inset-0 bg-gradient-to-r from-pink-600 to-purple-600 rounded-2xl blur-xl opacity-50" />
-          <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-2 border-pink-500/50">
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl blur-xl opacity-75" />
+          <div className="relative bg-black/60 backdrop-blur-sm rounded-3xl p-6 border-2 border-purple-500/50">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-white text-lg flex items-center gap-2">
-                <Star className="w-5 h-5 text-pink-400" />
+              <h3 className="text-xl font-black text-white flex items-center gap-2">
+                <Star className="w-6 h-6 text-yellow-400" />
                 お気に入りゲーム
               </h3>
-              {!isEditingGames && (
+              {!isEditingGames ? (
                 <button
-                  onClick={handleGamesEdit}
-                  className="relative group"
+                  onClick={() => setIsEditingGames(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded-xl transition-all"
                 >
-                  <div className="absolute inset-0 bg-pink-600 blur-lg animate-pulse" />
-                  <div className="relative w-8 h-8 bg-gradient-to-r from-pink-600 to-purple-600 rounded-full flex items-center justify-center hover:shadow-2xl hover:shadow-pink-500/50 transition-all transform hover:scale-110 border-2 border-white/20">
-                    <Edit2 className="w-4 h-4 text-white" />
-                  </div>
+                  <Edit2 className="w-4 h-4" />
+                  <span className="text-sm font-bold">編集</span>
                 </button>
+              ) : (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setIsEditingGames(false)
+                      setSelectedGames(profile?.favorite_games || [])
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-xl transition-all"
+                  >
+                    <X className="w-4 h-4" />
+                    <span className="text-sm font-bold">キャンセル</span>
+                  </button>
+                  <button
+                    onClick={handleGamesSave}
+                    disabled={savingGames}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 rounded-xl transition-all disabled:opacity-50"
+                  >
+                    {savingGames ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )}
+                    <span className="text-sm font-bold">保存</span>
+                  </button>
+                </div>
               )}
             </div>
 
             {gamesSuccess && (
               <div className="flex items-center gap-2 text-green-400 bg-green-950/50 px-4 py-2 rounded-xl mb-3 border-2 border-green-500/50 animate-slide-in">
                 <Check className="w-5 h-5" />
-                <span className="text-sm font-bold">更新しました！</span>
+                <span className="text-sm font-bold">お気に入りゲームを更新しました！</span>
               </div>
             )}
 
-            {isEditingGames ? (
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  {Object.entries(GAME_NAMES).map(([key, name]) => (
-                    <button
-                      key={key}
-                      onClick={() => toggleGame(key)}
-                      className={`p-4 rounded-xl font-bold transition-all border-2 ${
-                        selectedGames.includes(key)
-                          ? 'bg-pink-600/30 border-pink-500 text-white'
-                          : 'bg-gray-800/30 border-gray-600/50 text-gray-400'
-                      }`}
-                    >
-                      <div className="text-3xl mb-2">{GAME_ICONS[key]}</div>
-                      <div className="text-sm">{name}</div>
-                    </button>
-                  ))}
-                </div>
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleGamesSave}
-                    disabled={savingGames}
-                    className="relative group flex-1"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl blur-lg opacity-75 group-hover:opacity-100 transition-opacity" />
-                    <div className="relative px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl font-bold text-white flex items-center justify-center gap-2 border-2 border-white/20">
-                      {savingGames ? (
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
-                      ) : (
-                        <Save className="w-5 h-5" />
-                      )}
-                      保存
-                    </div>
-                  </button>
-                  <button
-                    onClick={handleGamesCancel}
-                    disabled={savingGames}
-                    className="px-6 py-3 bg-gray-700/50 backdrop-blur-sm text-gray-300 rounded-2xl font-bold hover:bg-gray-600/50 transition-all border-2 border-gray-600/50"
-                  >
-                    キャンセル
-                  </button>
-                </div>
-              </div>
-            ) : (
+            {!isEditingGames ? (
+              // 表示モード
               <div className="flex flex-wrap gap-2">
-                {selectedGames.length > 0 ? (
-                  selectedGames.map(gameType => (
-                    <span
+                {(profile?.favorite_games || []).length > 0 ? (
+                  (profile?.favorite_games || []).map((gameType: string) => (
+                    <div
                       key={gameType}
-                      className="px-4 py-2 bg-pink-600/20 border-2 border-pink-500/50 rounded-full text-white font-bold flex items-center gap-2"
+                      className="flex items-center gap-2 px-3 py-2 bg-purple-950/50 border-2 border-purple-500/50 rounded-xl"
                     >
-                      <span className="text-lg">{GAME_ICONS[gameType]}</span>
-                      <span className="text-sm">{GAME_NAMES[gameType]}</span>
-                    </span>
+                      <span className="text-xl">{GAME_ICONS[gameType]}</span>
+                      <span className="text-sm font-bold text-purple-200">{GAME_NAMES[gameType]}</span>
+                    </div>
                   ))
                 ) : (
-                  <p className="text-gray-400 text-sm">未設定</p>
+                  <p className="text-gray-400 text-sm">お気に入りゲームが設定されていません</p>
                 )}
               </div>
+            ) : (
+              // 編集モード（カテゴリ別）
+              <div className="max-h-[400px] overflow-y-auto pr-2 space-y-4 custom-scrollbar">
+                {Object.entries(GAME_CATEGORIES).map(([category, games]) => (
+                  <div key={category}>
+                    <h4 className="text-sm font-bold text-purple-300 mb-2 flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-purple-400" />
+                      {category}
+                    </h4>
+                    <div className="grid grid-cols-2 gap-2 mb-3">
+                      {games.map((gameType) => {
+                        const isSelected = selectedGames.includes(gameType)
+                        return (
+                          <button
+                            key={gameType}
+                            onClick={() => toggleGame(gameType)}
+                            className={`
+                              flex items-center gap-2 px-3 py-2 rounded-xl border-2 transition-all
+                              ${isSelected 
+                                ? 'bg-purple-600 border-purple-400 shadow-lg shadow-purple-500/50' 
+                                : 'bg-gray-800/50 border-gray-600/50 hover:border-purple-500/50'
+                              }
+                            `}
+                          >
+                            <span className="text-lg">{GAME_ICONS[gameType]}</span>
+                            <span className={`text-xs font-bold ${isSelected ? 'text-white' : 'text-gray-400'}`}>
+                              {GAME_NAMES[gameType]}
+                            </span>
+                            {isSelected && (
+                              <Check className="w-4 h-4 text-white ml-auto" />
+                            )}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
+
+            <p className="text-xs text-purple-300/60 mt-3">
+              最大3個まで選択可能
+            </p>
           </div>
         </div>
 
@@ -1009,43 +1499,134 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* アチーブメント表示 */}
+        {/* アチーブメント表示セクション */}
         <div className="relative group mb-6">
-          <div className="absolute inset-0 bg-gradient-to-r from-yellow-600 to-orange-600 rounded-2xl blur-xl opacity-50" />
-          <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-2 border-yellow-500/50">
-            <h3 className="font-bold text-white mb-4 text-lg flex items-center gap-2">
-              <Award className="w-6 h-6 text-yellow-400 drop-shadow-glow" />
-              アチーブメント
-            </h3>
-            <div className="grid grid-cols-4 gap-3">
-              {unlockedBadges.slice(0, 8).map(achievement => {
-                const IconComponent = getBadgeIcon(achievement.icon)
-                return (
-                  <div
-                    key={achievement.id}
-                    className="relative group/badge"
-                  >
-                    <div className={`absolute inset-0 ${achievement.badge_gradient} rounded-xl blur-lg opacity-50`} />
-                    <div className={`relative w-full aspect-square ${achievement.badge_gradient} rounded-xl flex items-center justify-center border-2 border-white/20`}>
-                      <IconComponent className="w-8 h-8 text-white drop-shadow-glow" />
-                    </div>
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-black/90 rounded-lg text-white text-xs font-bold whitespace-nowrap opacity-0 group-hover/badge:opacity-100 transition-opacity pointer-events-none">
-                      {achievement.name}
-                    </div>
-                  </div>
-                )
-              })}
-              {[...Array(Math.max(0, 8 - unlockedBadges.length))].map((_, i) => (
-                <div key={`locked-${i}`} className="relative">
-                  <div className="w-full aspect-square bg-gray-800/50 rounded-xl flex items-center justify-center border-2 border-gray-600/50">
-                    <Lock className="w-6 h-6 text-gray-600" />
-                  </div>
-                </div>
-              ))}
+          <div className="absolute inset-0 bg-gradient-to-r from-yellow-600 to-amber-600 rounded-3xl blur-xl opacity-75" />
+          <div className="relative bg-black/60 backdrop-blur-sm rounded-3xl p-6 border-2 border-yellow-500/50">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-2xl font-black bg-gradient-to-r from-yellow-300 to-amber-500 bg-clip-text text-transparent flex items-center gap-2">
+                <Trophy className="w-7 h-7 text-yellow-400 drop-shadow-glow" />
+                アチーブメント
+              </h2>
+              <div className="text-sm font-bold text-yellow-300 bg-black/50 px-3 py-1.5 rounded-full border border-yellow-500/50">
+                {unlockedAchievements.length} / {achievements.length}
+              </div>
             </div>
-            <p className="text-center text-sm text-yellow-300 mt-4 font-bold">
-              {unlockedBadges.length} / {achievements.length} 取得済み
-            </p>
+
+            {/* スクロール可能なアチーブメントリスト */}
+            <div className="max-h-[500px] overflow-y-auto pr-2 space-y-2 custom-scrollbar">
+              {achievements
+                .sort((a, b) => {
+                  // tierでソート（bronze < silver < gold < platinum < diamond）
+                  const tierOrder = { bronze: 1, silver: 2, gold: 3, platinum: 4, diamond: 5 }
+                  const tierDiff = (tierOrder[a.tier as keyof typeof tierOrder] || 0) - (tierOrder[b.tier as keyof typeof tierOrder] || 0)
+                  if (tierDiff !== 0) return tierDiff
+                  // 同じtierならcondition_typeでソート
+                  return a.condition_type.localeCompare(b.condition_type)
+                })
+                .map((achievement) => {
+                  const isUnlocked = unlockedAchievements.includes(achievement.id)
+                  const IconComponent = getBadgeIcon(achievement.icon)
+                  
+                  // tierに応じたボーダーカラー
+                  const tierBorderColor = {
+                    bronze: 'border-orange-500/50',
+                    silver: 'border-gray-400/50',
+                    gold: 'border-yellow-500/50',
+                    platinum: 'border-cyan-400/50',
+                    diamond: 'border-purple-500/50'
+                  }[achievement.tier] || 'border-gray-500/50'
+
+                  return (
+                    <div
+                      key={achievement.id}
+                      className={`
+                        relative flex items-center gap-4 p-3 rounded-xl border-2 transition-all duration-300
+                        ${isUnlocked 
+                          ? `bg-gradient-to-r ${achievement.badge_gradient} ${tierBorderColor}` 
+                          : 'bg-gray-900/50 border-gray-700/50 opacity-40'
+                        }
+                      `}
+                    >
+                      {/* アイコン部分 */}
+                      <div className={`
+                        flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center
+                        ${isUnlocked 
+                          ? 'bg-black/30 border-2 border-white/20' 
+                          : 'bg-gray-800/50 border-2 border-gray-600/50'
+                        }
+                      `}>
+                        {IconComponent && (
+                          <IconComponent className={`w-6 h-6 ${isUnlocked ? 'text-white' : 'text-gray-600'}`} />
+                        )}
+                      </div>
+
+                      {/* テキスト部分 */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className={`font-black text-base ${isUnlocked ? 'text-white' : 'text-gray-500'}`}>
+                            {achievement.name}
+                          </h3>
+                          {/* tierバッジ */}
+                          <span className={`
+                            text-xs font-bold px-2 py-0.5 rounded-full
+                            ${achievement.tier === 'bronze' && 'bg-orange-500/20 text-orange-300 border border-orange-500/50'}
+                            ${achievement.tier === 'silver' && 'bg-gray-400/20 text-gray-300 border border-gray-400/50'}
+                            ${achievement.tier === 'gold' && 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/50'}
+                            ${achievement.tier === 'platinum' && 'bg-cyan-400/20 text-cyan-300 border border-cyan-400/50'}
+                            ${achievement.tier === 'diamond' && 'bg-purple-500/20 text-purple-300 border border-purple-500/50'}
+                          `}>
+                            {achievement.tier.toUpperCase()}
+                          </span>
+                        </div>
+                        <p className={`text-sm mb-2 ${isUnlocked ? 'text-white/80' : 'text-gray-600'}`}>
+                          {generateAchievementDescription(achievement)}
+                        </p>
+                        
+                        {/* 進捗バー（未取得の場合のみ） */}
+                        {!isUnlocked && (() => {
+                          const progress = calculateAchievementProgress(achievement)
+                          if (progress && progress.percentage > 0 && progress.percentage < 100) {
+                            return (
+                              <div className="mt-2">
+                                <div className="flex justify-between items-center mb-1">
+                                  <span className="text-xs text-gray-400 font-bold">
+                                    進捗: {progress.current.toLocaleString()} / {progress.target.toLocaleString()}
+                                  </span>
+                                  <span className="text-xs text-gray-400 font-bold">
+                                    {progress.percentage.toFixed(0)}%
+                                  </span>
+                                </div>
+                                <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
+                                  <div 
+                                    className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
+                                    style={{ width: `${progress.percentage}%` }}
+                                  />
+                                </div>
+                              </div>
+                            )
+                          }
+                          return null
+                        })()}
+                      </div>
+
+                      {/* 取得済みマーク */}
+                      {isUnlocked && (
+                        <div className="flex-shrink-0 bg-yellow-400 rounded-full p-1.5">
+                          <Check className="w-4 h-4 text-black" />
+                        </div>
+                      )}
+
+                      {/* 未取得ロックアイコン */}
+                      {!isUnlocked && (
+                        <div className="flex-shrink-0 text-gray-600">
+                          <Lock className="w-5 h-5" />
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+            </div>
           </div>
         </div>
 
@@ -1221,6 +1802,30 @@ export default function ProfilePage() {
 
         .drop-shadow-glow {
           filter: drop-shadow(0 0 8px currentColor);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(0, 0, 0, 0.3);
+          border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: linear-gradient(to bottom, #f59e0b, #d97706);
+          border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(to bottom, #fbbf24, #f59e0b);
+        }
+
+        /* Firefox用スクロールバー */
+        .custom-scrollbar {
+          scrollbar-width: thin;
+          scrollbar-color: #f59e0b rgba(0, 0, 0, 0.3);
         }
       `}</style>
     </div>

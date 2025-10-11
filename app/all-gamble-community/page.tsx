@@ -9,8 +9,8 @@ import {
   Star, Flame, Skull, HeartCrack
 } from 'lucide-react'
 
-type Period = '7days' | '30days' | 'all'
-type Tab = 'rankings' | 'hall-of-fame' | 'photos'
+type Period = '7days' | 'month' | 'all' | 'custom'
+type Tab = 'rankings' | 'hall-of-fame' | 'photos' | 'players'
 
 interface UserStat {
   userId: string
@@ -33,6 +33,9 @@ interface HallOfFameRecord {
   playedDate: string
   feeling?: string
   memo?: string
+  details?: string
+  buy_in?: number
+  cash_out?: number
 }
 
 interface GamblePhoto {
@@ -79,7 +82,7 @@ export default function AllGambleCommunity() {
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<Tab>('rankings')
-  const [period, setPeriod] = useState<Period>('30days')
+  const [period, setPeriod] = useState<Period>('month')
   const [rankings, setRankings] = useState<UserStat[]>([])
   const [topWins, setTopWins] = useState<HallOfFameRecord[]>([])
   const [topLosses, setTopLosses] = useState<HallOfFameRecord[]>([])
@@ -91,6 +94,15 @@ export default function AllGambleCommunity() {
   const [photoPreview, setPhotoPreview] = useState<string>('')
   const [photoComment, setPhotoComment] = useState('')
   const [photoFeeling, setPhotoFeeling] = useState<'excellent' | 'good' | 'normal' | 'bad' | 'terrible'>('excellent')
+  
+  const [customStartDate, setCustomStartDate] = useState('')
+  const [customEndDate, setCustomEndDate] = useState('')
+  const [showCustomDatePicker, setShowCustomDatePicker] = useState(false)
+  
+  const [allPlayers, setAllPlayers] = useState<UserStat[]>([])
+  const [selectedPlayer, setSelectedPlayer] = useState<any>(null)
+  const [playerHistory, setPlayerHistory] = useState<any[]>([])
+  const [playerPeriod, setPlayerPeriod] = useState<Period>('7days')
 
   useEffect(() => {
     checkUser()
@@ -103,8 +115,10 @@ export default function AllGambleCommunity() {
       loadHallOfFame()
     } else if (activeTab === 'photos') {
       loadPhotos()
+    } else if (activeTab === 'players') {
+      loadPlayers()
     }
-  }, [activeTab, period])
+  }, [activeTab, period, customStartDate, customEndDate])
 
   const checkUser = async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -123,16 +137,21 @@ export default function AllGambleCommunity() {
     setLoading(true)
     
     let startDate: string | null = null
+    let endDate: string | null = null
     const now = new Date()
     
     if (period === '7days') {
       const sevenDaysAgo = new Date(now)
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
       startDate = sevenDaysAgo.toISOString().split('T')[0]
-    } else if (period === '30days') {
-      const thirtyDaysAgo = new Date(now)
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-      startDate = thirtyDaysAgo.toISOString().split('T')[0]
+    } else if (period === 'month') {
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+      startDate = firstDayOfMonth.toISOString().split('T')[0]
+      const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+      endDate = lastDayOfMonth.toISOString().split('T')[0]
+    } else if (period === 'custom') {
+      startDate = customStartDate || null
+      endDate = customEndDate || null
     }
 
     let gambleQuery = supabase
@@ -142,8 +161,15 @@ export default function AllGambleCommunity() {
     if (startDate) {
       gambleQuery = gambleQuery.gte('played_date', startDate)
     }
+    if (endDate) {
+      gambleQuery = gambleQuery.lte('played_date', endDate)
+    }
     
-    const { data: gambleData } = await gambleQuery
+    const { data: gambleData, error: gambleError } = await gambleQuery
+    
+    if (gambleError) {
+      console.error('Error loading gamble_records:', gambleError)
+    }
 
     let gameQuery = supabase
       .from('game_sessions')
@@ -152,8 +178,17 @@ export default function AllGambleCommunity() {
     if (startDate) {
       gameQuery = gameQuery.gte('played_at', new Date(startDate).toISOString())
     }
+    if (endDate) {
+      const endDateTime = new Date(endDate)
+      endDateTime.setHours(23, 59, 59, 999)
+      gameQuery = gameQuery.lte('played_at', endDateTime.toISOString())
+    }
     
-    const { data: gameData } = await gameQuery
+    const { data: gameData, error: gameError } = await gameQuery
+    
+    if (gameError) {
+      console.error('Error loading game_sessions:', gameError)
+    }
 
     const prettyCureData = gameData?.map(g => {
       const playedDate = new Date(g.played_at)
@@ -164,7 +199,12 @@ export default function AllGambleCommunity() {
         profit: g.profit,
         played_date: dateStr
       }
-    }).filter(g => !startDate || g.played_date >= startDate) || []
+    }).filter(g => {
+      if (!startDate && !endDate) return true
+      if (startDate && !endDate) return g.played_date >= startDate
+      if (!startDate && endDate) return g.played_date <= endDate
+      return g.played_date >= startDate && g.played_date <= endDate
+    }) || []
 
     const combinedData = [...(gambleData || []), ...prettyCureData]
 
@@ -215,22 +255,33 @@ export default function AllGambleCommunity() {
   const loadHallOfFame = async () => {
     setLoading(true)
 
-    const { data: gambleData } = await supabase
+    const { data: gambleData, error: gambleError } = await supabase
       .from('gamble_records')
-      .select('id, user_id, profit, category, location, played_date, feeling, memo')
+      .select('*')
       .order('profit', { ascending: false })
+    
+    if (gambleError) {
+      console.error('Error loading gamble_records:', gambleError)
+    }
 
-    const { data: gameData } = await supabase
+    const { data: gameData, error: gameError } = await supabase
       .from('game_sessions')
-      .select('id, user_id, profit, played_at')
+      .select('*')
       .order('profit', { ascending: false })
+    
+    if (gameError) {
+      console.error('Error loading game_sessions:', gameError)
+    }
 
     const allRecords = [
       ...(gambleData?.map(r => ({
         ...r,
         playedDate: r.played_date,
         category: r.category || 'other',
-        location: r.location || '不明'
+        location: r.location || '不明',
+        details: r.details || '',
+        buy_in: r.buy_in || null,
+        cash_out: r.cash_out || null
       })) || []),
       ...(gameData?.map(r => {
         const playedDate = new Date(r.played_at)
@@ -239,7 +290,10 @@ export default function AllGambleCommunity() {
           ...r,
           playedDate: jstDate.toISOString().split('T')[0],
           category: 'poker',
-          location: 'ホームゲーム'
+          location: 'ホームゲーム',
+          details: '',
+          buy_in: null,
+          cash_out: null
         }
       }) || [])
     ]
@@ -319,6 +373,117 @@ export default function AllGambleCommunity() {
     setLoading(false)
   }
 
+  const loadPlayers = async () => {
+    setLoading(true)
+
+    const { data: gambleData } = await supabase
+      .from('gamble_records')
+      .select('user_id')
+    
+    const { data: gameData } = await supabase
+      .from('game_sessions')
+      .select('user_id')
+
+    const allUserIds = [
+      ...(gambleData?.map(r => r.user_id) || []),
+      ...(gameData?.map(r => r.user_id) || [])
+    ]
+    const uniqueUserIds = [...new Set(allUserIds)]
+
+    if (uniqueUserIds.length > 0) {
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url, equipped_badge(*)')
+        .in('id', uniqueUserIds)
+
+      const players = profilesData?.map(profile => ({
+        userId: profile.id,
+        username: profile.username || 'Unknown',
+        avatarUrl: profile.avatar_url || null,
+        equippedBadge: profile.equipped_badge || null,
+        profit: 0,
+        sessions: 0
+      })) || []
+
+      players.sort((a, b) => a.username.localeCompare(b.username))
+      setAllPlayers(players)
+    }
+
+    setLoading(false)
+  }
+
+  const loadPlayerHistory = async (userId: string, period: Period) => {
+    let startDate: string | null = null
+    let endDate: string | null = null
+    const now = new Date()
+    
+    if (period === '7days') {
+      const sevenDaysAgo = new Date(now)
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+      startDate = sevenDaysAgo.toISOString().split('T')[0]
+    } else if (period === 'month') {
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+      startDate = firstDayOfMonth.toISOString().split('T')[0]
+      const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+      endDate = lastDayOfMonth.toISOString().split('T')[0]
+    } else if (period === 'custom') {
+      startDate = customStartDate || null
+      endDate = customEndDate || null
+    }
+
+    let gambleQuery = supabase
+      .from('gamble_records')
+      .select('*')
+      .eq('user_id', userId)
+    
+    if (startDate) gambleQuery = gambleQuery.gte('played_date', startDate)
+    if (endDate) gambleQuery = gambleQuery.lte('played_date', endDate)
+    
+    const { data: gambleData } = await gambleQuery
+
+    let gameQuery = supabase
+      .from('game_sessions')
+      .select('*')
+      .eq('user_id', userId)
+    
+    if (startDate) {
+      gameQuery = gameQuery.gte('played_at', new Date(startDate).toISOString())
+    }
+    if (endDate) {
+      const endDateTime = new Date(endDate)
+      endDateTime.setHours(23, 59, 59, 999)
+      gameQuery = gameQuery.lte('played_at', endDateTime.toISOString())
+    }
+    
+    const { data: gameData } = await gameQuery
+
+    const history = [
+      ...(gambleData?.map(r => ({
+        ...r,
+        playedDate: r.played_date,
+        category: r.category || 'other',
+        location: r.location || '不明',
+        details: r.details || '',
+        type: 'gamble'
+      })) || []),
+      ...(gameData?.map(r => {
+        const playedDate = new Date(r.played_at)
+        const jstDate = new Date(playedDate.getTime() + 9 * 60 * 60 * 1000)
+        return {
+          ...r,
+          playedDate: jstDate.toISOString().split('T')[0],
+          category: 'poker',
+          location: 'ホームゲーム',
+          details: '',
+          type: 'game'
+        }
+      }) || [])
+    ]
+
+    history.sort((a, b) => new Date(b.playedDate).getTime() - new Date(a.playedDate).getTime())
+    setPlayerHistory(history)
+  }
+
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0]
@@ -379,8 +544,9 @@ export default function AllGambleCommunity() {
   const getPeriodLabel = () => {
     switch (period) {
       case '7days': return '直近7日間'
-      case '30days': return '直近30日間'
+      case 'month': return '今月'
       case 'all': return '全期間'
+      case 'custom': return 'カスタム期間'
     }
   }
 
@@ -433,22 +599,23 @@ export default function AllGambleCommunity() {
         <div className="relative mb-6">
           <div className="absolute inset-0 bg-gradient-to-r from-yellow-600 via-amber-600 to-orange-600 blur-xl opacity-50" />
           <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-1 border-2 border-yellow-500/50">
-            <div className="grid grid-cols-3 gap-1">
+            <div className="grid grid-cols-4 gap-1">
               {[
                 { id: 'rankings', label: 'ランキング', icon: Trophy },
                 { id: 'hall-of-fame', label: '殿堂入り', icon: Crown },
-                { id: 'photos', label: '写真', icon: ImageIcon }
+                { id: 'photos', label: '写真', icon: ImageIcon },
+                { id: 'players', label: 'プレイヤー', icon: User }
               ].map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as Tab)}
-                  className={`py-3 px-2 rounded-xl font-black text-sm transition-all ${
+                  className={`py-3 px-1 rounded-xl font-black text-xs transition-all ${
                     activeTab === tab.id
                       ? 'bg-gradient-to-r from-yellow-500 to-amber-600 text-black shadow-lg shadow-yellow-500/50'
                       : 'text-yellow-400/60 hover:text-yellow-400'
                   }`}
                 >
-                  <tab.icon className="w-5 h-5 mx-auto mb-1" />
+                  <tab.icon className="w-4 h-4 mx-auto mb-1" />
                   {tab.label}
                 </button>
               ))}
@@ -463,16 +630,22 @@ export default function AllGambleCommunity() {
             <div className="relative">
               <div className="absolute inset-0 bg-yellow-600 blur-xl opacity-50" />
               <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-1 border-2 border-yellow-500/50">
-                <div className="grid grid-cols-3 gap-1">
+                <div className="grid grid-cols-4 gap-1">
                   {[
                     { value: '7days', label: '7日間' },
-                    { value: '30days', label: '30日間' },
-                    { value: 'all', label: '全期間' }
+                    { value: 'month', label: '今月' },
+                    { value: 'all', label: '全期間' },
+                    { value: 'custom', label: 'カスタム' }
                   ].map((p) => (
                     <button
                       key={p.value}
-                      onClick={() => setPeriod(p.value as Period)}
-                      className={`py-2 px-3 rounded-xl font-black text-sm transition-all ${
+                      onClick={() => {
+                        setPeriod(p.value as Period)
+                        if (p.value === 'custom') {
+                          setShowCustomDatePicker(true)
+                        }
+                      }}
+                      className={`py-2 px-2 rounded-xl font-black text-xs transition-all ${
                         period === p.value
                           ? 'bg-gradient-to-r from-yellow-500 to-amber-600 text-black shadow-lg'
                           : 'text-yellow-400/60 hover:text-yellow-400'
@@ -484,6 +657,35 @@ export default function AllGambleCommunity() {
                 </div>
               </div>
             </div>
+
+            {/* カスタム期間選択 */}
+            {period === 'custom' && (
+              <div className="relative">
+                <div className="absolute inset-0 bg-purple-600 blur-xl opacity-50" />
+                <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-4 border-2 border-purple-500/50">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-black text-purple-300 mb-2">開始日</label>
+                      <input
+                        type="date"
+                        value={customStartDate}
+                        onChange={(e) => setCustomStartDate(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-white/10 border-2 border-purple-500/30 text-purple-100 text-sm focus:outline-none focus:border-purple-400"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-black text-purple-300 mb-2">終了日</label>
+                      <input
+                        type="date"
+                        value={customEndDate}
+                        onChange={(e) => setCustomEndDate(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-white/10 border-2 border-purple-500/30 text-purple-100 text-sm focus:outline-none focus:border-purple-400"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* ランキングリスト */}
             <div className="relative">
@@ -618,7 +820,11 @@ export default function AllGambleCommunity() {
 
                           <div className="flex-1 min-w-0">
                             <p className="font-black text-green-100 text-base">{record.username}</p>
-                            <p className="text-sm text-green-400/80">{record.location} - {record.playedDate}</p>
+                            <div className="flex items-center gap-2 text-sm text-green-400/80">
+                              <span>{GAME_ICONS[record.category] || '🎲'}</span>
+                              <span>{GAME_NAMES[record.category] || record.category}</span>
+                            </div>
+                            <p className="text-xs text-green-400/70">{record.location} - {record.playedDate}</p>
                           </div>
 
                           <div className="flex-shrink-0 text-right">
@@ -628,6 +834,30 @@ export default function AllGambleCommunity() {
                             <p className="text-xs text-green-400/60">P</p>
                           </div>
                         </div>
+
+                        {record.details && (
+                          <div className="mb-2 flex items-center gap-2">
+                            <span className="text-xs text-green-300/70">詳細:</span>
+                            <span className="text-sm text-green-200/90">{record.details}</span>
+                          </div>
+                        )}
+
+                        {(record.buy_in || record.cash_out) && (
+                          <div className="mb-2 grid grid-cols-2 gap-2 text-xs">
+                            {record.buy_in && (
+                              <div className="bg-black/30 rounded-lg p-2 border border-green-500/20">
+                                <span className="text-green-300/70">バイイン: </span>
+                                <span className="text-green-200 font-bold">{record.buy_in.toLocaleString()}円</span>
+                              </div>
+                            )}
+                            {record.cash_out && (
+                              <div className="bg-black/30 rounded-lg p-2 border border-green-500/20">
+                                <span className="text-green-300/70">払戻: </span>
+                                <span className="text-green-200 font-bold">{record.cash_out.toLocaleString()}円</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
 
                         {record.feeling && (
                           <div className="flex items-center gap-2 mb-2">
@@ -695,7 +925,11 @@ export default function AllGambleCommunity() {
 
                           <div className="flex-1 min-w-0">
                             <p className="font-black text-red-100 text-base">{record.username}</p>
-                            <p className="text-sm text-red-400/80">{record.location} - {record.playedDate}</p>
+                            <div className="flex items-center gap-2 text-sm text-red-400/80">
+                              <span>{GAME_ICONS[record.category] || '🎲'}</span>
+                              <span>{GAME_NAMES[record.category] || record.category}</span>
+                            </div>
+                            <p className="text-xs text-red-400/70">{record.location} - {record.playedDate}</p>
                           </div>
 
                           <div className="flex-shrink-0 text-right">
@@ -705,6 +939,30 @@ export default function AllGambleCommunity() {
                             <p className="text-xs text-red-400/60">P</p>
                           </div>
                         </div>
+
+                        {record.details && (
+                          <div className="mb-2 flex items-center gap-2">
+                            <span className="text-xs text-red-300/70">詳細:</span>
+                            <span className="text-sm text-red-200/90">{record.details}</span>
+                          </div>
+                        )}
+
+                        {(record.buy_in || record.cash_out) && (
+                          <div className="mb-2 grid grid-cols-2 gap-2 text-xs">
+                            {record.buy_in && (
+                              <div className="bg-black/30 rounded-lg p-2 border border-red-500/20">
+                                <span className="text-red-300/70">バイイン: </span>
+                                <span className="text-red-200 font-bold">{record.buy_in.toLocaleString()}円</span>
+                              </div>
+                            )}
+                            {record.cash_out && (
+                              <div className="bg-black/30 rounded-lg p-2 border border-red-500/20">
+                                <span className="text-red-300/70">払戻: </span>
+                                <span className="text-red-200 font-bold">{record.cash_out.toLocaleString()}円</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
 
                         {record.feeling && (
                           <div className="flex items-center gap-2 mb-2">
@@ -829,6 +1087,80 @@ export default function AllGambleCommunity() {
             )}
           </div>
         )}
+
+        {/* プレイヤータブ */}
+        {activeTab === 'players' && (
+          <div className="space-y-5 animate-slide-in">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-600 blur-2xl opacity-50 animate-pulse" />
+              <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-2 border-blue-500/50">
+                <h2 className="font-black text-blue-300 mb-4 text-xl flex items-center gap-2">
+                  <User className="w-6 h-6 drop-shadow-glow" />
+                  プレイヤー一覧
+                </h2>
+
+                {allPlayers.length > 0 ? (
+                  <div className="space-y-2">
+                    {allPlayers.map((player) => (
+                      <button
+                        key={player.userId}
+                        onClick={() => {
+                          setSelectedPlayer(player)
+                          loadPlayerHistory(player.userId, '7days')
+                          setPlayerPeriod('7days')
+                        }}
+                        className="w-full relative group"
+                      >
+                        <div className="absolute inset-0 bg-blue-500 blur-lg opacity-20 group-hover:opacity-40 transition-opacity" />
+                        <div className="relative flex items-center gap-3 bg-black/40 backdrop-blur-sm rounded-xl p-3 border-2 border-blue-500/30 hover:border-blue-400/50 transition-all">
+                          <div className="relative flex-shrink-0">
+                            <div className={`w-12 h-12 rounded-full p-0.5 ${
+                              player.equippedBadge 
+                                ? `bg-gradient-to-r ${player.equippedBadge.badge_gradient}`
+                                : 'bg-gradient-to-r from-blue-500 to-cyan-500'
+                            }`}>
+                              {player.avatarUrl ? (
+                                <img 
+                                  src={player.avatarUrl} 
+                                  alt={player.username}
+                                  className="w-full h-full rounded-full object-cover bg-black"
+                                />
+                              ) : (
+                                <div className="w-full h-full rounded-full bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center">
+                                  <User className="w-6 h-6 text-white" />
+                                </div>
+                              )}
+                            </div>
+                            
+                            {player.equippedBadge && (
+                              <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center border-2 border-black shadow-lg bg-gradient-to-r ${player.equippedBadge.badge_gradient}`}>
+                                {(() => {
+                                  const iconMap: { [key: string]: any } = {
+                                    Trophy, Crown, Target, Zap, Award, Sparkles
+                                  }
+                                  const IconComponent = iconMap[player.equippedBadge.icon] || Trophy
+                                  return <IconComponent className="w-2.5 h-2.5 text-white" />
+                                })()}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex-1 text-left">
+                            <p className="font-black text-blue-100 text-base">{player.username}</p>
+                          </div>
+
+                          <ArrowLeft className="w-5 h-5 text-blue-400 transform rotate-180" />
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-center text-blue-400/60 py-8">プレイヤーがいません</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 写真投稿モーダル */}
@@ -940,6 +1272,192 @@ export default function AllGambleCommunity() {
                     )}
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* プレイヤー詳細モーダル */}
+      {selectedPlayer && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="relative max-w-2xl w-full my-8">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-3xl blur-xl opacity-75 animate-pulse" />
+            <div className="relative bg-black/90 backdrop-blur-sm rounded-3xl p-6 border-2 border-blue-500/50 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-6 sticky top-0 bg-black/90 pb-4 border-b border-blue-500/30">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <div className={`w-16 h-16 rounded-full p-0.5 ${
+                      selectedPlayer.equippedBadge 
+                        ? `bg-gradient-to-r ${selectedPlayer.equippedBadge.badge_gradient}`
+                        : 'bg-gradient-to-r from-blue-500 to-cyan-500'
+                    }`}>
+                      {selectedPlayer.avatarUrl ? (
+                        <img 
+                          src={selectedPlayer.avatarUrl} 
+                          alt={selectedPlayer.username}
+                          className="w-full h-full rounded-full object-cover bg-black"
+                        />
+                      ) : (
+                        <div className="w-full h-full rounded-full bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center">
+                          <User className="w-8 h-8 text-white" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-black text-blue-100">{selectedPlayer.username}</h2>
+                    <p className="text-sm text-blue-400/80">プレイヤーデータ</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSelectedPlayer(null)}
+                  className="p-2 text-blue-400 hover:bg-blue-500/20 rounded-lg transition-all"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {/* 期間フィルター */}
+              <div className="mb-6">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-blue-600 blur-xl opacity-50" />
+                  <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-1 border-2 border-blue-500/50">
+                    <div className="grid grid-cols-4 gap-1">
+                      {[
+                        { value: '7days', label: '7日間' },
+                        { value: 'month', label: '今月' },
+                        { value: 'all', label: '全履歴' },
+                        { value: 'custom', label: 'カスタム' }
+                      ].map((p) => (
+                        <button
+                          key={p.value}
+                          onClick={() => {
+                            setPlayerPeriod(p.value as Period)
+                            if (p.value === 'custom') {
+                              setShowCustomDatePicker(true)
+                            } else {
+                              loadPlayerHistory(selectedPlayer.userId, p.value as Period)
+                            }
+                          }}
+                          className={`py-2 px-2 rounded-xl font-black text-xs transition-all ${
+                            playerPeriod === p.value
+                              ? 'bg-gradient-to-r from-blue-500 to-cyan-600 text-black shadow-lg'
+                              : 'text-blue-400/60 hover:text-blue-400'
+                          }`}
+                        >
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {playerPeriod === 'custom' && (
+                  <div className="relative mt-3">
+                    <div className="absolute inset-0 bg-purple-600 blur-xl opacity-50" />
+                    <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-4 border-2 border-purple-500/50">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-black text-purple-300 mb-2">開始日</label>
+                          <input
+                            type="date"
+                            value={customStartDate}
+                            onChange={(e) => setCustomStartDate(e.target.value)}
+                            className="w-full px-3 py-2 rounded-xl bg-white/10 border-2 border-purple-500/30 text-purple-100 text-sm focus:outline-none focus:border-purple-400"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-black text-purple-300 mb-2">終了日</label>
+                          <input
+                            type="date"
+                            value={customEndDate}
+                            onChange={(e) => setCustomEndDate(e.target.value)}
+                            className="w-full px-3 py-2 rounded-xl bg-white/10 border-2 border-purple-500/30 text-purple-100 text-sm focus:outline-none focus:border-purple-400"
+                          />
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => loadPlayerHistory(selectedPlayer.userId, 'custom')}
+                        className="mt-3 w-full py-2 rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 text-white font-black text-sm hover:shadow-lg transition-all"
+                      >
+                        適用
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 履歴リスト */}
+              <div className="space-y-3">
+                <h3 className="font-black text-blue-300 text-lg mb-3">プレイ履歴</h3>
+                {playerHistory.length > 0 ? (
+                  playerHistory.map((record, idx) => (
+                    <div key={idx} className="relative group">
+                      <div className={`absolute inset-0 ${
+                        record.profit >= 0 ? 'bg-green-500' : 'bg-red-500'
+                      } blur-lg opacity-20 group-hover:opacity-40 transition-opacity`} />
+                      <div className="relative bg-black/40 backdrop-blur-sm rounded-xl p-4 border-2 border-blue-500/30">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-xl">{GAME_ICONS[record.category] || '🎲'}</span>
+                              <span className="font-black text-blue-100">{GAME_NAMES[record.category] || record.category}</span>
+                            </div>
+                            <p className="text-sm text-blue-400/80">{record.location}</p>
+                            <p className="text-xs text-blue-400/60">{record.playedDate}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className={`font-black text-2xl ${
+                              record.profit >= 0 ? 'text-green-400' : 'text-red-400'
+                            } drop-shadow-glow`}>
+                              {record.profit >= 0 ? '+' : ''}{record.profit.toLocaleString()}
+                            </p>
+                            <p className="text-xs text-blue-400/60">P</p>
+                          </div>
+                        </div>
+
+                        {record.details && (
+                          <div className="mb-2 flex items-center gap-2">
+                            <span className="text-xs text-blue-300/70">詳細:</span>
+                            <span className="text-sm text-blue-200/90">{record.details}</span>
+                          </div>
+                        )}
+
+                        {(record.buy_in || record.cash_out) && (
+                          <div className="grid grid-cols-2 gap-2 text-xs mt-2">
+                            {record.buy_in && (
+                              <div className="bg-black/30 rounded-lg p-2 border border-blue-500/20">
+                                <span className="text-blue-300/70">バイイン: </span>
+                                <span className="text-blue-200 font-bold">{record.buy_in.toLocaleString()}円</span>
+                              </div>
+                            )}
+                            {record.cash_out && (
+                              <div className="bg-black/30 rounded-lg p-2 border border-blue-500/20">
+                                <span className="text-blue-300/70">払戻: </span>
+                                <span className="text-blue-200 font-bold">{record.cash_out.toLocaleString()}円</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {record.feeling && (
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className="text-lg">{FEELING_EMOJIS[record.feeling as keyof typeof FEELING_EMOJIS]}</span>
+                          </div>
+                        )}
+
+                        {record.memo && (
+                          <p className="text-sm text-blue-200/90 bg-black/30 rounded-lg p-3 border border-blue-500/20 mt-2">
+                            {record.memo}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-center text-blue-400/60 py-8">履歴がありません</p>
+                )}
               </div>
             </div>
           </div>

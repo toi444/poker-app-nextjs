@@ -6,7 +6,8 @@ import { supabase } from '@/lib/supabase'
 import { 
   TrendingUp, Users, BarChart3, BookOpen, DollarSign,
   User, Trophy, Sparkles, Shield, ChevronRight,
-  Target, Link2, ArrowRight, Zap, Crown, Award, Coins
+  Target, Link2, ArrowRight, Zap, Crown, Award, Coins,
+  Calendar, Clock, Activity, Brain
 } from 'lucide-react'
 
 type Section = 'game-report' | 'data' | 'all-gamble' | 'lesson' | 'pbank'
@@ -17,6 +18,32 @@ interface LoanUser {
   avatarUrl: string | null
   equippedBadge: any
   amount: number
+}
+
+interface BatchRecord {
+  date: string
+  players: Array<{
+    username: string
+    avatarUrl: string | null
+    equippedBadge: any
+    profit: number
+  }>
+}
+
+interface PlayerAnalysis {
+  username: string
+  avatarUrl: string | null
+  equippedBadge: any
+  totalGames: number
+  totalProfit: number
+  winRate: number
+  totalPlayHours: number
+  playStyle: {
+    type: string
+    name: string
+    icon: string
+    color: string
+  }
 }
 
 export default function DashboardV2() {
@@ -33,6 +60,8 @@ export default function DashboardV2() {
   const [pbankData, setPbankData] = useState({ lent: 0, borrowed: 0, interest: 0, nextInterest: 0 })
   const [lendingUsers, setLendingUsers] = useState<LoanUser[]>([])
   const [borrowingUsers, setBorrowingUsers] = useState<LoanUser[]>([])
+  const [latestBatchRecord, setLatestBatchRecord] = useState<BatchRecord | null>(null)
+  const [randomPlayerAnalysis, setRandomPlayerAnalysis] = useState<PlayerAnalysis | null>(null)
 
   useEffect(() => {
     checkUser()
@@ -43,8 +72,113 @@ export default function DashboardV2() {
       loadDataSection()
     } else if (user && activeSection === 'pbank') {
       loadPBankData()
+    } else if (user && activeSection === 'all-gamble') {
+      loadAllGambleSection()
     }
   }, [user, activeSection])
+
+  useEffect(() => {
+    if (!weeklyRanking || weeklyRanking.length < 3) return
+
+    const interval = setInterval(() => {
+      const topThree = weeklyRanking.slice(0, 3).filter(r => r.profit > 0)
+      const bottomThree = weeklyRanking.slice(-3).filter(r => r.profit < 0)
+      
+      const roasts = [
+        "最近の{{player}}ほんま負けすぎやろ！",
+        "{{player}}、みんなよりハンド1枚少ないんか？",
+        "{{player}}、お前全然変わってへんやんけ！",
+        "{{player}}フォールドって知ってる？",
+        "{{player}}のプレイ、見てられへんわ",
+        "{{player}}チップ配るボランティアでもやってんのか？",
+        "{{player}}はポーカーよりジャグラー打った方がええで",
+        "{{player}}金ドブに捨ててるだけやん",
+        "{{player}}センスの欠片もないな",
+        "{{player}}、ほんまに心配やわ",
+        "最近の{{player}}、大丈夫かほんま",
+        "{{player}}みたいな打ち方してたら破産するで",
+        "{{player}}、ルール知ってる？",
+        "{{player}}、そんなんで勝てると思ってるん？",
+        "{{player}}、ボード見えてる？",
+        "{{player}}、ハンドレンジって知ってるか？",
+        "{{player}}いつからティルトなん？もしかしてずっとか？",
+        "{{player}}、、、まぁ、俺はええけどな。",
+        "{{player}}より俺の娘の方がうまいわ",
+        "{{player}}、イカサマされてんのか？",
+        "{{player}}、そのプレイ小学生以下やで",
+        "{{player}}、もしかしてルール覚えてないんか？",
+        "{{player}}、ポーカー教えたるから連絡してこい",
+        "{{player}}とポーカー打てるなら俺メシに困らんわ",
+        "{{player}}、相当カネに余裕あるんやな",
+        "{{player}}、フィッシュ確定やな",
+        "{{player}}、「コール」って誰かに言わされてんのか？",
+        "{{player}}は参加率高すぎんねんほんま",
+        "{{player}}ハンド見ていい？・・はよ降りとけ！",
+        "{{player}}、ほんまおもろいな、おまえ",
+        "そのカネ、俺やったらもっとマシに使えるで、{{player}}",
+        "{{player}}、カネを何やっと思ってんねん！お前、石油王なんか？",
+        "{{player}}、金が消えるスピード異常やわ。お前のせいでATM壊れるんとちゃうか",
+        "{{player}}、その金で何回マクド食えたと思っとんねん",
+        "{{player}}、札束燃やした方がまだ有意義やな",
+        "{{player}}、財布に穴空いてるレベルで金なくなってるやん(笑)",
+        "{{player}}、金持ってても使い方知らんとか悲しいな",
+        "{{player}}、その金、チリ紙と交換しといたろか？どうせなくなるから一緒やろ",
+        "{{player}}、銀行員泣いとるで、お前の通帳見て",
+        "{{player}}、世の中の平均時給知ってる？",
+        "{{player}}、ティッシュ配りのバイトした方がマシやで",
+        "そんな使い方するなら俺に寄付せえや、{{player}}",
+        "{{player}}、金銭感覚バグっとるで、再起動して直せ",
+        "{{player}}、ポーカー辞めて募金した方が有意義やん",
+        "{{player}}、誰かに負けろって脅されてるんか？",
+        "{{player}}、コインの裏表でオールインした方がマシやな",
+        "{{player}}、確率計算してるか？",
+        "{{player}}、運も実力もないんか。",
+        "{{player}}、その判断力で今後やっていけるか？",
+        "{{player}}、カモがネギ背負ってガスコンロまで持ってきてるわ",
+        "{{player}}、今日もチップをみんなに配る仕事、ご苦労さん",
+        "{{player}}、疫病神が人間の姿してんのか？",
+        "{{player}}、お前の存在がみんなの希望になってるで(笑)",
+        "{{player}}、ほんま下手くそやんな",
+        "{{player}}、お前バカラしてんのか？これポーカーやぞ",
+        "{{player}}、お前何かに憑かれてんのか？",
+        "{{player}}、寝てんのか？",
+        "{{player}}、素人以下やん、素人に謝れ",
+        "{{player}}、もうコールすんな！降りろ！",
+        "{{player}}はフォールドって言葉覚えられへんのか？",
+        "{{player}}、脳みそサイコロに入れ替えた方がマシやで",
+        "{{player}}、思考回路ショートしとるやろ",
+        "{{player}}、小学生の方が賢い判断するで",
+        "{{player}}、認知症なんか？",
+        "{{player}}、考えるな、どうせ外れるから",
+        "{{player}}、戦略？そんなもんお前には無縁やろ",
+        "{{player}}、明日から水だけで生きていけよ",
+        "{{player}}、お前の負け額、途上国救えるで",
+        "{{player}}、ここまで来たら逆にどこまで負けるか記録つくろうや",
+        "{{player}}見てるとある意味元気出るわ",
+        "{{player}}、もう寝ろ、起きるな、ギャンブルもするな"
+      ]
+      
+      const praise = [
+        "最近の{{player}}、強いやんけ！流石やな！",
+        "{{player}}くん、やっぱり才能あると思っててん。",
+        "{{player}}お前、最近調子ええやんけ！"
+      ]
+
+      const shouldPraise = Math.random() < 0.05
+
+      if (shouldPraise && topThree.length > 0) {
+        const winner = topThree[Math.floor(Math.random() * topThree.length)]
+        const comment = praise[Math.floor(Math.random() * praise.length)]
+        setRoastComment(comment.replace('{{player}}', winner.username))
+      } else if (bottomThree.length > 0) {
+        const loser = bottomThree[Math.floor(Math.random() * bottomThree.length)]
+        const comment = roasts[Math.floor(Math.random() * roasts.length)]
+        setRoastComment(comment.replace('{{player}}', loser.username))
+      }
+    }, 3000)
+
+    return () => clearInterval(interval)
+  }, [weeklyRanking])
 
   const checkUser = async () => {
     try {
@@ -69,9 +203,6 @@ export default function DashboardV2() {
       })
       
       await loadAllGamble30Days(authUser.id)
-
-      await loadDataSectionOnInit()
-
       setLoading(false)
     } catch (error) {
       console.error('User check error:', error)
@@ -110,27 +241,17 @@ export default function DashboardV2() {
     const totalProfit = allData.reduce((sum, r) => sum + r.profit, 0)
     setAllGamble30Days(totalProfit)
   }
-  const loadDataSectionOnInit = async () => {
+
+  const loadAllGambleSection = async () => {
     const sevenDaysAgo = new Date()
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-    
-    console.log('🔍 7日前の日付:', sevenDaysAgo.toISOString().split('T')[0])
 
-    // gamble_recordsからデータ取得（profilesとの結合なし）
-    const { data: allGambleData, error: gambleError } = await supabase
+    const { data: allGambleData } = await supabase
       .from('gamble_records')
       .select('user_id, profit, played_date')
       .gte('played_date', sevenDaysAgo.toISOString().split('T')[0])
 
-    if (gambleError) {
-      console.error('❌ gamble_recordsエラー:', gambleError)
-    }
-
-    console.log('📊 gamble_recordsから取得:', allGambleData)
-    console.log('📊 gamble_records件数:', allGambleData?.length || 0)
-
-    // game_sessionsからデータ取得
-    const { data: gameData, error: gameError } = await supabase
+    const { data: gameData } = await supabase
       .from('game_sessions')
       .select(`
         user_id,
@@ -140,13 +261,6 @@ export default function DashboardV2() {
       `)
       .gte('played_at', sevenDaysAgo.toISOString())
 
-    if (gameError) {
-      console.error('❌ game_sessionsエラー:', gameError)
-    }
-
-    console.log('🎮 game_sessionsから取得:', gameData)
-
-    // game_sessionsのデータを変換
     const prettyCureData = gameData?.map(g => {
       const playedDate = new Date(g.played_at)
       const jstDate = new Date(playedDate.getTime() + 9 * 60 * 60 * 1000)
@@ -159,28 +273,21 @@ export default function DashboardV2() {
       }
     }).filter(g => g.played_date >= sevenDaysAgo.toISOString().split('T')[0]) || []
 
-    // 全データを結合
     const combinedData = [...(allGambleData || []), ...prettyCureData]
-    
-    console.log('🔥 結合後の全データ件数:', combinedData.length)
 
     if (combinedData.length > 0) {
-      // ユニークなuser_idを取得
       const userIds = [...new Set(combinedData.map(r => r.user_id))]
       
-      // profilesデータを一括取得
       const { data: profilesData } = await supabase
         .from('profiles')
         .select('id, username, avatar_url, equipped_badge(*)')
         .in('id', userIds)
 
-      // user_id → profilesのマップを作成
       const profilesMap = new Map()
       profilesData?.forEach(profile => {
         profilesMap.set(profile.id, profile)
       })
 
-      // 統計を計算
       const allGambleStats = new Map()
       combinedData.forEach((record: any) => {
         const profile = profilesMap.get(record.user_id)
@@ -202,7 +309,6 @@ export default function DashboardV2() {
         .sort((a, b) => b.profit - a.profit)
         .slice(0, 3)
 
-      console.log('🏆 最終ランキング:', allGambleRankings)
       setAllGambleRanking(allGambleRankings)
     }
   }
@@ -217,7 +323,7 @@ export default function DashboardV2() {
     const sevenDaysAgo = new Date()
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
 
-    // ホームゲームポーカーのランキング
+    // ホームゲームポーカーの全プレイヤーランキング
     const { data: rankData } = await supabase
       .from('game_sessions')
       .select(`
@@ -247,129 +353,101 @@ export default function DashboardV2() {
         .sort((a, b) => b.profit - a.profit)
 
       setWeeklyRanking(rankings)
-
-      if (rankings.length >= 3) {
-        const topThree = rankings.slice(0, 3).filter(r => r.profit > 0)
-        const bottomThree = rankings.slice(-3).filter(r => r.profit < 0)
-        
-        const roasts = [
-          "最近の{{player}}ほんま負けすぎやろ！",
-          "{{player}}、みんなよりハンド1枚少ないんか？",
-          "{{player}}、お前全然変わってへんやんけ！",
-          "{{player}}フォールドって知ってる？",
-          "{{player}}のプレイ、見てられへんわ",
-          "{{player}}チップ配るボランティアでもやってんのか？",
-          "{{player}}はポーカーよりジャグラー打った方がええで",
-          "{{player}}金ドブに捨ててるだけやん",
-          "{{player}}センスの欠片もないな",
-          "{{player}}、ほんまに心配やわ",
-          "最近の{{player}}、大丈夫かほんま",
-          "{{player}}みたいな打ち方してたら破産するで",
-          "{{player}}、ルール知ってる？",
-          "{{player}}、そんなんで勝てると思ってるん？",
-          "{{player}}、ボード見えてる？",
-          "{{player}}、ハンドレンジって知ってるか？",
-          "{{player}}いつからティルトなん？もしかしてずっとか？",
-          "{{player}}、、、まぁ、俺はええけどな。",
-          "{{player}}より俺の娘の方がうまいわ",
-          "{{player}}、イカサマされてんのか？",
-          "{{player}}、そのプレイ小学生以下やで",
-          "{{player}}、もしかしてルール覚えてないんか？",
-          "{{player}}、ポーカー教えたるから連絡してこい",
-          "{{player}}とポーカー打てるなら俺メシに困らんわ",
-          "{{player}}、相当カネに余裕あるんやな",
-          "{{player}}、フィッシュ確定やな",
-          "{{player}}、「コール」って誰かに言わされてんのか？",
-          "{{player}}は参加率高すぎんねんほんま",
-          "{{player}}ハンド見ていい？・・はよ降りとけ！",
-          "{{player}}、ほんまおもろいな、おまえ"
-        ]
-        
-        const praise = [
-          "最近の{{player}}、強いやんけ！流石やな！",
-          "{{player}}くん、やっぱり才能あると思っててん。",
-          "{{player}}お前、最近調子ええやんけ！"
-        ]
-
-        const shouldPraise = Math.random() < 0.05
-
-        if (shouldPraise && topThree.length > 0) {
-          const winner = topThree[Math.floor(Math.random() * topThree.length)]
-          const comment = praise[Math.floor(Math.random() * praise.length)]
-          setRoastComment(comment.replace('{{player}}', winner.username))
-        } else if (bottomThree.length > 0) {
-          const loser = bottomThree[Math.floor(Math.random() * bottomThree.length)]
-          const comment = roasts[Math.floor(Math.random() * roasts.length)]
-          setRoastComment(comment.replace('{{player}}', loser.username))
-        }
-      }
     }
 
-    // オールギャンブルのランキング（gamble_recordsとgame_sessionsを結合）
-    const { data: allGambleDataForRanking } = await supabase
-      .from('gamble_records')
-      .select('user_id, profit, played_date')
-      .gte('played_date', sevenDaysAgo.toISOString().split('T')[0])
-
-    const { data: gameDataForRanking } = await supabase
+    // 直近1回の一括記録登録を取得
+    const { data: batchData } = await supabase
       .from('game_sessions')
       .select(`
         user_id,
         profit,
         played_at,
+        start_time,
         profiles(username, avatar_url, equipped_badge(*))
       `)
-      .gte('played_at', sevenDaysAgo.toISOString())
+      .order('played_at', { ascending: false })
+      .limit(50)
 
-    const prettyCureDataForRanking = gameDataForRanking?.map(g => {
-      const playedDate = new Date(g.played_at)
-      const jstDate = new Date(playedDate.getTime() + 9 * 60 * 60 * 1000)
-      const dateStr = jstDate.toISOString().split('T')[0]
-      return {
-        user_id: g.user_id,
-        profit: g.profit,
-        played_date: dateStr,
-        profiles: g.profiles
-      }
-    }).filter(g => g.played_date >= sevenDaysAgo.toISOString().split('T')[0]) || []
-
-    const combinedDataForRanking = [...(allGambleDataForRanking || []), ...prettyCureDataForRanking]
-
-    if (combinedDataForRanking.length > 0) {
-      const userIdsForRanking = [...new Set(combinedDataForRanking.map((r: any) => r.user_id))]
+    if (batchData && batchData.length > 0) {
+      // 同じ日時のセッションをグループ化
+      const sessionGroups = new Map<string, any[]>()
       
-      const { data: profilesDataForRanking } = await supabase
-        .from('profiles')
-        .select('id, username, avatar_url, equipped_badge(*)')
-        .in('id', userIdsForRanking)
-
-      const profilesMapForRanking = new Map()
-      profilesDataForRanking?.forEach((profile: any) => {
-        profilesMapForRanking.set(profile.id, profile)
-      })
-
-      const allGambleStats = new Map()
-      combinedDataForRanking.forEach((record: any) => {
-        const profile = profilesMapForRanking.get(record.user_id)
-        const username = profile?.username || 'Unknown'
-        const avatarUrl = profile?.avatar_url || null
-        const equippedBadge = profile?.equipped_badge || null
+      batchData.forEach(session => {
+        const playedDate = new Date(session.played_at)
+        const jstDate = new Date(playedDate.getTime() + 9 * 60 * 60 * 1000)
+        const key = `${jstDate.toISOString().split('T')[0]}_${session.start_time}`
         
-        const current = allGambleStats.get(record.user_id) || {
-          profit: 0,
-          username,
-          avatarUrl,
-          equippedBadge
+        if (!sessionGroups.has(key)) {
+          sessionGroups.set(key, [])
         }
-        current.profit += record.profit || 0
-        allGambleStats.set(record.user_id, current)
+        sessionGroups.get(key)!.push(session)
       })
 
-      const allGambleRankings = Array.from(allGambleStats.values())
-        .sort((a, b) => b.profit - a.profit)
-        .slice(0, 3)
+      // 最も新しいグループを取得（参加人数が2人以上）
+      for (const [key, sessions] of Array.from(sessionGroups.entries()).sort((a, b) => b[0].localeCompare(a[0]))) {
+        if (sessions.length >= 2) {
+          const date = key.split('_')[0]
+          const players = sessions
+            .map(s => ({
+              username: s.profiles?.username || 'Unknown',
+              avatarUrl: s.profiles?.avatar_url || null,
+              equippedBadge: s.profiles?.equipped_badge || null,
+              profit: s.profit
+            }))
+            .sort((a, b) => b.profit - a.profit)
 
-      setAllGambleRanking(allGambleRankings)
+          setLatestBatchRecord({ date, players })
+          break
+        }
+      }
+    }
+
+    // ランダムプレイヤー分析
+    if (rankData && rankData.length > 0) {
+      const allPlayerIds = [...new Set(rankData.map((s: any) => s.user_id))]
+      const randomUserId = allPlayerIds[Math.floor(Math.random() * allPlayerIds.length)]
+      
+      const { data: allSessionsForUser } = await supabase
+        .from('game_sessions')
+        .select(`
+          profit,
+          play_hours,
+          profiles(username, avatar_url, equipped_badge(*))
+        `)
+        .eq('user_id', randomUserId)
+
+      if (allSessionsForUser && allSessionsForUser.length > 0) {
+        const totalGames = allSessionsForUser.length
+        const totalProfit = allSessionsForUser.reduce((sum: number, s: any) => sum + s.profit, 0)
+        const wins = allSessionsForUser.filter((s: any) => s.profit > 0).length
+        const winRate = (wins / totalGames) * 100
+        const totalPlayHours = allSessionsForUser.reduce((sum: number, s: any) => sum + Number(s.play_hours), 0)
+
+        // プレイスタイル判定
+        let playStyle = { type: 'BEGINNER', name: 'ビギナー', icon: '🌱', color: 'from-green-500 to-emerald-600' }
+        
+        if (totalGames >= 5) {
+          if (winRate >= 55 && totalProfit > 0) {
+            playStyle = { type: 'TAG', name: 'TAG', icon: '⚔️', color: 'from-blue-500 to-purple-600' }
+          } else if (winRate >= 45 && totalProfit > 5000) {
+            playStyle = { type: 'LAG', name: 'LAG', icon: '🔥', color: 'from-orange-500 to-red-600' }
+          } else if (winRate >= 50 && totalProfit >= 0) {
+            playStyle = { type: 'ROCK', name: 'ロック', icon: '🪨', color: 'from-green-500 to-teal-600' }
+          }
+        }
+
+        const firstSession: any = allSessionsForUser[0]
+        setRandomPlayerAnalysis({
+          username: firstSession.profiles?.username || 'Unknown',
+          avatarUrl: firstSession.profiles?.avatar_url || null,
+          equippedBadge: firstSession.profiles?.equipped_badge || null,
+          totalGames,
+          totalProfit,
+          winRate,
+          totalPlayHours,
+          playStyle
+        })
+      }
     }
   }
 
@@ -415,7 +493,6 @@ export default function DashboardV2() {
         nextInterest: netNextInterest
       })
 
-      // 貸している人のリスト
       const lendingMap = new Map<string, number>()
       loansData
         .filter(l => l.lender_id === user.id)
@@ -439,7 +516,6 @@ export default function DashboardV2() {
       }
       setLendingUsers(lendingList)
 
-      // 借りている人のリスト
       const borrowingMap = new Map<string, number>()
       loansData
         .filter(l => l.borrower_id === user.id)
@@ -670,131 +746,19 @@ export default function DashboardV2() {
               Data & Analytics
             </h2>
 
-            {/* オールギャンブルデータエリア */}
+            {/* ホームゲーム限定データの強調 */}
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-orange-600 to-red-600 blur-xl opacity-50" />
-              <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-2 border-orange-500/50">
-                <h3 className="font-bold text-white mb-4 flex items-center gap-2 text-lg">
-                  <Coins className="w-6 h-6 text-orange-400 drop-shadow-glow" />
-                  みんなのオールギャンブルデータ
-                  <span className="text-xs text-orange-300 ml-2">（直近7日間）</span>
-                </h3>
-
-                {allGambleRanking.length > 0 ? (
-                  <div className="space-y-3 mb-4">
-                    {allGambleRanking.map((rank, idx) => (
-                      <div key={idx} className="flex items-center gap-3 bg-gradient-to-r from-orange-950/40 to-red-950/40 rounded-xl p-4 border border-orange-500/30 backdrop-blur-sm">
-                        <div className="flex-shrink-0">
-                          {idx === 0 && (
-                            <div className="relative">
-                              <div className="absolute inset-0 bg-yellow-500 blur-lg animate-pulse" />
-                              <Crown className="relative w-8 h-8 text-yellow-400 drop-shadow-glow" />
-                            </div>
-                          )}
-                          {idx === 1 && (
-                            <div className="relative">
-                              <div className="absolute inset-0 bg-gray-400 blur-lg animate-pulse" />
-                              <Award className="relative w-8 h-8 text-gray-300 drop-shadow-glow" />
-                            </div>
-                          )}
-                          {idx === 2 && (
-                            <div className="relative">
-                              <div className="absolute inset-0 bg-orange-500 blur-lg animate-pulse" />
-                              <Trophy className="relative w-8 h-8 text-orange-400 drop-shadow-glow" />
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="relative flex-shrink-0">
-                          <div className={`w-12 h-12 rounded-full p-0.5 ${
-                            rank.equippedBadge 
-                              ? `bg-gradient-to-r ${rank.equippedBadge.badge_gradient}`
-                              : 'bg-gradient-to-r from-orange-500 to-red-500'
-                          }`}>
-                            {rank.avatarUrl ? (
-                              <img 
-                                src={rank.avatarUrl} 
-                                alt={rank.username}
-                                className="w-full h-full rounded-full object-cover bg-black"
-                              />
-                            ) : (
-                              <div className="w-full h-full rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
-                                <User className="w-6 h-6 text-white" />
-                              </div>
-                            )}
-                          </div>
-                          
-                          {rank.equippedBadge && (
-                            <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-lg bg-gradient-to-r ${rank.equippedBadge.badge_gradient}`}>
-                              {(() => {
-                                const iconMap: { [key: string]: any } = {
-                                  Trophy, Crown, Target, Zap, Award, Sparkles
-                                }
-                                const IconComponent = iconMap[rank.equippedBadge.icon] || Trophy
-                                return <IconComponent className="w-2.5 h-2.5 text-white" />
-                              })()}
-                            </div>
-                          )}
-                        </div>
-
-                        <p className="font-bold text-white text-lg flex-1 truncate">{rank.username}</p>
-
-                        <p className={`font-black text-xl ${rank.profit >= 0 ? 'text-green-400' : 'text-red-400'} drop-shadow-glow flex-shrink-0`}>
-                          {rank.profit >= 0 ? '+' : ''}{rank.profit.toLocaleString()}P
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-center text-gray-400 py-4 text-sm">データがありません</p>
-                )}
-
-                <button
-                  onClick={() => router.push('/all-gamble-community')}
-                  className="w-full mt-4 py-3 rounded-xl bg-gradient-to-r from-orange-600 to-red-600 text-white font-black hover:shadow-lg hover:scale-105 transition-all flex items-center justify-center gap-2"
-                >
-                  <Coins className="w-5 h-5" />
-                  みんなのオールギャンブルデータを見る
-                </button>
-              </div>
-            </div>
-
-            {/* 区切り */}
-            <div className="relative">
-              <div className="absolute inset-0 bg-purple-600 blur-xl opacity-30" />
-              <div className="relative bg-black/40 backdrop-blur-sm rounded-xl p-4 border-2 border-purple-500/30">
-                <p className="text-center text-purple-200 font-bold text-sm">
-                  📊 ここから下はホームゲーム限定データ
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <button
-                onClick={() => router.push('/community')}
-                className="relative group overflow-hidden rounded-2xl"
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-600 to-pink-600 animate-gradient" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                <div className="relative p-6 text-white">
-                  <Users className="w-12 h-12 mb-3 drop-shadow-glow animate-float" />
-                  <p className="font-black text-lg drop-shadow-glow">みんなの記録</p>
-                  <p className="text-xs opacity-90 mt-1">ホームゲームポーカーのみ</p>
+              <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-orange-600 blur-2xl opacity-50 animate-pulse" />
+              <div className="relative bg-gradient-to-r from-red-600 to-orange-600 rounded-2xl p-1 shadow-2xl">
+                <div className="bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-2 border-white/20">
+                  <p className="text-center text-2xl font-black text-white drop-shadow-glow mb-2">
+                    ⚠️ ホームゲーム限定データ ⚠️
+                  </p>
+                  <p className="text-center text-sm text-orange-100 font-semibold">
+                    この画面のデータはすべてホームゲームポーカーの記録です
+                  </p>
                 </div>
-              </button>
-
-              <button
-                onClick={() => router.push('/stats')}
-                className="relative group overflow-hidden rounded-2xl"
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 to-purple-600 animate-gradient" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                <div className="relative p-6 text-white">
-                  <BarChart3 className="w-12 h-12 mb-3 drop-shadow-glow animate-float" />
-                  <p className="font-black text-lg drop-shadow-glow">自分の記録</p>
-                  <p className="text-xs opacity-90 mt-1">ホームゲームポーカーのみ</p>
-                </div>
-              </button>
+              </div>
             </div>
 
             {/* ジャックポット */}
@@ -815,6 +779,93 @@ export default function DashboardV2() {
               </div>
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={() => router.push('/community')}
+                className="relative group overflow-hidden rounded-2xl"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-600 to-pink-600 animate-gradient" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <div className="relative p-6 text-white">
+                  <Users className="w-12 h-12 mb-3 drop-shadow-glow animate-float" />
+                  <p className="font-black text-lg drop-shadow-glow">みんなの記録</p>
+                  <p className="text-xs opacity-90 mt-1">詳細データ</p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => router.push('/stats')}
+                className="relative group overflow-hidden rounded-2xl"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 to-purple-600 animate-gradient" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <div className="relative p-6 text-white">
+                  <BarChart3 className="w-12 h-12 mb-3 drop-shadow-glow animate-float" />
+                  <p className="font-black text-lg drop-shadow-glow">自分の記録</p>
+                  <p className="text-xs opacity-90 mt-1">詳細データ</p>
+                </div>
+              </button>
+            </div>
+
+            {/* 直近1回の一括記録登録 */}
+            {latestBatchRecord && (
+              <div className="relative">
+                <div className="absolute inset-0 bg-indigo-600 blur-xl opacity-50" />
+                <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-2 border-indigo-500/50">
+                  <h3 className="font-bold text-white mb-4 flex items-center gap-2 text-lg">
+                    <Calendar className="w-6 h-6 text-indigo-400 drop-shadow-glow" />
+                    直近1回の一括記録データ
+                  </h3>
+                  <p className="text-sm text-indigo-300 font-semibold mb-4">
+                    📅 {new Date(latestBatchRecord.date).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}
+                  </p>
+                  <div className="space-y-3">
+                    {latestBatchRecord.players.map((player, idx) => (
+                      <div key={idx} className="flex items-center gap-3 bg-indigo-950/30 rounded-xl p-4 border border-indigo-500/30">
+                        <div className="relative flex-shrink-0">
+                          <div className={`w-12 h-12 rounded-full p-0.5 ${
+                            player.equippedBadge 
+                              ? `bg-gradient-to-r ${player.equippedBadge.badge_gradient}`
+                              : 'bg-gradient-to-r from-indigo-500 to-purple-500'
+                          }`}>
+                            {player.avatarUrl ? (
+                              <img 
+                                src={player.avatarUrl} 
+                                alt={player.username}
+                                className="w-full h-full rounded-full object-cover bg-black"
+                              />
+                            ) : (
+                              <div className="w-full h-full rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                                <User className="w-6 h-6 text-white" />
+                              </div>
+                            )}
+                          </div>
+                          
+                          {player.equippedBadge && (
+                            <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-lg bg-gradient-to-r ${player.equippedBadge.badge_gradient}`}>
+                              {(() => {
+                                const iconMap: { [key: string]: any } = {
+                                  Trophy, Crown, Target, Zap, Award, Sparkles
+                                }
+                                const IconComponent = iconMap[player.equippedBadge.icon] || Trophy
+                                return <IconComponent className="w-2.5 h-2.5 text-white" />
+                              })()}
+                            </div>
+                          )}
+                        </div>
+
+                        <p className="font-bold text-white text-base flex-1">{player.username}</p>
+
+                        <p className={`font-black text-xl ${player.profit >= 0 ? 'text-green-400' : 'text-red-400'} drop-shadow-glow`}>
+                          {player.profit >= 0 ? '+' : ''}{player.profit.toLocaleString()}P
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* ???さんからのアドバイス */}
             {roastComment && (
               <div className="relative group">
@@ -829,6 +880,7 @@ export default function DashboardV2() {
                     </div>
                     <div className="flex-1">
                       <p className="text-base font-black text-orange-300 mb-2" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>???さんからのアドバイス</p>
+                      <p className="text-xs text-orange-200 mb-2 font-semibold">※ 直近7日間データを元にアドバイス</p>
                       <p className="text-lg font-bold text-white leading-relaxed" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 700 }}>「{roastComment}」</p>
                     </div>
                   </div>
@@ -836,17 +888,82 @@ export default function DashboardV2() {
               </div>
             )}
 
-            {/* 週間ランキング */}
+            {/* ランダムプレイヤー分析 */}
+            {randomPlayerAnalysis && (
+              <div className="relative">
+                <div className={`absolute inset-0 bg-gradient-to-r ${randomPlayerAnalysis.playStyle.color} blur-xl opacity-50`} />
+                <div className={`relative bg-gradient-to-r ${randomPlayerAnalysis.playStyle.color} rounded-2xl p-1`}>
+                  <div className="bg-black/60 backdrop-blur-sm rounded-2xl p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Brain className="w-5 h-5 text-white" />
+                      <h3 className="text-sm font-black text-white">ランダムプレイヤー分析</h3>
+                    </div>
+                    
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="relative flex-shrink-0">
+                        <div className={`w-10 h-10 rounded-full p-0.5 ${
+                          randomPlayerAnalysis.equippedBadge 
+                            ? `bg-gradient-to-r ${randomPlayerAnalysis.equippedBadge.badge_gradient}`
+                            : 'bg-gradient-to-r from-purple-500 to-pink-500'
+                        }`}>
+                          {randomPlayerAnalysis.avatarUrl ? (
+                            <img 
+                              src={randomPlayerAnalysis.avatarUrl} 
+                              alt={randomPlayerAnalysis.username}
+                              className="w-full h-full rounded-full object-cover bg-black"
+                            />
+                          ) : (
+                            <div className="w-full h-full rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
+                              <User className="w-5 h-5 text-white" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-black text-white text-base">{randomPlayerAnalysis.username}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xl">{randomPlayerAnalysis.playStyle.icon}</span>
+                          <span className="text-xs font-bold text-white/80">{randomPlayerAnalysis.playStyle.name}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="bg-white/10 rounded-lg p-2">
+                        <p className="text-white/70 font-semibold mb-0.5">総ゲーム数</p>
+                        <p className="text-white font-black">{randomPlayerAnalysis.totalGames}戦</p>
+                      </div>
+                      <div className="bg-white/10 rounded-lg p-2">
+                        <p className="text-white/70 font-semibold mb-0.5">勝率</p>
+                        <p className="text-white font-black">{randomPlayerAnalysis.winRate.toFixed(1)}%</p>
+                      </div>
+                      <div className="bg-white/10 rounded-lg p-2">
+                        <p className="text-white/70 font-semibold mb-0.5">総収支</p>
+                        <p className={`font-black ${randomPlayerAnalysis.totalProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          {randomPlayerAnalysis.totalProfit >= 0 ? '+' : ''}{randomPlayerAnalysis.totalProfit.toLocaleString()}P
+                        </p>
+                      </div>
+                      <div className="bg-white/10 rounded-lg p-2">
+                        <p className="text-white/70 font-semibold mb-0.5">総プレイ時間</p>
+                        <p className="text-white font-black">{randomPlayerAnalysis.totalPlayHours.toFixed(1)}h</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 直近7日間の全プレイヤーランキング */}
             {weeklyRanking.length > 0 && (
               <div className="relative">
                 <div className="absolute inset-0 bg-purple-600 blur-xl opacity-50" />
                 <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-2 border-purple-500/50">
                   <h3 className="font-bold text-white mb-4 flex items-center gap-2 text-lg">
                     <Crown className="w-6 h-6 text-yellow-400 drop-shadow-glow" />
-                    直近7日間ランキング
+                    直近7日間ランキング（全プレイヤー）
                   </h3>
                   <div className="space-y-3">
-                    {weeklyRanking.slice(0, 5).map((rank, idx) => (
+                    {weeklyRanking.map((rank, idx) => (
                       <div key={idx} className="flex items-center gap-3 bg-white/5 rounded-xl p-4 border border-white/10 backdrop-blur-sm">
                         <div className="flex-shrink-0">
                           {idx === 0 && (
@@ -939,7 +1056,6 @@ export default function DashboardV2() {
             </div>
           </div>
         )}
-
 
         {/* All-Gamble Section */}
         {activeSection === 'all-gamble' && (
@@ -1092,6 +1208,93 @@ export default function DashboardV2() {
             </div>
 
             <div className="space-y-8 mt-8">
+              {/* みんなのオールギャンブルデータTOP3 */}
+              {allGambleRanking.length > 0 && (
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-orange-600 to-red-600 blur-xl opacity-50" />
+                  <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-2 border-orange-500/50">
+                    <h3 className="font-bold text-white mb-4 flex items-center gap-2 text-lg">
+                      <Coins className="w-6 h-6 text-orange-400 drop-shadow-glow" />
+                      みんなのオールギャンブルデータTOP3
+                      <span className="text-xs text-orange-300 ml-2">（直近7日間）</span>
+                    </h3>
+
+                    <div className="space-y-3 mb-4">
+                      {allGambleRanking.map((rank, idx) => (
+                        <div key={idx} className="flex items-center gap-3 bg-gradient-to-r from-orange-950/40 to-red-950/40 rounded-xl p-4 border border-orange-500/30 backdrop-blur-sm">
+                          <div className="flex-shrink-0">
+                            {idx === 0 && (
+                              <div className="relative">
+                                <div className="absolute inset-0 bg-yellow-500 blur-lg animate-pulse" />
+                                <Crown className="relative w-8 h-8 text-yellow-400 drop-shadow-glow" />
+                              </div>
+                            )}
+                            {idx === 1 && (
+                              <div className="relative">
+                                <div className="absolute inset-0 bg-gray-400 blur-lg animate-pulse" />
+                                <Award className="relative w-8 h-8 text-gray-300 drop-shadow-glow" />
+                              </div>
+                            )}
+                            {idx === 2 && (
+                              <div className="relative">
+                                <div className="absolute inset-0 bg-orange-500 blur-lg animate-pulse" />
+                                <Trophy className="relative w-8 h-8 text-orange-400 drop-shadow-glow" />
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="relative flex-shrink-0">
+                            <div className={`w-12 h-12 rounded-full p-0.5 ${
+                              rank.equippedBadge 
+                                ? `bg-gradient-to-r ${rank.equippedBadge.badge_gradient}`
+                                : 'bg-gradient-to-r from-orange-500 to-red-500'
+                            }`}>
+                              {rank.avatarUrl ? (
+                                <img 
+                                  src={rank.avatarUrl} 
+                                  alt={rank.username}
+                                  className="w-full h-full rounded-full object-cover bg-black"
+                                />
+                              ) : (
+                                <div className="w-full h-full rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
+                                  <User className="w-6 h-6 text-white" />
+                                </div>
+                              )}
+                            </div>
+                            
+                            {rank.equippedBadge && (
+                              <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-lg bg-gradient-to-r ${rank.equippedBadge.badge_gradient}`}>
+                                {(() => {
+                                  const iconMap: { [key: string]: any } = {
+                                    Trophy, Crown, Target, Zap, Award, Sparkles
+                                  }
+                                  const IconComponent = iconMap[rank.equippedBadge.icon] || Trophy
+                                  return <IconComponent className="w-2.5 h-2.5 text-white" />
+                                })()}
+                              </div>
+                            )}
+                          </div>
+
+                          <p className="font-bold text-white text-lg flex-1 truncate">{rank.username}</p>
+
+                          <p className={`font-black text-xl ${rank.profit >= 0 ? 'text-green-400' : 'text-red-400'} drop-shadow-glow flex-shrink-0`}>
+                            {rank.profit >= 0 ? '+' : ''}{rank.profit.toLocaleString()}P
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={() => router.push('/all-gamble-community')}
+                      className="w-full py-3 rounded-xl bg-gradient-to-r from-orange-600 to-red-600 text-white font-black hover:shadow-lg hover:scale-105 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Coins className="w-5 h-5" />
+                      みんなのオールギャンブルデータを見る
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="relative group">
                 <div className="absolute inset-0 bg-gradient-to-r from-orange-600 to-red-600 rounded-3xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity animate-pulse" />
                 <button
@@ -1106,7 +1309,7 @@ export default function DashboardV2() {
                         </div>
                         <div className="text-left">
                           <p className="text-2xl font-black drop-shadow-glow">収支管理</p>
-                          <p className="text-sm opacity-90 mt-1">All Gamble Manager</p>
+                          <p className="text-sm opacity-90 mt-1">収支管理の登録と、詳細データ</p>
                         </div>
                       </div>
                       <ChevronRight className="w-7 h-7 opacity-70 group-hover:opacity-100 group-hover:translate-x-2 transition-all" />
@@ -1219,6 +1422,87 @@ export default function DashboardV2() {
               </button>
 
               <button
+                onClick={() => router.push('/blackjack-lesson')}
+                className="relative group overflow-hidden rounded-2xl aspect-[3/4]"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-amber-600 to-orange-700 animate-gradient" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                <div className="relative h-full flex flex-col items-center justify-center p-5 text-white">
+                  <span className="text-7xl drop-shadow-glow animate-float mb-6">♠️</span>
+                  <div className="text-center">
+                    <p className="font-black text-lg drop-shadow-glow" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>ブラックジャック</p>
+                    <p className="text-sm opacity-90 mt-1" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 700 }}>（特殊）ルール・戦略</p>
+                  </div>
+                </div>
+                <div className="absolute inset-0 border-4 border-amber-400/50 rounded-2xl" />
+              </button>
+
+              <button
+                onClick={() => router.push('/progressive-texas-holdem')}
+                className="relative group overflow-hidden rounded-2xl aspect-[3/4]"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-red-600 via-orange-600 to-yellow-600 animate-gradient" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                <div className="relative h-full flex flex-col items-center justify-center p-5 text-white">
+                  <span className="text-7xl drop-shadow-glow animate-float mb-6">👑</span>
+                  <div className="text-center">
+                    <p className="font-black text-lg drop-shadow-glow" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>Progressive</p>
+                    <p className="font-black text-lg drop-shadow-glow -mt-1" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>Texas Hold'em</p>
+                    <p className="text-sm opacity-90 mt-1" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 700 }}>ルール・戦略・JP</p>
+                  </div>
+                </div>
+                <div className="absolute inset-0 border-4 border-yellow-400/50 rounded-2xl" />
+              </button>
+
+              <button
+                onClick={() => router.push('/three-card-poker-lesson')}
+                className="relative group overflow-hidden rounded-2xl aspect-[3/4]"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-orange-600 to-red-700 animate-gradient" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                <div className="relative h-full flex flex-col items-center justify-center p-5 text-white">
+                  <span className="text-7xl drop-shadow-glow animate-float mb-6">🎴</span>
+                  <div className="text-center">
+                    <p className="font-black text-lg drop-shadow-glow" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>スリーカードポーカー</p>
+                    <p className="text-sm opacity-90 mt-1" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 700 }}>ルール・戦略</p>
+                  </div>
+                </div>
+                <div className="absolute inset-0 border-4 border-orange-400/50 rounded-2xl" />
+              </button>
+
+              <button
+                onClick={() => router.push('/roulette-lesson')}
+                className="relative group overflow-hidden rounded-2xl aspect-[3/4]"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-red-600 to-rose-700 animate-gradient" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                <div className="relative h-full flex flex-col items-center justify-center p-5 text-white">
+                  <span className="text-7xl drop-shadow-glow animate-float mb-6">🎰</span>
+                  <div className="text-center">
+                    <p className="font-black text-lg drop-shadow-glow" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>ルーレット</p>
+                    <p className="text-sm opacity-90 mt-1" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 700 }}>ルール・戦略・投資法</p>
+                  </div>
+                </div>
+                <div className="absolute inset-0 border-4 border-red-400/50 rounded-2xl" />
+              </button>
+
+              <button
+                onClick={() => router.push('/sic-bo-lesson')}
+                className="relative group overflow-hidden rounded-2xl aspect-[3/4]"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-green-600 to-emerald-700 animate-gradient" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                <div className="relative h-full flex flex-col items-center justify-center p-5 text-white">
+                  <span className="text-7xl drop-shadow-glow animate-float mb-6">🎲</span>
+                  <div className="text-center">
+                    <p className="font-black text-lg drop-shadow-glow" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 900 }}>シックボー（大小）</p>
+                    <p className="text-sm opacity-90 mt-1" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontWeight: 700 }}>ルール・戦略・投資法</p>
+                  </div>
+                </div>
+                <div className="absolute inset-0 border-4 border-green-400/50 rounded-2xl" />
+              </button>
+
+              <button
                 onClick={() => router.push('/betting-simulator')}
                 className="relative group overflow-hidden rounded-2xl aspect-[3/4]"
               >
@@ -1233,6 +1517,8 @@ export default function DashboardV2() {
                 </div>
                 <div className="absolute inset-0 border-4 border-orange-400/50 rounded-2xl" />
               </button>
+
+              
 
               <div className="relative overflow-hidden rounded-2xl aspect-[3/4] bg-black/40 backdrop-blur-sm border-2 border-white/10 opacity-50">
                 <div className="h-full flex flex-col items-center justify-center p-5 text-center">

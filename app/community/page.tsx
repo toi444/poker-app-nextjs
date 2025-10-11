@@ -4,28 +4,14 @@ import { useState, useEffect } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useRouter } from 'next/navigation'
 import { 
-  ArrowLeft, 
-  Trophy, 
-  TrendingUp, 
-  Award, 
-  Users, 
-  Clock, 
-  DollarSign, 
-  Calendar,
-  Sparkles,
-  Target,
-  CreditCard,
-  User
+  ArrowLeft, Trophy, TrendingUp, Award, Users, Clock, DollarSign, 
+  Calendar, Sparkles, Target, CreditCard, User, X, ChevronRight,
+  Crown, Zap, Star, TrendingDown, Activity, BarChart3, Shield,
+  Percent, Brain, Filter, Search
 } from 'lucide-react'
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, Cell, LineChart, Line, PieChart, Pie
 } from 'recharts'
 
 interface Profile {
@@ -34,6 +20,7 @@ interface Profile {
   email: string
   active: boolean
   avatar_url?: string
+  favorite_games?: string[]
   equipped_badge?: {
     id: string
     name: string
@@ -63,6 +50,42 @@ interface JackpotWinner {
   board_cards: string
   created_at: string
   profiles?: Profile
+}
+
+interface Achievement {
+  id: string
+  name: string
+  description: string
+  icon: string
+  tier: string
+  badge_gradient: string
+  condition_type: string
+  condition_value: number
+}
+
+interface PlayerDetail {
+  userId: string
+  username: string
+  avatar_url?: string
+  equipped_badge?: any
+  favorite_games?: string[]
+  stats: {
+    totalGames: number
+    totalProfit: number
+    winRate: number
+    avgProfit: number
+    totalPlayHours: number
+    bestWin: number
+    worstLoss: number
+    roi: number
+    hourlyRate: number
+    volatility: number
+    maxWinStreak: number
+    maxLossStreak: number
+    currentStreak: number
+  }
+  achievements: Achievement[]
+  playStyle: any
 }
 
 const AvatarIcon = ({ profile, size = 'sm' }: { profile?: Profile | null, size?: 'sm' | 'md' | 'lg' }) => {
@@ -113,12 +136,265 @@ const AvatarIcon = ({ profile, size = 'sm' }: { profile?: Profile | null, size?:
         )}
       </div>
       
-      {/* バッジアイコン */}
       {profile?.equipped_badge && (
         <div className={`absolute -bottom-0.5 -right-0.5 ${badgeSizes[size]} rounded-full flex items-center justify-center border border-white shadow-lg ${getBorderGradient()}`}>
           <Award className={`${badgeIconSizes[size]} text-white`} />
         </div>
       )}
+    </div>
+  )
+}
+
+const PlayerDetailModal = ({ player, onClose }: { player: PlayerDetail, onClose: () => void }) => {
+  const [activeTab, setActiveTab] = useState<'overview' | 'style' | 'achievements'>('overview')
+  
+  const playStyleInfo = {
+    TAG: { name: 'TAG', icon: '⚔️', color: 'from-blue-500 to-purple-600' },
+    LAG: { name: 'LAG', icon: '🔥', color: 'from-orange-500 to-red-600' },
+    ROCK: { name: 'ROCK', icon: '🪨', color: 'from-green-500 to-teal-600' },
+    NIT: { name: 'NIT', icon: '🛡️', color: 'from-gray-500 to-slate-600' },
+    FISH: { name: 'FISH', icon: '🐟', color: 'from-red-600 to-rose-600' },
+    BEGINNER: { name: 'BEGINNER', icon: '🌱', color: 'from-green-500 to-emerald-600' }
+  }
+  
+  const style = playStyleInfo[player.playStyle?.type] || playStyleInfo.BEGINNER
+  
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+      <div className="bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-900 rounded-3xl max-w-md w-full max-h-[90vh] overflow-y-auto border-2 border-purple-500/50 shadow-2xl">
+        <div className="sticky top-0 bg-black/60 backdrop-blur-sm p-6 border-b-2 border-purple-500/30 flex items-center justify-between z-10">
+          <div className="flex items-center gap-3">
+            <AvatarIcon profile={{ username: player.username, avatar_url: player.avatar_url, equipped_badge: player.equipped_badge } as Profile} size="md" />
+            <div>
+              <h2 className="text-xl font-black text-white">{player.username}</h2>
+              <p className="text-sm text-purple-300 font-semibold">{player.stats.totalGames}戦のデータ</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-10 h-10 rounded-full bg-red-600/80 hover:bg-red-500 flex items-center justify-center transition-all">
+            <X className="w-6 h-6 text-white" />
+          </button>
+        </div>
+
+        <div className="p-4">
+          {/* タブナビゲーション */}
+          <div className="grid grid-cols-3 gap-2 mb-6 bg-black/40 p-2 rounded-2xl">
+            {[
+              { id: 'overview', icon: BarChart3, label: '統計' },
+              { id: 'style', icon: Brain, label: 'スタイル' },
+              { id: 'achievements', icon: Trophy, label: '実績' }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`py-3 rounded-xl text-sm font-bold transition-all ${
+                  activeTab === tab.id
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                    : 'text-purple-300 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <tab.icon className="w-5 h-5 mx-auto mb-1" />
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {activeTab === 'overview' && (
+            <div className="space-y-4 animate-slide-in">
+              {/* 主要統計 */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-gradient-to-br from-green-600 to-emerald-700 rounded-2xl p-4 border-2 border-green-400/30">
+                  <DollarSign className="w-6 h-6 text-green-200 mb-2" />
+                  <div className="text-3xl font-black text-white">
+                    {player.stats.totalProfit >= 0 ? '+' : ''}{player.stats.totalProfit.toLocaleString()}
+                  </div>
+                  <div className="text-sm text-green-200 font-bold mt-1">総収支</div>
+                </div>
+                
+                <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-4 border-2 border-blue-400/30">
+                  <Trophy className="w-6 h-6 text-blue-200 mb-2" />
+                  <div className="text-3xl font-black text-white">
+                    {player.stats.winRate.toFixed(1)}%
+                  </div>
+                  <div className="text-sm text-blue-200 font-bold mt-1">勝率</div>
+                </div>
+                
+                <div className="bg-gradient-to-br from-purple-600 to-pink-700 rounded-2xl p-4 border-2 border-purple-400/30">
+                  <Zap className="w-6 h-6 text-purple-200 mb-2" />
+                  <div className="text-3xl font-black text-white">
+                    {player.stats.hourlyRate >= 0 ? '+' : ''}{Math.round(player.stats.hourlyRate).toLocaleString()}
+                  </div>
+                  <div className="text-sm text-purple-200 font-bold mt-1">時給 (P/h)</div>
+                </div>
+                
+                <div className="bg-gradient-to-br from-orange-600 to-red-700 rounded-2xl p-4 border-2 border-orange-400/30">
+                  <Percent className="w-6 h-6 text-orange-200 mb-2" />
+                  <div className="text-3xl font-black text-white">
+                    {player.stats.roi.toFixed(1)}%
+                  </div>
+                  <div className="text-sm text-orange-200 font-bold mt-1">ROI</div>
+                </div>
+              </div>
+
+              {/* 詳細統計 */}
+              <div className="space-y-3 bg-black/40 rounded-2xl p-4">
+                <div className="flex justify-between items-center p-3 bg-green-950/50 rounded-xl">
+                  <span className="text-sm font-bold text-green-300 flex items-center gap-2">
+                    <Crown className="w-4 h-4" />
+                    最高勝利
+                  </span>
+                  <span className="text-lg font-black text-green-400">
+                    +{player.stats.bestWin.toLocaleString()}
+                  </span>
+                </div>
+                
+                <div className="flex justify-between items-center p-3 bg-red-950/50 rounded-xl">
+                  <span className="text-sm font-bold text-red-300 flex items-center gap-2">
+                    <TrendingDown className="w-4 h-4" />
+                    最大敗北
+                  </span>
+                  <span className="text-lg font-black text-red-400">
+                    {player.stats.worstLoss.toLocaleString()}
+                  </span>
+                </div>
+                
+                <div className="flex justify-between items-center p-3 bg-blue-950/50 rounded-xl">
+                  <span className="text-sm font-bold text-blue-300 flex items-center gap-2">
+                    <Activity className="w-4 h-4" />
+                    平均収支
+                  </span>
+                  <span className="text-lg font-black text-blue-400">
+                    {player.stats.avgProfit >= 0 ? '+' : ''}{Math.round(player.stats.avgProfit).toLocaleString()}
+                  </span>
+                </div>
+                
+                <div className="flex justify-between items-center p-3 bg-purple-950/50 rounded-xl">
+                  <span className="text-sm font-bold text-purple-300 flex items-center gap-2">
+                    <Star className="w-4 h-4" />
+                    最高連勝
+                  </span>
+                  <span className="text-lg font-black text-purple-400">
+                    {player.stats.maxWinStreak}連勝
+                  </span>
+                </div>
+                
+                <div className="flex justify-between items-center p-3 bg-gray-950/50 rounded-xl">
+                  <span className="text-sm font-bold text-gray-300 flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    総プレイ時間
+                  </span>
+                  <span className="text-lg font-black text-gray-400">
+                    {player.stats.totalPlayHours.toFixed(1)}h
+                  </span>
+                </div>
+              </div>
+
+              {/* お気に入りゲーム */}
+              {player.favorite_games && player.favorite_games.length > 0 && (
+                <div className="bg-black/40 rounded-2xl p-4">
+                  <h3 className="text-sm font-black text-purple-300 mb-3 flex items-center gap-2">
+                    <Star className="w-4 h-4" />
+                    お気に入りゲーム
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {player.favorite_games.map((game, idx) => (
+                      <div key={idx} className="px-3 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full text-xs font-bold text-white">
+                        {game}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'style' && player.playStyle && (
+            <div className="space-y-4 animate-slide-in">
+              <div className={`relative bg-gradient-to-br ${style.color} rounded-3xl p-1`}>
+                <div className="bg-black/40 backdrop-blur-sm rounded-3xl p-6">
+                  <div className="text-center">
+                    <div className="text-6xl mb-3">{style.icon}</div>
+                    <h3 className="text-xl font-black text-white mb-2">プレイスタイル</h3>
+                    <p className="text-2xl font-black text-white">{player.playStyle.name}</p>
+                    <p className="text-sm text-white/80 mt-3">{player.playStyle.description}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-black/40 rounded-2xl p-4">
+                <h3 className="text-sm font-black text-white mb-3">診断根拠</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-blue-950/50 rounded-xl p-3">
+                    <div className="text-xs text-blue-300 font-bold mb-1">勝率</div>
+                    <div className="text-2xl font-black text-blue-400">
+                      {player.playStyle.metrics.winRate.toFixed(1)}%
+                    </div>
+                  </div>
+                  <div className="bg-purple-950/50 rounded-xl p-3">
+                    <div className="text-xs text-purple-300 font-bold mb-1">変動率</div>
+                    <div className="text-2xl font-black text-purple-400">
+                      {player.playStyle.metrics.volatility.toFixed(1)}%
+                    </div>
+                  </div>
+                  <div className="bg-green-950/50 rounded-xl p-3">
+                    <div className="text-xs text-green-300 font-bold mb-1">ROI</div>
+                    <div className="text-2xl font-black text-green-400">
+                      {player.playStyle.metrics.roi.toFixed(1)}%
+                    </div>
+                  </div>
+                  <div className="bg-orange-950/50 rounded-xl p-3">
+                    <div className="text-xs text-orange-300 font-bold mb-1">大変動率</div>
+                    <div className="text-2xl font-black text-orange-400">
+                      {player.playStyle.metrics.bigSwingRate.toFixed(1)}%
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-indigo-950/50 rounded-2xl p-4 border-2 border-indigo-500/30">
+                <h3 className="text-sm font-black text-indigo-300 mb-2 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  上達へのアドバイス
+                </h3>
+                <p className="text-sm text-indigo-100 leading-relaxed">
+                  {player.playStyle.advice}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'achievements' && (
+            <div className="space-y-4 animate-slide-in">
+              <div className="text-center bg-black/40 rounded-2xl p-4">
+                <Trophy className="w-12 h-12 text-yellow-400 mx-auto mb-2" />
+                <div className="text-3xl font-black text-white">{player.achievements.length}</div>
+                <div className="text-sm text-purple-300 font-bold">アチーブメント取得済み</div>
+              </div>
+
+              <div className="space-y-2">
+                {player.achievements.map((achievement) => (
+                  <div key={achievement.id} className={`bg-gradient-to-r ${achievement.badge_gradient} rounded-2xl p-1`}>
+                    <div className="bg-black/60 rounded-2xl p-4 flex items-center gap-3">
+                      <div className="text-3xl">{achievement.icon}</div>
+                      <div className="flex-1">
+                        <div className="font-black text-white text-sm">{achievement.name}</div>
+                        <div className="text-xs text-white/70">{achievement.description}</div>
+                      </div>
+                      <div className={`px-2 py-1 rounded-lg text-xs font-black ${
+                        achievement.tier === 'legendary' ? 'bg-yellow-500 text-black' :
+                        achievement.tier === 'epic' ? 'bg-purple-500 text-white' :
+                        achievement.tier === 'rare' ? 'bg-blue-500 text-white' :
+                        'bg-gray-500 text-white'
+                      }`}>
+                        {achievement.tier.toUpperCase()}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
@@ -136,16 +412,49 @@ export default function CommunityPage() {
     totalBuyin: 0,
     activePlayers: 0
   })
-  const [allTimeRanking, setAllTimeRanking] = useState<any[]>([])
-  const [monthlyRanking, setMonthlyRanking] = useState<any[]>([])
+  
+  const [activeTab, setActiveTab] = useState('ranking')
+  const [rankingType, setRankingType] = useState<'profit' | 'winrate' | 'roi' | 'hourly' | 'streak' | 'weekday'>('profit')
+  const [timeRange, setTimeRange] = useState<'7days' | 'month' | 'all' | 'custom'>('month')
+  const [customStartDate, setCustomStartDate] = useState('')
+  const [customEndDate, setCustomEndDate] = useState('')
+  
+  const [rankings, setRankings] = useState<any[]>([])
+  const [weekdayChampions, setWeekdayChampions] = useState<any[]>([])
+  const [weekdayStats, setWeekdayStats] = useState<any[]>([])
   const [bigWins, setBigWins] = useState<GameSession[]>([])
   const [bigLosses, setBigLosses] = useState<GameSession[]>([])
-  const [weekdayStats, setWeekdayStats] = useState<any[]>([])
-  const [activeTab, setActiveTab] = useState('ranking')
+  
+  const [selectedPlayer, setSelectedPlayer] = useState<PlayerDetail | null>(null)
 
   useEffect(() => {
     loadCommunityData()
-  }, [])
+  }, [timeRange, customStartDate, customEndDate])
+
+  const getDateRange = () => {
+    const now = new Date()
+    let startDate = new Date(0)
+    let endDate = now
+
+    switch (timeRange) {
+      case '7days':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+        break
+      case 'month':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1)
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
+        break
+      case 'custom':
+        if (customStartDate) startDate = new Date(customStartDate)
+        if (customEndDate) endDate = new Date(customEndDate)
+        break
+      case 'all':
+      default:
+        break
+    }
+
+    return { startDate, endDate }
+  }
 
   const loadCommunityData = async () => {
     try {
@@ -158,14 +467,12 @@ export default function CommunityPage() {
         setCurrentJackpot(jpData.current_amount)
       }
 
-      const { data: winnersData, error: winnersError } = await supabase
+      const { data: winnersData } = await supabase
         .from('jackpot_winners')
         .select('*')
         .order('created_at', { ascending: false })
       
-      if (winnersError) {
-        console.error('Error fetching winners:', winnersError)
-      } else if (winnersData && winnersData.length > 0) {
+      if (winnersData && winnersData.length > 0) {
         const winnersWithProfiles = await Promise.all(
           winnersData.map(async (winner) => {
             const { data: profileData } = await supabase
@@ -191,12 +498,16 @@ export default function CommunityPage() {
         }
       }
 
+      const { startDate, endDate } = getDateRange()
+      
       const { data: allSessions } = await supabase
         .from('game_sessions')
         .select(`
           *,
-          profiles(username, active, avatar_url, equipped_badge(*))
+          profiles(username, active, avatar_url, equipped_badge(*), favorite_games)
         `)
+        .gte('played_at', startDate.toISOString())
+        .lte('played_at', endDate.toISOString())
       
       const sessions = allSessions?.filter(s => 
         s.profiles && s.profiles.active !== false
@@ -213,71 +524,9 @@ export default function CommunityPage() {
           activePlayers: uniquePlayers
         })
 
-        const playerStats = new Map()
-        sessions.forEach(session => {
-          const userId = session.user_id
-          const username = session.profiles?.username
-          const avatar_url = session.profiles?.avatar_url
-          const equipped_badge = session.profiles?.equipped_badge
-          
-          if (!playerStats.has(userId)) {
-            playerStats.set(userId, {
-              username,
-              avatar_url,
-              equipped_badge,
-              totalProfit: 0,
-              gamesPlayed: 0,
-              totalHours: 0
-            })
-          }
-          
-          const stats = playerStats.get(userId)
-          stats.totalProfit += session.profit
-          stats.gamesPlayed += 1
-          stats.totalHours += Number(session.play_hours)
-          playerStats.set(userId, stats)
-        })
+        calculateRankings(sessions)
+        calculateWeekdayStats(sessions)
         
-        const rankingData = Array.from(playerStats.values())
-          .sort((a, b) => b.totalProfit - a.totalProfit)
-          .slice(0, 10)
-        
-        setAllTimeRanking(rankingData)
-
-        const currentMonth = new Date().toISOString().slice(0, 7)
-        const monthlySessions = sessions.filter(s => 
-          s.played_at.startsWith(currentMonth)
-        )
-        
-        const monthlyPlayerStats = new Map()
-        monthlySessions.forEach(session => {
-          const userId = session.user_id
-          const username = session.profiles?.username
-          const avatar_url = session.profiles?.avatar_url
-          const equipped_badge = session.profiles?.equipped_badge
-          
-          if (!monthlyPlayerStats.has(userId)) {
-            monthlyPlayerStats.set(userId, {
-              username,
-              avatar_url,
-              equipped_badge,
-              totalProfit: 0,
-              gamesPlayed: 0
-            })
-          }
-          
-          const stats = monthlyPlayerStats.get(userId)
-          stats.totalProfit += session.profit
-          stats.gamesPlayed += 1
-          monthlyPlayerStats.set(userId, stats)
-        })
-        
-        const monthlyRankingData = Array.from(monthlyPlayerStats.values())
-          .sort((a, b) => b.totalProfit - a.totalProfit)
-          .slice(0, 5)
-        
-        setMonthlyRanking(monthlyRankingData)
-
         const topWins = [...sessions]
           .sort((a, b) => b.profit - a.profit)
           .slice(0, 5)
@@ -287,31 +536,6 @@ export default function CommunityPage() {
           .sort((a, b) => a.profit - b.profit)
           .slice(0, 5)
         setBigLosses(topLosses)
-
-        const weekdayData = new Map()
-        const weekdays = ['日', '月', '火', '水', '木', '金', '土']
-        
-        sessions.forEach(session => {
-          const date = new Date(session.played_at)
-          const weekday = weekdays[date.getDay()]
-          
-          if (!weekdayData.has(weekday)) {
-            weekdayData.set(weekday, { count: 0, avgProfit: 0, totalProfit: 0 })
-          }
-          
-          const stats = weekdayData.get(weekday)
-          stats.count += 1
-          stats.totalProfit += session.profit
-          stats.avgProfit = stats.totalProfit / stats.count
-        })
-        
-        const weekdayArray = weekdays.map(day => ({
-          day,
-          count: weekdayData.get(day)?.count || 0,
-          avgProfit: weekdayData.get(day)?.avgProfit || 0
-        }))
-        
-        setWeekdayStats(weekdayArray)
       }
       
     } catch (error) {
@@ -321,12 +545,314 @@ export default function CommunityPage() {
     }
   }
 
+  const calculateRankings = (sessions: GameSession[]) => {
+    const playerStats = new Map()
+    
+    sessions.forEach(session => {
+      const userId = session.user_id
+      const profile = session.profiles
+      
+      if (!playerStats.has(userId)) {
+        playerStats.set(userId, {
+          userId,
+          username: profile?.username,
+          avatar_url: profile?.avatar_url,
+          equipped_badge: profile?.equipped_badge,
+          favorite_games: profile?.favorite_games,
+          totalProfit: 0,
+          gamesPlayed: 0,
+          wins: 0,
+          totalHours: 0,
+          totalBuyin: 0,
+          bestWin: 0,
+          worstLoss: 0,
+          profits: [],
+          currentStreak: 0,
+          maxWinStreak: 0,
+          maxLossStreak: 0,
+          tempWinStreak: 0,
+          tempLossStreak: 0
+        })
+      }
+      
+      const stats = playerStats.get(userId)
+      stats.totalProfit += session.profit
+      stats.gamesPlayed += 1
+      stats.totalHours += Number(session.play_hours)
+      stats.totalBuyin += session.buy_in
+      stats.profits.push(session.profit)
+      
+      if (session.profit > 0) {
+        stats.wins += 1
+        stats.tempWinStreak += 1
+        stats.tempLossStreak = 0
+        stats.maxWinStreak = Math.max(stats.maxWinStreak, stats.tempWinStreak)
+      } else if (session.profit < 0) {
+        stats.tempLossStreak += 1
+        stats.tempWinStreak = 0
+        stats.maxLossStreak = Math.max(stats.maxLossStreak, stats.tempLossStreak)
+      }
+      
+      stats.bestWin = Math.max(stats.bestWin, session.profit)
+      stats.worstLoss = Math.min(stats.worstLoss, session.profit)
+      stats.currentStreak = stats.tempWinStreak > 0 ? stats.tempWinStreak : -stats.tempLossStreak
+      
+      playerStats.set(userId, stats)
+    })
+    
+    const rankingData = Array.from(playerStats.values()).map(stats => {
+      const winRate = stats.gamesPlayed > 0 ? (stats.wins / stats.gamesPlayed) * 100 : 0
+      const roi = stats.totalBuyin > 0 ? (stats.totalProfit / stats.totalBuyin) * 100 : 0
+      const hourlyRate = stats.totalHours > 0 ? stats.totalProfit / stats.totalHours : 0
+      const avgProfit = stats.gamesPlayed > 0 ? stats.totalProfit / stats.gamesPlayed : 0
+      
+      const mean = avgProfit
+      const variance = stats.profits.reduce((sum, p) => sum + Math.pow(p - mean, 2), 0) / stats.profits.length
+      const volatility = Math.sqrt(variance)
+      
+      return {
+        ...stats,
+        winRate,
+        roi,
+        hourlyRate,
+        avgProfit,
+        volatility
+      }
+    })
+    
+    setRankings(rankingData)
+  }
+
+  const calculateWeekdayStats = (sessions: GameSession[]) => {
+    const weekdays = ['日', '月', '火', '水', '木', '金', '土']
+    const weekdayData = new Map()
+    const weekdayPlayers = new Map()
+    
+    sessions.forEach(session => {
+      const date = new Date(session.played_at)
+      const weekday = weekdays[date.getDay()]
+      const userId = session.user_id
+      
+      if (!weekdayData.has(weekday)) {
+        weekdayData.set(weekday, { count: 0, totalProfit: 0, avgProfit: 0 })
+      }
+      
+      if (!weekdayPlayers.has(weekday)) {
+        weekdayPlayers.set(weekday, new Map())
+      }
+      
+      const dayStats = weekdayData.get(weekday)
+      dayStats.count += 1
+      dayStats.totalProfit += session.profit
+      dayStats.avgProfit = dayStats.totalProfit / dayStats.count
+      
+      const dayPlayerMap = weekdayPlayers.get(weekday)
+      if (!dayPlayerMap.has(userId)) {
+        dayPlayerMap.set(userId, {
+          username: session.profiles?.username,
+          avatar_url: session.profiles?.avatar_url,
+          equipped_badge: session.profiles?.equipped_badge,
+          totalProfit: 0,
+          games: 0
+        })
+      }
+      
+      const playerStats = dayPlayerMap.get(userId)
+      playerStats.totalProfit += session.profit
+      playerStats.games += 1
+    })
+    
+    const weekdayArray = weekdays.map(day => ({
+      day,
+      count: weekdayData.get(day)?.count || 0,
+      avgProfit: weekdayData.get(day)?.avgProfit || 0
+    }))
+    
+    setWeekdayStats(weekdayArray)
+    
+    const champions = weekdays.map(day => {
+      const players = weekdayPlayers.get(day)
+      if (!players || players.size === 0) return null
+      
+      const topPlayer = Array.from(players.values())
+        .sort((a: any, b: any) => b.totalProfit - a.totalProfit)[0]
+      
+      return {
+        day,
+        player: topPlayer
+      }
+    }).filter((c): c is { day: string; player: any } => c !== null)
+    
+    setWeekdayChampions(champions)
+  }
+
+  const getSortedRankings = () => {
+    let sorted = [...rankings]
+    
+    switch (rankingType) {
+      case 'profit':
+        sorted.sort((a, b) => b.totalProfit - a.totalProfit)
+        break
+      case 'winrate':
+        sorted = sorted.filter(p => p.gamesPlayed >= 5)
+        sorted.sort((a, b) => b.winRate - a.winRate)
+        break
+      case 'roi':
+        sorted = sorted.filter(p => p.gamesPlayed >= 5)
+        sorted.sort((a, b) => b.roi - a.roi)
+        break
+      case 'hourly':
+        sorted = sorted.filter(p => p.totalHours >= 3)
+        sorted.sort((a, b) => b.hourlyRate - a.hourlyRate)
+        break
+      case 'streak':
+        sorted.sort((a, b) => b.maxWinStreak - a.maxWinStreak)
+        break
+    }
+    
+    return sorted.slice(0, 10)
+  }
+
+  const analyzePlayStyle = (stats: any) => {
+    const { winRate, volatility, roi, totalProfit, avgProfit, gamesPlayed, totalBuyin } = stats
+    
+    if (gamesPlayed < 5) {
+      return {
+        type: 'BEGINNER',
+        name: 'ビギナー',
+        description: 'まだスタイルが確立されていない段階。',
+        color: 'from-green-500 to-emerald-600',
+        icon: '🌱',
+        advice: 'もう少しデータが必要です。',
+        metrics: { winRate, volatility: 0, roi, bigSwingRate: 0, sessions: gamesPlayed }
+      }
+    }
+
+    const avgBuyIn = totalBuyin / gamesPlayed
+    const profitVolatility = avgBuyIn > 0 ? (volatility / avgBuyIn) * 100 : 0
+    
+    const bigWins = stats.profits.filter((p: number) => p > avgBuyIn * 0.5).length
+    const bigLosses = stats.profits.filter((p: number) => p < -avgBuyIn * 0.5).length
+    const bigSwingRate = ((bigWins + bigLosses) / gamesPlayed) * 100
+    
+    if (winRate >= 55 && profitVolatility < 30 && roi > 10) {
+      return {
+        type: 'TAG',
+        name: 'TAG（タイトアグレッシブ）',
+        description: 'バランスの取れた堅実なプレイスタイル。',
+        color: 'from-blue-500 to-purple-600',
+        icon: '⚔️',
+        advice: 'TAGは最も安定した勝ちやすいスタイルです。',
+        metrics: { winRate, volatility: profitVolatility, roi, bigSwingRate, sessions: gamesPlayed }
+      }
+    } else if (winRate >= 45 && profitVolatility > 50 && bigSwingRate > 40) {
+      return {
+        type: 'LAG',
+        name: 'LAG（ルースアグレッシブ）',
+        description: '幅広いレンジで積極的にプレイ。',
+        color: 'from-orange-500 to-red-600',
+        icon: '🔥',
+        advice: 'LAGスタイルは高い技術を要します。',
+        metrics: { winRate, volatility: profitVolatility, roi, bigSwingRate, sessions: gamesPlayed }
+      }
+    }
+    
+    return {
+      type: 'ROCK',
+      name: 'ロック（堅実型）',
+      description: 'とても堅実で安定したプレイスタイル。',
+      color: 'from-green-500 to-teal-600',
+      icon: '🪨',
+      advice: '安定したプレイです。',
+      metrics: { winRate, volatility: profitVolatility, roi, bigSwingRate, sessions: gamesPlayed }
+    }
+  }
+
+  const loadPlayerDetail = async (stats: any) => {
+    try {
+      const { data: achievementsData } = await supabase
+        .from('user_achievements')
+        .select('achievement_id, achievements(*)')
+        .eq('user_id', stats.userId)
+
+      const achievements: Achievement[] = achievementsData?.map((ua: any) => ua.achievements).filter(Boolean) || []
+      
+      const playStyle = analyzePlayStyle(stats)
+      
+      const playerDetail: PlayerDetail = {
+        userId: stats.userId,
+        username: stats.username,
+        avatar_url: stats.avatar_url,
+        equipped_badge: stats.equipped_badge,
+        favorite_games: stats.favorite_games,
+        stats: {
+          totalGames: stats.gamesPlayed,
+          totalProfit: stats.totalProfit,
+          winRate: stats.winRate,
+          avgProfit: stats.avgProfit,
+          totalPlayHours: stats.totalHours,
+          bestWin: stats.bestWin,
+          worstLoss: stats.worstLoss,
+          roi: stats.roi,
+          hourlyRate: stats.hourlyRate,
+          volatility: stats.volatility,
+          maxWinStreak: stats.maxWinStreak,
+          maxLossStreak: stats.maxLossStreak,
+          currentStreak: stats.currentStreak
+        },
+        achievements,
+        playStyle
+      }
+      
+      setSelectedPlayer(playerDetail)
+    } catch (error) {
+      console.error('Error loading player detail:', error)
+    }
+  }
+
   const getMedalEmoji = (rank: number) => {
     switch (rank) {
       case 1: return '🥇'
       case 2: return '🥈'
       case 3: return '🥉'
       default: return `${rank}.`
+    }
+  }
+
+  const getRankingTitle = () => {
+    const titles = {
+      profit: '💰 総収支ランキング',
+      winrate: '🎯 勝率ランキング',
+      roi: '📊 ROIランキング',
+      hourly: '⚡ 時給ランキング',
+      streak: '🔥 最高連勝ランキング'
+    }
+    return titles[rankingType]
+  }
+
+  const getRankingValue = (player: any) => {
+    switch (rankingType) {
+      case 'profit':
+        return `${player.totalProfit >= 0 ? '+' : ''}${player.totalProfit.toLocaleString()}`
+      case 'winrate':
+        return `${player.winRate.toFixed(1)}%`
+      case 'roi':
+        return `${player.roi >= 0 ? '+' : ''}${player.roi.toFixed(1)}%`
+      case 'hourly':
+        return `${player.hourlyRate >= 0 ? '+' : ''}${Math.round(player.hourlyRate).toLocaleString()} P/h`
+      case 'streak':
+        return `${player.maxWinStreak}連勝`
+      default:
+        return ''
+    }
+  }
+
+  const getTimeRangeLabel = () => {
+    switch (timeRange) {
+      case '7days': return '過去7日間'
+      case 'month': return '今月'
+      case 'all': return '全期間'
+      case 'custom': return 'カスタム期間'
     }
   }
 
@@ -488,86 +1014,176 @@ export default function CommunityPage() {
         {/* タブコンテンツ */}
         {activeTab === 'ranking' && (
           <div className="space-y-5 animate-slide-in">
-            {/* 今月のランキング */}
+            {/* 期間選択 */}
             <div className="relative group">
-              <div className="absolute inset-0 bg-indigo-600 blur-xl opacity-50" />
-              <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-6 border-2 border-indigo-500/50">
-                <h2 className="text-xl font-black mb-5 flex items-center gap-2 text-white drop-shadow-glow">
-                  <Target className="w-6 h-6 text-indigo-400 drop-shadow-glow" />
-                  今月のランキング
-                </h2>
-                <div className="space-y-3">
-                  {monthlyRanking.map((player, idx) => (
-                    <div key={idx} className="relative group">
-                      <div className={`absolute inset-0 blur-lg opacity-50 ${idx < 3 ? 'bg-yellow-600' : 'bg-purple-600'}`} />
-                      <div className={`relative flex items-center gap-3 p-4 rounded-xl backdrop-blur-sm border-2 hover:scale-105 transition-all ${idx < 3 ? 'bg-yellow-950/30 border-yellow-500/50' : 'bg-purple-950/30 border-purple-500/50'}`}>
-                        <span className="text-2xl font-black w-10 text-white drop-shadow-glow">{idx + 1}.</span>
-                        <AvatarIcon profile={{ username: player.username, avatar_url: player.avatar_url, equipped_badge: player.equipped_badge } as Profile} size="sm" />
-                        <div className="flex-1">
-                          <div className="font-bold text-white drop-shadow-glow">{player.username}</div>
-                          <div className="text-xs font-semibold text-purple-300">{player.gamesPlayed}戦</div>
-                        </div>
-                        <div className={`px-4 py-2 rounded-full font-black ${
-                          player.totalProfit >= 0 
-                            ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white' 
-                            : 'bg-gradient-to-r from-red-600 to-pink-600 text-white'
-                        } shadow-lg drop-shadow-glow`}>
-                          {player.totalProfit >= 0 ? '+' : ''}{player.totalProfit.toLocaleString()}
-                        </div>
-                      </div>
-                    </div>
+              <div className="absolute inset-0 bg-blue-600 blur-xl opacity-50" />
+              <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-4 border-2 border-blue-500/50">
+                <div className="flex items-center gap-2 mb-3">
+                  <Calendar className="w-5 h-5 text-blue-400" />
+                  <h3 className="text-sm font-black text-blue-300">期間設定</h3>
+                </div>
+                <div className="grid grid-cols-4 gap-2 mb-3">
+                  {[
+                    { value: '7days', label: '7日間' },
+                    { value: 'month', label: '今月' },
+                    { value: 'all', label: '全期間' },
+                    { value: 'custom', label: 'カスタム' }
+                  ].map(option => (
+                    <button
+                      key={option.value}
+                      onClick={() => setTimeRange(option.value as any)}
+                      className={`py-2 px-3 rounded-xl text-xs font-bold transition-all ${
+                        timeRange === option.value
+                          ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white'
+                          : 'bg-white/10 text-blue-300 hover:bg-white/20'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+                
+                {timeRange === 'custom' && (
+                  <div className="space-y-2">
+                    <input
+                      type="date"
+                      value={customStartDate}
+                      onChange={(e) => setCustomStartDate(e.target.value)}
+                      className="w-full bg-black/40 border-2 border-blue-500/30 rounded-xl px-3 py-2 text-sm text-white"
+                      placeholder="開始日"
+                    />
+                    <input
+                      type="date"
+                      value={customEndDate}
+                      onChange={(e) => setCustomEndDate(e.target.value)}
+                      className="w-full bg-black/40 border-2 border-blue-500/30 rounded-xl px-3 py-2 text-sm text-white"
+                      placeholder="終了日"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ランキングタイプ選択 */}
+            <div className="relative group">
+              <div className="absolute inset-0 bg-purple-600 blur-xl opacity-50" />
+              <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-4 border-2 border-purple-500/50">
+                <div className="flex items-center gap-2 mb-3">
+                  <Filter className="w-5 h-5 text-purple-400" />
+                  <h3 className="text-sm font-black text-purple-300">ランキング種別</h3>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { value: 'profit', label: '💰 総収支', icon: DollarSign },
+                    { value: 'winrate', label: '🎯 勝率', icon: Target },
+                    { value: 'roi', label: '📊 ROI', icon: TrendingUp },
+                    { value: 'hourly', label: '⚡ 時給', icon: Zap },
+                    { value: 'streak', label: '🔥 連勝', icon: Activity }
+                  ].map(option => (
+                    <button
+                      key={option.value}
+                      onClick={() => setRankingType(option.value as any)}
+                      className={`py-3 px-3 rounded-xl text-xs font-bold transition-all ${
+                        rankingType === option.value
+                          ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                          : 'bg-white/10 text-purple-300 hover:bg-white/20'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
                   ))}
                 </div>
               </div>
             </div>
 
-            {/* 総合収支ランキング */}
+            {/* ランキング表示 */}
             <div className="relative group">
-              <div className="absolute inset-0 bg-purple-600 blur-xl opacity-50" />
-              <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-6 border-2 border-purple-500/50">
-                <h2 className="text-xl font-black mb-5 flex items-center gap-2 text-white drop-shadow-glow">
-                  <Trophy className="w-6 h-6 text-yellow-400 drop-shadow-glow" />
-                  総合収支ランキング
+              <div className="absolute inset-0 bg-indigo-600 blur-xl opacity-50" />
+              <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-6 border-2 border-indigo-500/50">
+                <h2 className="text-xl font-black mb-2 flex items-center gap-2 text-white drop-shadow-glow">
+                  {getRankingTitle()}
                 </h2>
+                <p className="text-sm text-indigo-300 font-bold mb-5">
+                  {getTimeRangeLabel()}
+                </p>
                 <div className="space-y-3">
-                  {allTimeRanking.map((player, idx) => {
-                    const avg = player.gamesPlayed > 0 ? player.totalProfit / player.gamesPlayed : 0
-                    return (
-                      <div key={idx} className="relative group">
-                        <div className={`absolute inset-0 blur-lg opacity-50 ${
-                          idx === 0 ? 'bg-yellow-600' :
-                          idx === 1 ? 'bg-gray-600' :
-                          idx === 2 ? 'bg-orange-600' :
-                          'bg-purple-600'
-                        }`} />
-                        <div className={`relative flex items-center gap-3 p-4 rounded-xl backdrop-blur-sm border-2 hover:scale-105 transition-all ${
-                          idx === 0 ? 'bg-yellow-950/30 border-yellow-500/50' :
-                          idx === 1 ? 'bg-gray-950/30 border-gray-500/50' :
-                          idx === 2 ? 'bg-orange-950/30 border-orange-500/50' :
-                          'bg-purple-950/30 border-purple-500/50'
-                        }`}>
-                          <span className="text-2xl font-black w-12 text-center text-white drop-shadow-glow">
-                            {getMedalEmoji(idx + 1)}
-                          </span>
-                          <AvatarIcon profile={{ username: player.username, avatar_url: player.avatar_url, equipped_badge: player.equipped_badge } as Profile} size="sm" />
-                          <div className="flex-1">
-                            <div className="font-bold text-white drop-shadow-glow">{player.username}</div>
-                            <div className="text-xs font-semibold text-purple-300">
-                              {player.gamesPlayed}戦 | 平均{avg >= 0 ? '+' : ''}{Math.round(avg).toLocaleString()}
-                            </div>
-                          </div>
-                          <div className={`text-2xl font-black ${
-                            player.totalProfit >= 0 ? 'text-green-400' : 'text-red-400'
-                          } drop-shadow-glow`}>
-                            {player.totalProfit >= 0 ? '+' : ''}{player.totalProfit.toLocaleString()}
+                  {getSortedRankings().map((player, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => loadPlayerDetail(player)}
+                      className="w-full text-left relative group"
+                    >
+                      <div className={`absolute inset-0 blur-lg opacity-50 ${
+                        idx === 0 ? 'bg-yellow-600' :
+                        idx === 1 ? 'bg-gray-600' :
+                        idx === 2 ? 'bg-orange-600' :
+                        'bg-purple-600'
+                      }`} />
+                      <div className={`relative flex items-center gap-3 p-4 rounded-xl backdrop-blur-sm border-2 hover:scale-105 transition-all ${
+                        idx === 0 ? 'bg-yellow-950/30 border-yellow-500/50' :
+                        idx === 1 ? 'bg-gray-950/30 border-gray-500/50' :
+                        idx === 2 ? 'bg-orange-950/30 border-orange-500/50' :
+                        'bg-purple-950/30 border-purple-500/50'
+                      }`}>
+                        <span className="text-2xl font-black w-12 text-center text-white drop-shadow-glow">
+                          {getMedalEmoji(idx + 1)}
+                        </span>
+                        <AvatarIcon profile={{ username: player.username, avatar_url: player.avatar_url, equipped_badge: player.equipped_badge } as Profile} size="sm" />
+                        <div className="flex-1">
+                          <div className="font-bold text-white drop-shadow-glow">{player.username}</div>
+                          <div className="text-xs font-semibold text-purple-300">
+                            {player.gamesPlayed}戦 | {player.totalHours.toFixed(1)}h
                           </div>
                         </div>
+                        <div className="flex items-center gap-2">
+                          <div className="text-xl font-black text-white drop-shadow-glow">
+                            {getRankingValue(player)}
+                          </div>
+                          <ChevronRight className="w-5 h-5 text-white/50" />
+                        </div>
                       </div>
-                    )
-                  })}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
+
+            {/* 曜日別チャンピオン */}
+            {rankingType === 'weekday' && (
+              <div className="relative group">
+                <div className="absolute inset-0 bg-yellow-600 blur-xl opacity-50" />
+                <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-6 border-2 border-yellow-500/50">
+                  <h2 className="text-xl font-black mb-5 flex items-center gap-2 text-white drop-shadow-glow">
+                    <Crown className="w-6 h-6 text-yellow-400 drop-shadow-glow" />
+                    曜日別チャンピオン
+                  </h2>
+                  <div className="space-y-3">
+                    {weekdayChampions.map((champion, idx) => champion && (
+                      <div key={idx} className="relative">
+                        <div className="absolute inset-0 bg-yellow-600 blur-lg opacity-50" />
+                        <div className="relative bg-yellow-950/30 backdrop-blur-sm rounded-xl p-4 border-2 border-yellow-500/50">
+                          <div className="flex items-center gap-3">
+                            <div className="text-2xl font-black text-yellow-400 w-10">
+                              {champion.day}
+                            </div>
+                            <AvatarIcon profile={{ username: champion.player.username, avatar_url: champion.player.avatar_url, equipped_badge: champion.player.equipped_badge } as Profile} size="sm" />
+                            <div className="flex-1">
+                              <div className="font-bold text-white">{champion.player.username}</div>
+                              <div className="text-xs text-yellow-300 font-semibold">
+                                {champion.player.games}戦
+                              </div>
+                            </div>
+                            <div className="text-xl font-black text-yellow-400">
+                              +{champion.player.totalProfit.toLocaleString()}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -602,20 +1218,6 @@ export default function CommunityPage() {
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
-              <div className="mt-6 flex justify-center gap-6 text-xs font-bold">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-purple-600 rounded" />
-                  <span className="text-white">プレイ回数</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-green-500 rounded" />
-                  <span className="text-white">平均収支(+)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-red-500 rounded" />
-                  <span className="text-white">平均収支(-)</span>
-                </div>
-              </div>
             </div>
           </div>
         )}
@@ -632,7 +1234,7 @@ export default function CommunityPage() {
                     ジャックポット殿堂
                   </h2>
                   <div className="space-y-4">
-                    {allJackpotWinners.map((winner, idx) => (
+                    {allJackpotWinners.slice(0, 10).map((winner, idx) => (
                       <div key={winner.id} className="relative">
                         <div className={`absolute inset-0 blur-lg opacity-50 ${
                           winner.hand_type.includes('ロイヤル') ? 'bg-purple-600' : 'bg-blue-600'
@@ -654,30 +1256,10 @@ export default function CommunityPage() {
                                 <div className="text-3xl font-black text-green-400 mt-2 drop-shadow-glow">
                                   +{winner.amount.toLocaleString()} P
                                 </div>
-                                <div className="mt-3 space-y-1">
-                                  <p className="text-xs font-semibold text-purple-200 flex items-center gap-1">
-                                    <CreditCard className="w-3 h-3" />
-                                    {winner.hand_cards}
-                                  </p>
-                                  <p className="text-xs font-semibold text-purple-200 flex items-center gap-1">
-                                    <Trophy className="w-3 h-3" />
-                                    {winner.board_cards}
-                                  </p>
-                                </div>
                               </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-xs font-bold text-purple-200">
-                                {new Date(winner.created_at).toLocaleDateString('ja-JP')}
-                              </p>
                             </div>
                           </div>
                         </div>
-                        {idx === 0 && (
-                          <div className="absolute -top-2 -right-2 bg-gradient-to-r from-yellow-400 to-amber-500 text-black text-xs font-black px-3 py-1 rounded-full shadow-lg animate-pulse">
-                            LATEST
-                          </div>
-                        )}
                       </div>
                     ))}
                   </div>
@@ -706,65 +1288,15 @@ export default function CommunityPage() {
                                 {idx + 1}. {session.profiles?.username}
                               </div>
                               <div className="text-xs font-semibold text-green-300 mt-1">
-                                {new Date(session.played_at).toLocaleDateString('ja-JP')} | {session.play_hours}時間
+                                {new Date(session.played_at).toLocaleDateString('ja-JP')}
                               </div>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <div className="text-3xl font-black text-green-400 drop-shadow-glow">
-                              +{session.profit.toLocaleString()}
-                            </div>
+                          <div className="text-3xl font-black text-green-400 drop-shadow-glow">
+                            +{session.profit.toLocaleString()}
                           </div>
                         </div>
                       </div>
-                      {idx === 0 && (
-                        <div className="absolute -top-2 -right-2 bg-gradient-to-r from-yellow-400 to-amber-500 text-black text-xs font-black px-2 py-1 rounded-full shadow-lg">
-                          BEST
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* 大負け記録 */}
-            <div className="relative group">
-              <div className="absolute inset-0 bg-red-600 blur-xl opacity-50" />
-              <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-6 border-2 border-red-500/50">
-                <h2 className="text-xl font-black mb-5 flex items-center gap-2 text-white drop-shadow-glow">
-                  <Award className="w-6 h-6 text-red-400 drop-shadow-glow" />
-                  大負け記録 TOP5
-                </h2>
-                <div className="space-y-3">
-                  {bigLosses.map((session, idx) => (
-                    <div key={idx} className="relative">
-                      <div className="absolute inset-0 bg-red-600 blur-lg opacity-50" />
-                      <div className="relative bg-red-950/30 backdrop-blur-sm rounded-xl p-4 border-l-4 border-red-400">
-                        <div className="flex items-start justify-between">
-                          <div className="flex gap-3">
-                            <AvatarIcon profile={session.profiles} size="sm" />
-                            <div>
-                              <div className="font-black text-white text-lg drop-shadow-glow">
-                                {idx + 1}. {session.profiles?.username}
-                              </div>
-                              <div className="text-xs font-semibold text-red-300 mt-1">
-                                {new Date(session.played_at).toLocaleDateString('ja-JP')} | {session.play_hours}時間
-                              </div>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-3xl font-black text-red-400 drop-shadow-glow">
-                              {session.profit.toLocaleString()}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      {idx === 0 && (
-                        <div className="absolute -top-2 -right-2 bg-gradient-to-r from-gray-600 to-gray-800 text-white text-xs font-black px-2 py-1 rounded-full shadow-lg">
-                          WORST
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
@@ -773,6 +1305,10 @@ export default function CommunityPage() {
           </div>
         )}
       </div>
+
+      {selectedPlayer && (
+        <PlayerDetailModal player={selectedPlayer} onClose={() => setSelectedPlayer(null)} />
+      )}
 
       <style jsx global>{`
         @keyframes slide-in {
@@ -783,6 +1319,15 @@ export default function CommunityPage() {
           to {
             opacity: 1;
             transform: translateY(0);
+          }
+        }
+
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
           }
         }
 
@@ -797,6 +1342,10 @@ export default function CommunityPage() {
 
         .animate-slide-in {
           animation: slide-in 0.4s ease-out;
+        }
+
+        .animate-fade-in {
+          animation: fade-in 0.3s ease-out;
         }
 
         .animate-bounce-slow {

@@ -3,11 +3,14 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { TrendingUp, BarChart3, BookOpen, Sparkles, AlertCircle, CheckCircle, Loader2 } from 'lucide-react'
+import { TrendingUp, BarChart3, BookOpen, Sparkles, AlertCircle, CheckCircle, Loader2, Key } from 'lucide-react'
+
+const INVITE_CODE = '1223334444'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [inviteCode, setInviteCode] = useState('')
   const [isSignUp, setIsSignUp] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -22,6 +25,13 @@ export default function LoginPage() {
     
     try {
       if (isSignUp) {
+        // 招待コードチェック
+        if (inviteCode !== INVITE_CODE) {
+          setError('招待コードが正しくありません')
+          setLoading(false)
+          return
+        }
+
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -262,6 +272,28 @@ export default function LoginPage() {
                   />
                 </div>
 
+                {isSignUp && (
+                  <div className="animate-slide-in">
+                    <label className="block text-sm font-bold text-purple-200 mb-3 flex items-center gap-2">
+                      <Key className="w-4 h-4 text-yellow-400 drop-shadow-glow" />
+                      招待コード
+                      <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={inviteCode}
+                      onChange={(e) => setInviteCode(e.target.value)}
+                      className="w-full px-5 py-4 bg-black/60 backdrop-blur-sm border-2 border-yellow-500/50 rounded-2xl focus:ring-4 focus:ring-yellow-500/30 focus:border-yellow-400 transition-all duration-200 text-white font-medium text-base placeholder:text-yellow-300/50 hover:border-yellow-400"
+                      placeholder="招待コードを入力"
+                    />
+                    <p className="text-yellow-300 text-xs font-semibold mt-2 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      新規登録には招待コードが必要です
+                    </p>
+                  </div>
+                )}
+
                 <div className="relative group">
                   <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl blur-lg opacity-75 group-hover:opacity-100 transition-opacity" />
                   <button
@@ -315,6 +347,7 @@ export default function LoginPage() {
                     setIsSignUp(!isSignUp)
                     setError('')
                     setSuccess('')
+                    setInviteCode('')
                   }}
                   className="ml-2 text-pink-400 hover:text-pink-300 font-black hover:underline transition-all text-base drop-shadow-glow"
                 >

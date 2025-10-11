@@ -256,12 +256,15 @@ export default function StatsPage() {
   const [sessions, setSessions] = useState<GameSession[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'overview' | 'time' | 'pattern' | 'style' | 'roi'>('overview')
-  const [timeRange, setTimeRange] = useState<'week' | 'month' | 'year' | 'all'>('month')
+  const [timeRange, setTimeRange] = useState<'week' | 'month' | 'year' | 'all' | 'custom'>('month')
+  
+  const [customStartDate, setCustomStartDate] = useState('')
+  const [customEndDate, setCustomEndDate] = useState('')
 
   useEffect(() => {
     checkAuth()
     loadSessions()
-  }, [timeRange])
+  }, [timeRange, customStartDate, customEndDate])
 
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession()
@@ -282,7 +285,16 @@ export default function StatsPage() {
         .eq('user_id', user.id)
         .order('played_at', { ascending: true })
 
-      if (timeRange !== 'all') {
+      if (timeRange === 'custom') {
+        if (customStartDate) {
+          query = query.gte('played_at', new Date(customStartDate).toISOString())
+        }
+        if (customEndDate) {
+          const endDateTime = new Date(customEndDate)
+          endDateTime.setHours(23, 59, 59, 999)
+          query = query.lte('played_at', endDateTime.toISOString())
+        }
+      } else if (timeRange !== 'all') {
         const now = new Date()
         let startDate = new Date()
         
@@ -453,6 +465,16 @@ export default function StatsPage() {
   }
 
   const cumulativeData = getCumulativeData()
+  
+  const getPeriodLabel = () => {
+    switch (timeRange) {
+      case 'week': return '1週間'
+      case 'month': return '1ヶ月'
+      case 'year': return '1年'
+      case 'all': return '全期間'
+      case 'custom': return 'カスタム期間'
+    }
+  }
 
   if (loading) {
     return (
@@ -497,12 +519,12 @@ export default function StatsPage() {
         <div className="relative mb-6">
           <div className="absolute inset-0 bg-purple-600 blur-xl opacity-50" />
           <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-1.5 border-2 border-purple-500/50">
-            <div className="flex gap-2">
-              {(['week', 'month', 'year', 'all'] as const).map(range => (
+            <div className="grid grid-cols-5 gap-1">
+              {(['week', 'month', 'year', 'all', 'custom'] as const).map(range => (
                 <button
                   key={range}
                   onClick={() => setTimeRange(range)}
-                  className={`flex-1 py-3 px-3 rounded-xl text-sm font-black transition-all ${
+                  className={`py-2.5 px-2 rounded-xl text-xs font-black transition-all ${
                     timeRange === range
                       ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg transform scale-105'
                       : 'text-purple-200 hover:bg-white/10'
@@ -510,19 +532,51 @@ export default function StatsPage() {
                 >
                   {range === 'week' ? '1週間' : 
                    range === 'month' ? '1ヶ月' : 
-                   range === 'year' ? '1年' : '全期間'}
+                   range === 'year' ? '1年' : 
+                   range === 'all' ? '全期間' : 'カスタム'}
                 </button>
               ))}
             </div>
           </div>
         </div>
 
+        {timeRange === 'custom' && (
+          <div className="relative mb-6 animate-slide-in">
+            <div className="absolute inset-0 bg-indigo-600 blur-xl opacity-50" />
+            <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-4 border-2 border-indigo-500/50">
+              <h3 className="font-black text-indigo-300 mb-3 text-sm">カスタム期間を選択</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-black text-indigo-300 mb-2">開始日</label>
+                  <input
+                    type="date"
+                    value={customStartDate}
+                    onChange={(e) => setCustomStartDate(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-white/10 border-2 border-indigo-500/30 text-indigo-100 text-sm focus:outline-none focus:border-indigo-400 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-indigo-300 mb-2">終了日</label>
+                  <input
+                    type="date"
+                    value={customEndDate}
+                    onChange={(e) => setCustomEndDate(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-white/10 border-2 border-indigo-500/30 text-indigo-100 text-sm focus:outline-none focus:border-indigo-400 transition-all"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {!stats || sessions.length === 0 ? (
           <div className="relative group">
             <div className="absolute inset-0 bg-purple-600 blur-xl opacity-50 animate-pulse" />
             <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-20 text-center border-2 border-purple-500/50">
               <Trophy className="w-20 h-20 text-purple-400 mx-auto mb-4 animate-bounce-slow" />
-              <p className="text-white font-black text-xl mb-4">まだデータがありません</p>
+              <p className="text-white font-black text-xl mb-4">
+                {timeRange === 'custom' ? 'この期間にデータがありません' : 'まだデータがありません'}
+              </p>
               <button
                 onClick={() => router.push('/game-report')}
                 className="relative group/btn"
@@ -656,7 +710,7 @@ export default function StatsPage() {
                   <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-2 border-violet-500/50">
                     <h3 className="font-black text-white mb-4 flex items-center gap-2">
                       <Activity className="w-5 h-5 text-violet-400" />
-                      累積収支グラフ
+                      累積収支グラフ（{getPeriodLabel()}）
                     </h3>
                     
                     {cumulativeData.length > 0 && (
