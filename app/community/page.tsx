@@ -7,7 +7,8 @@ import {
   ArrowLeft, Trophy, TrendingUp, Award, Users, Clock, DollarSign, 
   Calendar, Sparkles, Target, CreditCard, User, X, ChevronRight,
   Crown, Zap, Star, TrendingDown, Activity, BarChart3, Shield,
-  Percent, Brain, Filter, Search
+  Percent, Brain, Filter, Search, Coins, Hand, Flame, Gem, Medal,
+  Gift, Rocket, Briefcase, CircleDollarSign, FileText, Camera
 } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -159,6 +160,51 @@ const PlayerDetailModal = ({ player, onClose }: { player: PlayerDetail, onClose:
   
   const style = playStyleInfo[player.playStyle?.type] || playStyleInfo.BEGINNER
   
+  // アイコン名を適切なコンポーネントまたは絵文字に変換する関数
+  const getAchievementIconDisplay = (iconName: string) => {
+    // 絵文字の場合はそのまま返す
+    if (/[\u{1F300}-\u{1F9FF}]/u.test(iconName)) {
+      return <span className="text-xl">{iconName}</span>
+    }
+    
+    // Lucideアイコン名の場合はコンポーネントを返す
+    const iconMap: { [key: string]: any } = {
+      'Trophy': Trophy,
+      'Award': Award,
+      'Crown': Crown,
+      'Star': Star,
+      'Zap': Zap,
+      'Target': Target,
+      'Shield': Shield,
+      'Sparkles': Sparkles,
+      'TrendingUp': TrendingUp,
+      'TrendingDown': TrendingDown,
+      'DollarSign': DollarSign,
+      'CircleDollarSign': CircleDollarSign,
+      'Users': Users,
+      'Clock': Clock,
+      'Calendar': Calendar,
+      'Activity': Activity,
+      'BarChart3': BarChart3,
+      'Percent': Percent,
+      'Brain': Brain,
+      'Coins': Coins,
+      'Hand': Hand,
+      'HandCoins': Hand,
+      'Flame': Flame,
+      'Gem': Gem,
+      'Medal': Medal,
+      'Gift': Gift,
+      'Rocket': Rocket,
+      'Briefcase': Briefcase,
+      'FileText': FileText,
+      'Camera': Camera
+    }
+    
+    const IconComponent = iconMap[iconName]
+    return IconComponent ? <IconComponent className="w-5 h-5 text-white" /> : <span className="text-xl">{iconName}</span>
+  }
+  
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
       <div className="bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-900 rounded-3xl max-w-md w-full max-h-[90vh] overflow-y-auto border-2 border-purple-500/50 shadow-2xl">
@@ -168,6 +214,20 @@ const PlayerDetailModal = ({ player, onClose }: { player: PlayerDetail, onClose:
             <div>
               <h2 className="text-xl font-black text-white">{player.username}</h2>
               <p className="text-sm text-purple-300 font-semibold">{player.stats.totalGames}戦のデータ</p>
+              {player.equipped_badge && (
+                <div className="mt-1 flex items-center gap-2">
+                  <div className={`px-2 py-0.5 rounded-lg text-[10px] font-black bg-gradient-to-r ${player.equipped_badge.badge_gradient} text-white`}>
+                    {player.equipped_badge.icon} {player.equipped_badge.name}
+                  </div>
+                  <p className="text-[10px] text-purple-200">
+                    {player.equipped_badge.condition_type === 'total_profit' && `収支 ${player.equipped_badge.condition_value >= 0 ? '+' : ''}${player.equipped_badge.condition_value.toLocaleString()}以上`}
+                    {player.equipped_badge.condition_type === 'win_streak' && `${player.equipped_badge.condition_value}連勝達成`}
+                    {player.equipped_badge.condition_type === 'games_played' && `${player.equipped_badge.condition_value}戦以上プレイ`}
+                    {player.equipped_badge.condition_type === 'roi' && `ROI ${player.equipped_badge.condition_value}%以上`}
+                    {player.equipped_badge.condition_type === 'single_win' && `1戦で+${player.equipped_badge.condition_value.toLocaleString()}以上の勝利`}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
           <button onClick={onClose} className="w-10 h-10 rounded-full bg-red-600/80 hover:bg-red-500 flex items-center justify-center transition-all">
@@ -371,25 +431,42 @@ const PlayerDetailModal = ({ player, onClose }: { player: PlayerDetail, onClose:
               </div>
 
               <div className="space-y-2">
-                {player.achievements.map((achievement) => (
-                  <div key={achievement.id} className={`bg-gradient-to-r ${achievement.badge_gradient} rounded-2xl p-1`}>
-                    <div className="bg-black/60 rounded-2xl p-4 flex items-center gap-3">
-                      <div className="text-3xl">{achievement.icon}</div>
-                      <div className="flex-1">
-                        <div className="font-black text-white text-sm">{achievement.name}</div>
-                        <div className="text-xs text-white/70">{achievement.description}</div>
-                      </div>
-                      <div className={`px-2 py-1 rounded-lg text-xs font-black ${
-                        achievement.tier === 'legendary' ? 'bg-yellow-500 text-black' :
-                        achievement.tier === 'epic' ? 'bg-purple-500 text-white' :
-                        achievement.tier === 'rare' ? 'bg-blue-500 text-white' :
-                        'bg-gray-500 text-white'
-                      }`}>
-                        {achievement.tier.toUpperCase()}
+                {player.achievements.map((achievement) => {
+                  // ティアに応じた色を設定（小文字に変換して比較）
+                  const tier = achievement.tier.toLowerCase()
+                  const tierGradient = 
+                    tier === 'legendary' ? 'from-yellow-400 via-yellow-500 to-orange-500' :
+                    tier === 'gold' ? 'from-yellow-500 via-amber-500 to-orange-600' :
+                    tier === 'silver' ? 'from-gray-300 via-gray-400 to-gray-500' :
+                    tier === 'bronze' ? 'from-amber-700 via-orange-800 to-amber-900' :
+                    'from-gray-400 via-gray-500 to-gray-600'
+                  
+                  return (
+                    <div key={achievement.id} className={`bg-gradient-to-r ${tierGradient} rounded-xl p-0.5`}>
+                      <div className="bg-black/70 rounded-xl p-3 flex items-center gap-2">
+                        <div className="flex-shrink-0">{getAchievementIconDisplay(achievement.icon)}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-black text-white text-xs leading-tight">{achievement.name}</div>
+                          <div className="text-[10px] text-white/70 leading-tight mt-0.5">
+                            {achievement.condition_type === 'total_profit' && `収支 ${achievement.condition_value >= 0 ? '+' : ''}${achievement.condition_value.toLocaleString()}以上`}
+                            {achievement.condition_type === 'win_streak' && `${achievement.condition_value}連勝達成`}
+                            {achievement.condition_type === 'games_played' && `${achievement.condition_value}戦以上プレイ`}
+                            {achievement.condition_type === 'roi' && `ROI ${achievement.condition_value}%以上`}
+                            {achievement.condition_type === 'single_win' && `1戦で+${achievement.condition_value.toLocaleString()}以上の勝利`}
+                          </div>
+                        </div>
+                        <div className={`px-1.5 py-0.5 rounded text-[10px] font-black flex-shrink-0 ${
+                          achievement.tier === 'legendary' ? 'bg-yellow-500 text-black' :
+                          achievement.tier === 'epic' ? 'bg-purple-500 text-white' :
+                          achievement.tier === 'rare' ? 'bg-blue-500 text-white' :
+                          'bg-gray-500 text-white'
+                        }`}>
+                          {achievement.tier.toUpperCase()}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           )}
@@ -428,25 +505,68 @@ export default function CommunityPage() {
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerDetail | null>(null)
 
   useEffect(() => {
-    loadCommunityData()
-  }, [timeRange, customStartDate, customEndDate])
+    checkAuthAndLoadData()
+  }, [])
+
+    useEffect(() => {
+      if (!loading) {
+        loadCommunityData()
+      }
+    }, [timeRange, customStartDate, customEndDate])
+
+    const checkAuthAndLoadData = async () => {
+      try {
+        console.log('🔐 認証確認開始...')
+        
+        // まずセッションを確認
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError) {
+          console.error('❌ セッション取得エラー:', sessionError)
+          router.push('/login')
+          return
+        }
+        
+        if (!session) {
+          console.log('❌ セッションなし - ログインページへ')
+          router.push('/login')
+          return
+        }
+        
+        console.log('✅ 認証成功:', session.user.id)
+        
+        // 認証確認後にデータ読み込み
+        await loadCommunityData()
+        
+      } catch (error) {
+        console.error('❌ 認証確認エラー:', error)
+        router.push('/login')
+      }
+    }
 
   const getDateRange = () => {
     const now = new Date()
     let startDate = new Date(0)
-    let endDate = now
+    let endDate = new Date(now)
+    endDate.setHours(23, 59, 59, 999)
 
     switch (timeRange) {
       case '7days':
         startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+        startDate.setHours(0, 0, 0, 0)
         break
       case 'month':
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1)
-        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59)
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0)
         break
       case 'custom':
-        if (customStartDate) startDate = new Date(customStartDate)
-        if (customEndDate) endDate = new Date(customEndDate)
+        if (customStartDate) {
+          startDate = new Date(customStartDate)
+          startDate.setHours(0, 0, 0, 0)
+        }
+        if (customEndDate) {
+          endDate = new Date(customEndDate)
+          endDate.setHours(23, 59, 59, 999)
+        }
         break
       case 'all':
       default:
@@ -458,21 +578,32 @@ export default function CommunityPage() {
 
   const loadCommunityData = async () => {
     try {
-      const { data: jpData } = await supabase
+      console.log('🔄 データ読み込み開始...')
+      
+      // ジャックポット情報取得
+      const { data: jpData, error: jpError } = await supabase
         .from('jackpot_pool')
         .select('current_amount')
         .single()
       
-      if (jpData) {
+      if (jpError) {
+        console.error('❌ ジャックポット取得エラー:', jpError)
+      } else if (jpData) {
         setCurrentJackpot(jpData.current_amount)
+        console.log('✅ ジャックポット取得成功:', jpData.current_amount)
       }
 
-      const { data: winnersData } = await supabase
+      // ジャックポット獲得者取得
+      const { data: winnersData, error: winnersError } = await supabase
         .from('jackpot_winners')
         .select('*')
         .order('created_at', { ascending: false })
       
-      if (winnersData && winnersData.length > 0) {
+      if (winnersError) {
+        console.error('❌ ジャックポット獲得者取得エラー:', winnersError)
+      } else if (winnersData && winnersData.length > 0) {
+        console.log('✅ ジャックポット獲得者取得:', winnersData.length, '件')
+        
         const winnersWithProfiles = await Promise.all(
           winnersData.map(async (winner) => {
             const { data: profileData } = await supabase
@@ -495,25 +626,52 @@ export default function CommunityPage() {
         if (activeWinners.length > 0) {
           setAllJackpotWinners(activeWinners)
           setLatestWinner(activeWinners[0])
+          console.log('✅ アクティブな獲得者:', activeWinners.length, '件')
         }
       }
 
+      // 期間フィルター取得
       const { startDate, endDate } = getDateRange()
+      console.log('📅 期間フィルター:', {
+        start: startDate.toISOString(),
+        end: endDate.toISOString(),
+        range: timeRange
+      })
       
-      const { data: allSessions } = await supabase
+      // セッションデータ取得
+      let query = supabase
         .from('game_sessions')
         .select(`
           *,
           profiles(username, active, avatar_url, equipped_badge(*), favorite_games)
         `)
-        .gte('played_at', startDate.toISOString())
-        .lte('played_at', endDate.toISOString())
+        .order('played_at', { ascending: false })
+
+      // 期間フィルター適用
+      if (timeRange !== 'all') {
+        query = query
+          .gte('played_at', startDate.toISOString())
+          .lte('played_at', endDate.toISOString())
+      }
+
+      const { data: allSessions, error: sessionsError } = await query
       
+      if (sessionsError) {
+        console.error('❌ セッション取得エラー:', sessionsError)
+        throw sessionsError
+      }
+
+      console.log('✅ 全セッション取得:', allSessions?.length || 0, '件')
+      
+      // アクティブユーザーのみフィルター
       const sessions = allSessions?.filter(s => 
         s.profiles && s.profiles.active !== false
       ) || []
       
+      console.log('✅ アクティブユーザーのセッション:', sessions.length, '件')
+      
       if (sessions.length > 0) {
+        // 統計計算
         const totalHours = sessions.reduce((sum, s) => sum + Number(s.play_hours), 0)
         const totalBuyin = sessions.reduce((sum, s) => sum + s.buy_in, 0)
         const uniquePlayers = new Set(sessions.map(s => s.user_id)).size
@@ -523,10 +681,16 @@ export default function CommunityPage() {
           totalBuyin,
           activePlayers: uniquePlayers
         })
+        
+        console.log('📊 統計計算完了:', { totalHours, totalBuyin, uniquePlayers })
 
+        // ランキング計算
         calculateRankings(sessions)
+        
+        // 曜日別統計計算
         calculateWeekdayStats(sessions)
         
+        // 大勝ち・大負け記録
         const topWins = [...sessions]
           .sort((a, b) => b.profit - a.profit)
           .slice(0, 5)
@@ -536,16 +700,29 @@ export default function CommunityPage() {
           .sort((a, b) => a.profit - b.profit)
           .slice(0, 5)
         setBigLosses(topLosses)
+        
+        console.log('✅ ランキング計算完了')
+      } else {
+        console.log('⚠️ 表示可能なセッションがありません')
+        // データがない場合は空の状態に設定
+        setRankings([])
+        setWeekdayStats([])
+        setWeekdayChampions([])
+        setBigWins([])
+        setBigLosses([])
       }
       
     } catch (error) {
-      console.error('Error loading community data:', error)
+      console.error('❌ コミュニティデータ読み込みエラー:', error)
     } finally {
       setLoading(false)
+      console.log('✅ データ読み込み完了')
     }
   }
 
   const calculateRankings = (sessions: GameSession[]) => {
+    console.log('🔢 ランキング計算開始:', sessions.length, '件')
+    
     const playerStats = new Map()
     
     sessions.forEach(session => {
@@ -555,7 +732,7 @@ export default function CommunityPage() {
       if (!playerStats.has(userId)) {
         playerStats.set(userId, {
           userId,
-          username: profile?.username,
+          username: profile?.username || 'Unknown',
           avatar_url: profile?.avatar_url,
           equipped_badge: profile?.equipped_badge,
           favorite_games: profile?.favorite_games,
@@ -607,7 +784,7 @@ export default function CommunityPage() {
       const avgProfit = stats.gamesPlayed > 0 ? stats.totalProfit / stats.gamesPlayed : 0
       
       const mean = avgProfit
-      const variance = stats.profits.reduce((sum, p) => sum + Math.pow(p - mean, 2), 0) / stats.profits.length
+      const variance = stats.profits.reduce((sum: number, p: number) => sum + Math.pow(p - mean, 2), 0) / stats.profits.length
       const volatility = Math.sqrt(variance)
       
       return {
@@ -620,6 +797,7 @@ export default function CommunityPage() {
       }
     })
     
+    console.log('✅ ランキングデータ作成完了:', rankingData.length, '人')
     setRankings(rankingData)
   }
 
@@ -735,8 +913,24 @@ export default function CommunityPage() {
     const bigLosses = stats.profits.filter((p: number) => p < -avgBuyIn * 0.5).length
     const bigSwingRate = ((bigWins + bigLosses) / gamesPlayed) * 100
     
+    let style: any = {
+      type: '',
+      name: '',
+      description: '',
+      color: '',
+      icon: '🎯',
+      advice: '',
+      metrics: {
+        winRate: 0,
+        volatility: 0,
+        roi: 0,
+        bigSwingRate: 0,
+        sessions: 0
+      }
+    }
+    
     if (winRate >= 55 && profitVolatility < 30 && roi > 10) {
-      return {
+      style = {
         type: 'TAG',
         name: 'TAG（タイトアグレッシブ）',
         description: 'バランスの取れた堅実なプレイスタイル。',
@@ -746,7 +940,7 @@ export default function CommunityPage() {
         metrics: { winRate, volatility: profitVolatility, roi, bigSwingRate, sessions: gamesPlayed }
       }
     } else if (winRate >= 45 && profitVolatility > 50 && bigSwingRate > 40) {
-      return {
+      style = {
         type: 'LAG',
         name: 'LAG（ルースアグレッシブ）',
         description: '幅広いレンジで積極的にプレイ。',
@@ -755,17 +949,19 @@ export default function CommunityPage() {
         advice: 'LAGスタイルは高い技術を要します。',
         metrics: { winRate, volatility: profitVolatility, roi, bigSwingRate, sessions: gamesPlayed }
       }
+    } else {
+      style = {
+        type: 'ROCK',
+        name: 'ロック（堅実型）',
+        description: 'とても堅実で安定したプレイスタイル。',
+        color: 'from-green-500 to-teal-600',
+        icon: '🪨',
+        advice: '安定したプレイです。',
+        metrics: { winRate, volatility: profitVolatility, roi, bigSwingRate, sessions: gamesPlayed }
+      }
     }
     
-    return {
-      type: 'ROCK',
-      name: 'ロック（堅実型）',
-      description: 'とても堅実で安定したプレイスタイル。',
-      color: 'from-green-500 to-teal-600',
-      icon: '🪨',
-      advice: '安定したプレイです。',
-      metrics: { winRate, volatility: profitVolatility, roi, bigSwingRate, sessions: gamesPlayed }
-    }
+    return style
   }
 
   const loadPlayerDetail = async (stats: any) => {
@@ -806,7 +1002,7 @@ export default function CommunityPage() {
       
       setSelectedPlayer(playerDetail)
     } catch (error) {
-      console.error('Error loading player detail:', error)
+      console.error('プレイヤー詳細読み込みエラー:', error)
     }
   }
 
@@ -1106,84 +1302,56 @@ export default function CommunityPage() {
                 <p className="text-sm text-indigo-300 font-bold mb-5">
                   {getTimeRangeLabel()}
                 </p>
-                <div className="space-y-3">
-                  {getSortedRankings().map((player, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => loadPlayerDetail(player)}
-                      className="w-full text-left relative group"
-                    >
-                      <div className={`absolute inset-0 blur-lg opacity-50 ${
-                        idx === 0 ? 'bg-yellow-600' :
-                        idx === 1 ? 'bg-gray-600' :
-                        idx === 2 ? 'bg-orange-600' :
-                        'bg-purple-600'
-                      }`} />
-                      <div className={`relative flex items-center gap-3 p-4 rounded-xl backdrop-blur-sm border-2 hover:scale-105 transition-all ${
-                        idx === 0 ? 'bg-yellow-950/30 border-yellow-500/50' :
-                        idx === 1 ? 'bg-gray-950/30 border-gray-500/50' :
-                        idx === 2 ? 'bg-orange-950/30 border-orange-500/50' :
-                        'bg-purple-950/30 border-purple-500/50'
-                      }`}>
-                        <span className="text-2xl font-black w-12 text-center text-white drop-shadow-glow">
-                          {getMedalEmoji(idx + 1)}
-                        </span>
-                        <AvatarIcon profile={{ username: player.username, avatar_url: player.avatar_url, equipped_badge: player.equipped_badge } as Profile} size="sm" />
-                        <div className="flex-1">
-                          <div className="font-bold text-white drop-shadow-glow">{player.username}</div>
-                          <div className="text-xs font-semibold text-purple-300">
-                            {player.gamesPlayed}戦 | {player.totalHours.toFixed(1)}h
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="text-xl font-black text-white drop-shadow-glow">
-                            {getRankingValue(player)}
-                          </div>
-                          <ChevronRight className="w-5 h-5 text-white/50" />
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* 曜日別チャンピオン */}
-            {rankingType === 'weekday' && (
-              <div className="relative group">
-                <div className="absolute inset-0 bg-yellow-600 blur-xl opacity-50" />
-                <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-6 border-2 border-yellow-500/50">
-                  <h2 className="text-xl font-black mb-5 flex items-center gap-2 text-white drop-shadow-glow">
-                    <Crown className="w-6 h-6 text-yellow-400 drop-shadow-glow" />
-                    曜日別チャンピオン
-                  </h2>
+                
+                {getSortedRankings().length === 0 ? (
+                  <div className="text-center py-10">
+                    <Trophy className="w-16 h-16 text-purple-400 mx-auto mb-4 opacity-50" />
+                    <p className="text-white font-bold text-lg mb-2">データがありません</p>
+                    <p className="text-purple-300 text-sm">この期間のデータが見つかりません</p>
+                  </div>
+                ) : (
                   <div className="space-y-3">
-                    {weekdayChampions.map((champion, idx) => champion && (
-                      <div key={idx} className="relative">
-                        <div className="absolute inset-0 bg-yellow-600 blur-lg opacity-50" />
-                        <div className="relative bg-yellow-950/30 backdrop-blur-sm rounded-xl p-4 border-2 border-yellow-500/50">
-                          <div className="flex items-center gap-3">
-                            <div className="text-2xl font-black text-yellow-400 w-10">
-                              {champion.day}
-                            </div>
-                            <AvatarIcon profile={{ username: champion.player.username, avatar_url: champion.player.avatar_url, equipped_badge: champion.player.equipped_badge } as Profile} size="sm" />
-                            <div className="flex-1">
-                              <div className="font-bold text-white">{champion.player.username}</div>
-                              <div className="text-xs text-yellow-300 font-semibold">
-                                {champion.player.games}戦
-                              </div>
-                            </div>
-                            <div className="text-xl font-black text-yellow-400">
-                              +{champion.player.totalProfit.toLocaleString()}
+                    {getSortedRankings().map((player, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => loadPlayerDetail(player)}
+                        className="w-full text-left relative group/item"
+                      >
+                        <div className={`absolute inset-0 blur-lg opacity-50 ${
+                          idx === 0 ? 'bg-yellow-600' :
+                          idx === 1 ? 'bg-gray-600' :
+                          idx === 2 ? 'bg-orange-600' :
+                          'bg-purple-600'
+                        }`} />
+                        <div className={`relative flex items-center gap-3 p-4 rounded-xl backdrop-blur-sm border-2 hover:scale-105 transition-all ${
+                          idx === 0 ? 'bg-yellow-950/30 border-yellow-500/50' :
+                          idx === 1 ? 'bg-gray-950/30 border-gray-500/50' :
+                          idx === 2 ? 'bg-orange-950/30 border-orange-500/50' :
+                          'bg-purple-950/30 border-purple-500/50'
+                        }`}>
+                          <span className="text-2xl font-black w-12 text-center text-white drop-shadow-glow">
+                            {getMedalEmoji(idx + 1)}
+                          </span>
+                          <AvatarIcon profile={{ username: player.username, avatar_url: player.avatar_url, equipped_badge: player.equipped_badge } as Profile} size="sm" />
+                          <div className="flex-1">
+                            <div className="font-bold text-white drop-shadow-glow">{player.username}</div>
+                            <div className="text-xs font-semibold text-purple-300">
+                              {player.gamesPlayed}戦 | {player.totalHours.toFixed(1)}h
                             </div>
                           </div>
+                          <div className="flex items-center gap-2">
+                            <div className="text-xl font-black text-white drop-shadow-glow">
+                              {getRankingValue(player)}
+                            </div>
+                            <ChevronRight className="w-5 h-5 text-white/50" />
+                          </div>
                         </div>
-                      </div>
+                      </button>
                     ))}
                   </div>
-                </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
         )}
 
@@ -1195,29 +1363,37 @@ export default function CommunityPage() {
                 <TrendingUp className="w-6 h-6 text-green-400 drop-shadow-glow" />
                 曜日別プレイ統計
               </h2>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={weekdayStats}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#4b5563" />
-                  <XAxis dataKey="day" tick={{ fill: '#ffffff', fontWeight: 'bold' }} />
-                  <YAxis yAxisId="left" orientation="left" stroke="#a855f7" tick={{ fill: '#ffffff' }} />
-                  <YAxis yAxisId="right" orientation="right" stroke="#10b981" tick={{ fill: '#ffffff' }} />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'rgba(0, 0, 0, 0.9)', 
-                      border: '2px solid #8b5cf6',
-                      borderRadius: '12px',
-                      fontWeight: 'bold',
-                      color: '#ffffff'
-                    }} 
-                  />
-                  <Bar yAxisId="left" dataKey="count" fill="#a855f7" name="プレイ回数" radius={[8, 8, 0, 0]} />
-                  <Bar yAxisId="right" dataKey="avgProfit" name="平均収支" radius={[8, 8, 0, 0]}>
-                    {weekdayStats.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.avgProfit >= 0 ? '#10b981' : '#ef4444'} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+              {weekdayStats.filter(d => d.count > 0).length === 0 ? (
+                <div className="text-center py-10">
+                  <BarChart3 className="w-16 h-16 text-green-400 mx-auto mb-4 opacity-50" />
+                  <p className="text-white font-bold text-lg mb-2">データがありません</p>
+                  <p className="text-green-300 text-sm">この期間のデータが見つかりません</p>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={weekdayStats}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#4b5563" />
+                    <XAxis dataKey="day" tick={{ fill: '#ffffff', fontWeight: 'bold' }} />
+                    <YAxis yAxisId="left" orientation="left" stroke="#a855f7" tick={{ fill: '#ffffff' }} />
+                    <YAxis yAxisId="right" orientation="right" stroke="#10b981" tick={{ fill: '#ffffff' }} />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'rgba(0, 0, 0, 0.9)', 
+                        border: '2px solid #8b5cf6',
+                        borderRadius: '12px',
+                        fontWeight: 'bold',
+                        color: '#ffffff'
+                      }} 
+                    />
+                    <Bar yAxisId="left" dataKey="count" fill="#a855f7" name="プレイ回数" radius={[8, 8, 0, 0]} />
+                    <Bar yAxisId="right" dataKey="avgProfit" name="平均収支" radius={[8, 8, 0, 0]}>
+                      {weekdayStats.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.avgProfit >= 0 ? '#10b981' : '#ef4444'} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </div>
         )}
@@ -1268,40 +1444,42 @@ export default function CommunityPage() {
             )}
 
             {/* 大勝ち記録 */}
-            <div className="relative group">
-              <div className="absolute inset-0 bg-green-600 blur-xl opacity-50" />
-              <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-6 border-2 border-green-500/50">
-                <h2 className="text-xl font-black mb-5 flex items-center gap-2 text-white drop-shadow-glow">
-                  <Award className="w-6 h-6 text-green-400 drop-shadow-glow" />
-                  大勝ち記録 TOP5
-                </h2>
-                <div className="space-y-3">
-                  {bigWins.map((session, idx) => (
-                    <div key={idx} className="relative">
-                      <div className="absolute inset-0 bg-green-600 blur-lg opacity-50" />
-                      <div className="relative bg-green-950/30 backdrop-blur-sm rounded-xl p-4 border-l-4 border-green-400">
-                        <div className="flex items-start justify-between">
-                          <div className="flex gap-3">
-                            <AvatarIcon profile={session.profiles} size="sm" />
-                            <div>
-                              <div className="font-black text-white text-lg drop-shadow-glow">
-                                {idx + 1}. {session.profiles?.username}
-                              </div>
-                              <div className="text-xs font-semibold text-green-300 mt-1">
-                                {new Date(session.played_at).toLocaleDateString('ja-JP')}
+            {bigWins.length > 0 && (
+              <div className="relative group">
+                <div className="absolute inset-0 bg-green-600 blur-xl opacity-50" />
+                <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-6 border-2 border-green-500/50">
+                  <h2 className="text-xl font-black mb-5 flex items-center gap-2 text-white drop-shadow-glow">
+                    <Award className="w-6 h-6 text-green-400 drop-shadow-glow" />
+                    大勝ち記録 TOP5
+                  </h2>
+                  <div className="space-y-3">
+                    {bigWins.map((session, idx) => (
+                      <div key={idx} className="relative">
+                        <div className="absolute inset-0 bg-green-600 blur-lg opacity-50" />
+                        <div className="relative bg-green-950/30 backdrop-blur-sm rounded-xl p-4 border-l-4 border-green-400">
+                          <div className="flex items-start justify-between">
+                            <div className="flex gap-3">
+                              <AvatarIcon profile={session.profiles} size="sm" />
+                              <div>
+                                <div className="font-black text-white text-lg drop-shadow-glow">
+                                  {idx + 1}. {session.profiles?.username}
+                                </div>
+                                <div className="text-xs font-semibold text-green-300 mt-1">
+                                  {new Date(session.played_at).toLocaleDateString('ja-JP')}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                          <div className="text-3xl font-black text-green-400 drop-shadow-glow">
-                            +{session.profit.toLocaleString()}
+                            <div className="text-3xl font-black text-green-400 drop-shadow-glow">
+                              +{session.profit.toLocaleString()}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         )}
       </div>

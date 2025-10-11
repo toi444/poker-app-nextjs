@@ -262,22 +262,62 @@ export default function StatsPage() {
   const [customEndDate, setCustomEndDate] = useState('')
 
   useEffect(() => {
-    checkAuth()
-    loadSessions()
-  }, [timeRange, customStartDate, customEndDate])
+      checkAuthAndLoadData()
+    }, [])
 
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
-      router.push('/login')
+    useEffect(() => {
+      if (!loading) {
+        loadSessions()
+      }
+    }, [timeRange, customStartDate, customEndDate])
+
+    const checkAuthAndLoadData = async () => {
+      try {
+        console.log('🔐 認証確認開始...')
+        
+        // まずセッションを確認
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError) {
+          console.error('❌ セッション取得エラー:', sessionError)
+          router.push('/login')
+          return
+        }
+        
+        if (!session) {
+          console.log('❌ セッションなし - ログインページへ')
+          router.push('/login')
+          return
+        }
+        
+        console.log('✅ 認証成功:', session.user.id)
+        
+        // 認証確認後にデータ読み込み
+        await loadSessions()
+        
+      } catch (error) {
+        console.error('❌ 認証確認エラー:', error)
+        router.push('/login')
+      }
     }
-  }
+
+  useEffect(() => {
+    // 認証済みの場合のみ期間変更時にリロード
+    if (!loading) {
+      loadSessions()
+    }
+  }, [timeRange, customStartDate, customEndDate])
 
   const loadSessions = async () => {
     setLoading(true)
     try {
+      console.log('📊 セッション読み込み開始...')
+      
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user) {
+        console.error('❌ ユーザーが見つかりません')
+        return
+      }
 
       let query = supabase
         .from('game_sessions')
@@ -287,7 +327,9 @@ export default function StatsPage() {
 
       if (timeRange === 'custom') {
         if (customStartDate) {
-          query = query.gte('played_at', new Date(customStartDate).toISOString())
+          const startDateTime = new Date(customStartDate)
+          startDateTime.setHours(0, 0, 0, 0)
+          query = query.gte('played_at', startDateTime.toISOString())
         }
         if (customEndDate) {
           const endDateTime = new Date(customEndDate)
@@ -306,20 +348,23 @@ export default function StatsPage() {
           startDate.setFullYear(now.getFullYear() - 1)
         }
         
+        startDate.setHours(0, 0, 0, 0)
         query = query.gte('played_at', startDate.toISOString())
       }
 
       const { data, error } = await query
       
       if (error) {
-        console.error('Error loading sessions:', error)
+        console.error('❌ セッション取得エラー:', error)
       } else {
+        console.log('✅ セッション取得成功:', data?.length || 0, '件')
         setSessions(data || [])
       }
     } catch (error) {
-      console.error('セッション読み込みエラー:', error)
+      console.error('❌ セッション読み込みエラー:', error)
     } finally {
       setLoading(false)
+      console.log('✅ セッション読み込み完了')
     }
   }
 

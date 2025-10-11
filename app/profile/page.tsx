@@ -526,14 +526,20 @@ export default function ProfilePage() {
       const maxSessionHours = Math.max(...allGames.map(g => g.play_hours || 0), 0)
       const maxSessionMinutes = maxSessionHours * 60
 
-      // ジャックポット取得チェック
+      // ジャックポット取得チェック（日本語と英語の両方に対応）
       const { data: jackpots } = await supabase
         .from('jackpot_winners')
         .select('hand_type')
         .eq('user_id', userId)
 
-      const hasStraightFlush = jackpots?.some(j => j.hand_type === 'straight_flush')
-      const hasRoyalFlush = jackpots?.some(j => j.hand_type === 'royal_flush')
+      const hasStraightFlush = jackpots?.some(j => 
+        j.hand_type === 'straight_flush' || 
+        j.hand_type === 'ストレートフラッシュ'
+      )
+      const hasRoyalFlush = jackpots?.some(j => 
+        j.hand_type === 'royal_flush' || 
+        j.hand_type === 'ロイヤルフラッシュ'
+      )
 
       // 写真投稿数チェック
       const { data: photos } = await supabase
@@ -1093,6 +1099,11 @@ export default function ProfilePage() {
   }
 
   const getBadgeIcon = (iconName: string) => {
+    // 絵文字の場合はそのまま返す
+    if (/[\u{1F300}-\u{1F9FF}]/u.test(iconName)) {
+      return () => <span className="text-2xl">{iconName}</span>
+    }
+    
     const IconComponent = iconComponents[iconName]
     return IconComponent || Trophy
   }
@@ -1570,11 +1581,11 @@ export default function ProfilePage() {
                           {/* tierバッジ */}
                           <span className={`
                             text-xs font-bold px-2 py-0.5 rounded-full
-                            ${achievement.tier === 'bronze' && 'bg-orange-500/20 text-orange-300 border border-orange-500/50'}
-                            ${achievement.tier === 'silver' && 'bg-gray-400/20 text-gray-300 border border-gray-400/50'}
-                            ${achievement.tier === 'gold' && 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/50'}
-                            ${achievement.tier === 'platinum' && 'bg-cyan-400/20 text-cyan-300 border border-cyan-400/50'}
-                            ${achievement.tier === 'diamond' && 'bg-purple-500/20 text-purple-300 border border-purple-500/50'}
+                            ${achievement.tier === 'bronze' && 'bg-amber-700 text-orange-100 border border-orange-400'}
+                            ${achievement.tier === 'silver' && 'bg-gray-400 text-gray-900 border border-gray-300'}
+                            ${achievement.tier === 'gold' && 'bg-yellow-500 text-yellow-950 border border-yellow-400'}
+                            ${achievement.tier === 'platinum' && 'bg-cyan-400 text-cyan-950 border border-cyan-300'}
+                            ${achievement.tier === 'diamond' && 'bg-purple-500 text-purple-100 border border-purple-400'}
                           `}>
                             {achievement.tier.toUpperCase()}
                           </span>
