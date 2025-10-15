@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { 
   TrendingUp, Users, BarChart3, BookOpen, DollarSign,
@@ -1060,15 +1061,10 @@ export default function DashboardV2() {
         {/* All-Gamble Section */}
         {activeSection === 'all-gamble' && (
           <>
-            <div className="space-y-8 animate-slide-in">
-              <h2 className="text-3xl font-black text-white flex items-center gap-3">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-orange-600 blur-xl animate-pulse" />
-                  <Coins className="relative w-8 h-8 text-orange-400" />
-                </div>
-                All-Gamble
-              </h2>
-            </div>
+            {/* ========================================
+                石高トーナメントKV（超豪華版）
+                ======================================== */}
+            
 
             {/* KVを全幅表示 */}
             <div className="relative overflow-hidden" style={{ height: '450px', margin: '0 -1rem' }}>
