@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { 
-  ArrowLeft, Swords, Search, Crown, Trophy, 
-  TrendingUp, Shield, Target, Flame, ChevronRight
+  ArrowLeft, Swords, Search, Trophy, 
+  TrendingUp, Shield, Target, Flame, ChevronRight, TrendingDown
 } from 'lucide-react'
 
 const GAME_INFO = {
@@ -32,6 +32,9 @@ type Player = {
   recentForm: boolean[]
   isMe?: boolean
   avatarUrl?: string | null
+  kokuChange: number
+  totalWins: number
+  totalLosses: number
 }
 
 export default function OpponentSelectPage() {
@@ -72,7 +75,7 @@ export default function OpponentSelectPage() {
         return
       }
 
-      const response = await fetch(`/api/koku-tournament/opponents?userId=${session.user.id}`)
+      const response = await fetch(`/koku-tournament/opponents?userId=${session.user.id}`)
       const result = await response.json()
 
       if (!result.success) {
@@ -104,7 +107,6 @@ export default function OpponentSelectPage() {
     const opponent = players.find(p => p.id === selectedPlayer)
     if (!opponent) return
 
-    // 相手の情報をクエリパラメータで渡す
     router.push(
       `/koku-tournament/game/battle/phase1?` +
       `opponentId=${opponent.id}&` +
@@ -159,6 +161,14 @@ export default function OpponentSelectPage() {
             <h1 className="text-2xl font-black text-white">相手を選択</h1>
             <p className="text-sm text-gray-400">{GAME_INFO.name}「{GAME_INFO.subtitle}」</p>
           </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="p-2 bg-black/40 hover:bg-black/60 border border-white/20 rounded-xl transition-colors"
+          >
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
         </div>
 
         <div className="relative group mb-6">
@@ -190,7 +200,7 @@ export default function OpponentSelectPage() {
             <div className="bg-orange-950/30 border-2 border-orange-500/30 rounded-xl p-3">
               <p className="text-sm font-bold text-orange-300 flex items-center gap-2">
                 <Flame className="w-4 h-4" />
-                今日の攻撃残り: {attacksLeft}/20回
+                今日の攻撃残り: {attacksLeft || 0}/20回
               </p>
             </div>
           </div>
@@ -267,8 +277,23 @@ export default function OpponentSelectPage() {
                         <p className="text-lg font-black text-green-400">{myInfo.winRate}%</p>
                       </div>
                       <div className="bg-black/40 rounded-lg p-2 border border-white/10 text-center">
-                        <p className="text-xs text-gray-400">総試合</p>
+                        <p className="text-xs text-gray-400">対戦数</p>
                         <p className="text-lg font-black text-cyan-400">{myInfo.totalMatches}</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 mb-3">
+                      <div className="bg-black/40 rounded-lg p-2 border border-white/10 text-center">
+                        <p className="text-xs text-gray-400">石高</p>
+                        <p className="text-lg font-black text-yellow-400">
+                          {myInfo.koku}万石
+                        </p>
+                      </div>
+                      <div className="bg-black/40 rounded-lg p-2 border border-white/10 text-center">
+                        <p className="text-xs text-gray-400">戦績</p>
+                        <p className="text-base font-black text-white">
+                          {myInfo.totalWins}勝{myInfo.totalLosses}敗
+                        </p>
                       </div>
                     </div>
 
@@ -349,8 +374,23 @@ export default function OpponentSelectPage() {
                         <p className="text-lg font-black text-green-400">{player.winRate}%</p>
                       </div>
                       <div className="bg-black/40 rounded-lg p-2 border border-white/10 text-center">
-                        <p className="text-xs text-gray-400">総試合</p>
+                        <p className="text-xs text-gray-400">対戦数</p>
                         <p className="text-lg font-black text-cyan-400">{player.totalMatches}</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 mb-3">
+                      <div className="bg-black/40 rounded-lg p-2 border border-white/10 text-center">
+                        <p className="text-xs text-gray-400">石高</p>
+                        <p className="text-lg font-black text-yellow-400">
+                          {player.koku}万石
+                        </p>
+                      </div>
+                      <div className="bg-black/40 rounded-lg p-2 border border-white/10 text-center">
+                        <p className="text-xs text-gray-400">戦績</p>
+                        <p className="text-base font-black text-white">
+                          {player.totalWins}勝{player.totalLosses}敗
+                        </p>
                       </div>
                     </div>
 

@@ -24,8 +24,9 @@ const ALL_UNITS: Record<string, UnitInfo> = {
 export default function BattlePhase4() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  
-  const opponentName = searchParams.get('opponent') || 'プレイヤーA'
+
+  const opponentId = searchParams.get('opponentId') || ''
+  const opponentName = searchParams.get('opponentName') || 'プレイヤーA'
   const isWin = searchParams.get('win') === 'true'
   const allyValue = parseInt(searchParams.get('ally') || '0')
   const enemyValue = parseInt(searchParams.get('enemy') || '0')
@@ -36,12 +37,12 @@ export default function BattlePhase4() {
   const allyUnit = ALL_UNITS[allyUnitId] || ALL_UNITS.cavalry
   const enemyUnit = ALL_UNITS[enemyUnitId] || ALL_UNITS.cavalry
   
-  const [beforeKoku, setBeforeKoku] = useState(123)
-  const [afterKoku, setAfterKoku] = useState(123)
-  const [beforeRank, setBeforeRank] = useState(3)
-  const [afterRank, setAfterRank] = useState(3)
-  const [treasurePot, setTreasurePot] = useState(36000)
-  const [attacksLeft, setAttacksLeft] = useState(12)
+  const [beforeKoku, setBeforeKoku] = useState(0)
+  const [afterKoku, setAfterKoku] = useState(0)
+  const [beforeRank, setBeforeRank] = useState(0)
+  const [afterRank, setAfterRank] = useState(0)
+  const [treasurePot, setTreasurePot] = useState(0)
+  const [attacksLeft, setAttacksLeft] = useState(0)
 
   const [showContent, setShowContent] = useState(false)
   const [showButtons, setShowButtons] = useState(false)
@@ -49,9 +50,18 @@ export default function BattlePhase4() {
   const [saveError, setSaveError] = useState<string | null>(null)
 
   useEffect(() => {
+    console.log('=== Phase4 mounted ===')
+    console.log('Query params:', {
+      opponentId,
+      opponentName,
+      isWin,
+      allyValue,
+      enemyValue
+    })
+
     const timer1 = setTimeout(() => setShowContent(true), 300)
     const timer2 = setTimeout(() => {
-      // データを保存してから表示
+      console.log('Calling saveResultToDatabase...')
       saveResultToDatabase()
     }, 800)
     
@@ -62,15 +72,20 @@ export default function BattlePhase4() {
   }, [])
 
   const saveResultToDatabase = async () => {
+    console.log('=== saveResultToDatabase START ===')
+    
     try {
       setIsSaving(true)
       
       // セッション取得
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) {
+        console.error('No session')
         router.push('/login')
         return
       }
+
+      console.log('Session user ID:', session.user.id)
 
       const challengerId = session.user.id
       
@@ -82,27 +97,35 @@ export default function BattlePhase4() {
         .single()
 
       const challengerName = profile?.username || 'あなた'
+      console.log('Challenger name:', challengerName)
 
-      // 相手のIDを取得（実際は相手選択画面から渡されるべき）
-      // 暫定的にランダムな相手を選択
-      const { data: opponents } = await supabase
-        .from('player_monthly_stats')
-        .select('user_id, player_name')
-        .neq('user_id', challengerId)
-        .limit(1)
-        .single()
-
-      if (!opponents) {
-        setSaveError('相手プレイヤーが見つかりません')
+      // 相手情報の確認
+      if (!opponentId) {
+        console.error('No opponent ID')
+        setSaveError('対戦相手の情報が見つかりません')
         setShowButtons(true)
         return
       }
 
-      const defenderId = opponents.user_id
-      const defenderName = opponents.player_name
+      const defenderId = opponentId
+      const defenderName = opponentName
+
+      console.log('Preparing API call with data:', {
+        challengerId,
+        defenderId,
+        challengerName,
+        defenderName,
+        enemyRoll: enemyValue,
+        enemyType: enemyUnitId,
+        allyRoll: allyValue,
+        allyType: allyUnitId,
+        isTank,
+        result: isWin ? 'win' : 'lose',
+        kokuChange: isWin ? 1 : -1
+      })
 
       // APIを呼び出し
-      const response = await fetch('/api/koku-tournament/record-battle', {
+      const response = await fetch('/koku-tournament/record-battle', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -122,26 +145,39 @@ export default function BattlePhase4() {
         })
       })
 
+      console.log('Response status:', response.status)
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('API error response:', errorText)
+        throw new Error(`API error: ${response.status} - ${errorText}`)
+      }
+
       const result = await response.json()
+      console.log('API result:', result)
 
       if (result.success) {
         // 更新後のデータを反映
         setBeforeKoku(result.data.newKoku - (isWin ? 1 : -1))
         setAfterKoku(result.data.newKoku)
         setAfterRank(result.data.newRank)
-        setBeforeRank(result.data.newRank + (isWin ? 1 : -1))
+        setBeforeRank(result.data.newRank)
         setTreasurePot(result.data.treasurePot)
         setAttacksLeft(20 - result.data.newAttackCount)
+        
+        console.log('Data updated successfully:', result.data)
       } else {
+        console.error('API returned error:', result.error)
         setSaveError(result.error)
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Save error:', error)
-      setSaveError('データの保存に失敗しました')
+      setSaveError('データの保存に失敗しました: ' + error.message)
     } finally {
       setIsSaving(false)
       setShowButtons(true)
+      console.log('=== saveResultToDatabase END ===')
     }
   }
 
@@ -154,7 +190,6 @@ export default function BattlePhase4() {
         ? 'bg-gradient-to-br from-green-900 via-emerald-900 to-teal-900'
         : 'bg-gradient-to-br from-red-900 via-rose-900 to-pink-900'
     }`}>
-      <div className="absolute inset-0 bg-[url('/brick-texture.png')] opacity-10" />
       
       {isWin && (
         <>
@@ -344,66 +379,29 @@ export default function BattlePhase4() {
         )}
 
         {/* ランキング変動カード */}
-        {showContent && !isSaving && (
+        {showContent && !isSaving && afterRank > 0 && (
           <div className="relative group mb-4 animate-fade-in" style={{ animationDelay: '0.4s' }}>
             <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg blur-md opacity-50" />
             <div className="relative bg-black/60 backdrop-blur-sm rounded-lg p-4 border-2 border-white/20">
               <h2 className="text-sm font-black text-white mb-2 flex items-center gap-1.5">
                 <Trophy className="w-4 h-4 text-purple-400" />
-                ランキング変動
+                ランキング
               </h2>
 
               <div className="flex items-center justify-center gap-3">
                 <div className="text-center">
-                  <p className="text-xs text-gray-400 mb-0.5">変動前</p>
-                  <div className="flex items-center gap-1.5 justify-center">
-                    {beforeRank <= 3 && (
-                      <span className="text-2xl">
-                        {beforeRank === 1 ? '🥇' : beforeRank === 2 ? '🥈' : '🥉'}
-                      </span>
-                    )}
-                    <p className="text-3xl font-black text-white">{beforeRank}</p>
-                    <p className="text-base text-gray-400">位</p>
-                  </div>
-                </div>
-
-                <div className="text-center">
-                  {rankChange < 0 ? (
-                    <TrendingUp className="w-8 h-8 text-green-400" />
-                  ) : rankChange > 0 ? (
-                    <TrendingDown className="w-8 h-8 text-red-400" />
-                  ) : (
-                    <div className="w-8 h-8 flex items-center justify-center">
-                      <div className="w-5 h-0.5 bg-gray-500 rounded-full" />
-                    </div>
-                  )}
-                </div>
-
-                <div className="text-center">
-                  <p className="text-xs text-gray-400 mb-0.5">変動後</p>
+                  <p className="text-xs text-gray-400 mb-0.5">現在順位</p>
                   <div className="flex items-center gap-1.5 justify-center">
                     {afterRank <= 3 && (
                       <span className="text-2xl">
                         {afterRank === 1 ? '🥇' : afterRank === 2 ? '🥈' : '🥉'}
                       </span>
                     )}
-                    <p className={`text-3xl font-black ${
-                      rankChange < 0 ? 'text-green-400' : 
-                      rankChange > 0 ? 'text-red-400' : 
-                      'text-white'
-                    }`}>
-                      {afterRank}
-                    </p>
+                    <p className="text-3xl font-black text-white">{afterRank}</p>
                     <p className="text-base text-gray-400">位</p>
                   </div>
                 </div>
               </div>
-
-              <p className="text-center text-gray-400 mt-2 text-xs">
-                {rankChange < 0 && `⬆️ ${Math.abs(rankChange)}ランクアップ!`}
-                {rankChange > 0 && `⬇️ ${rankChange}ランクダウン...`}
-                {rankChange === 0 && '変動なし'}
-              </p>
             </div>
           </div>
         )}

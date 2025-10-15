@@ -78,8 +78,9 @@ const TANK_UNIT: UnitType = {
 
 function BattlePhase3Content() {
   const searchParams = useSearchParams()
-  
-  const opponentName = searchParams.get('opponent') || 'プレイヤーA'
+
+  const opponentId = searchParams.get('opponentId') || ''
+  const opponentName = searchParams.get('opponentName') || 'プレイヤーA'
   const enemyValue = parseInt(searchParams.get('enemyValue') || '67')
   const enemyUnitId = searchParams.get('enemyUnit') || 'cavalry'
   
@@ -325,7 +326,7 @@ function BattlePhase3Content() {
         {showNextButton && (
           <div className="flex justify-center animate-fade-in">
             <Link 
-              href={`/koku-tournament/game/battle/phase4?opponent=${encodeURIComponent(opponentName)}&win=${isWin}&ally=${finalValue}&enemy=${enemyValue}&allyUnit=${allyUnit.id}&enemyUnit=${enemyUnitId}&tank=${isTankMode}`}
+              href={`/koku-tournament/game/battle/phase4?opponentId=${opponentId}&opponentName=${encodeURIComponent(opponentName)}&win=${isWin}&ally=${finalValue}&enemy=${enemyValue}&allyUnit=${allyUnit.id}&enemyUnit=${enemyUnitId}&tank=${isTankMode}`}
               className="relative group"
             >
               <div className={`absolute inset-0 bg-gradient-to-r ${

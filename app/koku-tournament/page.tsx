@@ -6,7 +6,8 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { 
   Swords, Trophy, Target, Users, TrendingUp, Zap, Shield, 
-  ChevronRight, Calendar, Flame, Coins, DollarSign, Info, X
+  ChevronRight, Calendar, Flame, Coins, DollarSign, Info, X,
+  History, Crown, TrendingDown, Medal
 } from 'lucide-react'
 
 const GAME_INFO = [
@@ -35,8 +36,33 @@ const GAME_INFO = [
 
 最後までハラハラドキドキの戦いを楽しもう！`
   },
-  // ... 他のゲームは省略
 ]
+
+type RankingPlayer = {
+  user_id: string
+  player_name: string
+  current_koku: number
+  total_matches: number
+  total_wins: number
+  total_losses: number
+  rank: number
+  winRate: number
+  kokuChange: number
+}
+
+type BattleMatch = {
+  id: string
+  challenger_name: string
+  defender_name: string
+  result: string
+  koku_change: number
+  created_at: string
+  ally_type: string
+  enemy_type: string
+  ally_roll: number
+  enemy_roll: number
+  is_tank: boolean
+}
 
 export default function KokuTournamentDashboard() {
   const router = useRouter()
@@ -46,6 +72,12 @@ export default function KokuTournamentDashboard() {
   const [treasurePot, setTreasurePot] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  
+  // 新規追加
+  const [rankings, setRankings] = useState<RankingPlayer[]>([])
+  const [recentMatches, setRecentMatches] = useState<BattleMatch[]>([])
+  const [showRankingModal, setShowRankingModal] = useState(false)
+  const [showHistoryModal, setShowHistoryModal] = useState(false)
 
   useEffect(() => {
     checkAuth()
@@ -69,9 +101,8 @@ export default function KokuTournamentDashboard() {
 
       if (!playerResult.success) {
         if (playerResult.needsInitialization) {
-          // 初期化が必要な場合、初期化APIを呼ぶ
           await initializePlayer()
-          await loadDashboardData() // 再読み込み
+          await loadDashboardData()
           return
         }
         throw new Error(playerResult.error)
@@ -80,12 +111,34 @@ export default function KokuTournamentDashboard() {
       setUser(playerResult.data)
 
       // トーナメント情報を取得
-      const tournamentResponse = await fetch('/koku-tournament/info')
+      const tournamentResponse = await fetch('/koku-tournament/info', {
+        cache: 'no-store'
+      })
       const tournamentResult = await tournamentResponse.json()
 
+      console.log('=== Tournament Info ===')
+      console.log('Response:', tournamentResult)
+
       if (tournamentResult.success) {
+        console.log('Setting treasurePot to:', tournamentResult.data.totalPot)
         setTreasurePot(tournamentResult.data.totalPot)
         setDaysLeft(tournamentResult.data.daysLeft)
+      }
+
+      // ランキングを取得
+      const rankingResponse = await fetch('/koku-tournament/ranking')
+      const rankingResult = await rankingResponse.json()
+      
+      if (rankingResult.success) {
+        setRankings(rankingResult.data)
+      }
+
+      // 最近の対戦履歴を取得
+      const historyResponse = await fetch('/koku-tournament/history?limit=10')
+      const historyResult = await historyResponse.json()
+      
+      if (historyResult.success) {
+        setRecentMatches(historyResult.data)
       }
 
     } catch (error: any) {
@@ -131,6 +184,19 @@ export default function KokuTournamentDashboard() {
     setShowRuleModal(game)
   }
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diff = now.getTime() - date.getTime()
+    const minutes = Math.floor(diff / 60000)
+    const hours = Math.floor(diff / 3600000)
+    
+    if (minutes < 1) return 'たった今'
+    if (minutes < 60) return `${minutes}分前`
+    if (hours < 24) return `${hours}時間前`
+    return `${Math.floor(hours / 24)}日前`
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-red-950 to-black flex items-center justify-center">
@@ -161,12 +227,150 @@ export default function KokuTournamentDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-red-950 to-black relative overflow-hidden">
-      {/* 背景エフェクトは省略 */}
+      <div className="absolute inset-0 bg-[url('/brick-texture.png')] opacity-10" />
 
+      {/* ルールモーダル */}
       {showRuleModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
              onClick={() => setShowRuleModal(null)}>
-          {/* モーダルの中身は元のまま */}
+          <div className="relative max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+            <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-orange-600 rounded-2xl blur-xl opacity-75" />
+            <div className="relative bg-black/90 backdrop-blur-sm rounded-2xl p-6 border-2 border-red-500/50">
+              <button
+                onClick={() => setShowRuleModal(null)}
+                className="absolute top-4 right-4 p-2 hover:bg-white/10 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-white" />
+              </button>
+              <h3 className="text-2xl font-black text-white mb-4">{showRuleModal.ruleTitle}</h3>
+              <p className="text-sm text-gray-300 whitespace-pre-line leading-relaxed">
+                {showRuleModal.ruleDescription}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ランキングモーダル */}
+      {showRankingModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+             onClick={() => setShowRankingModal(false)}>
+          <div className="relative max-w-2xl w-full max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="absolute inset-0 bg-gradient-to-r from-yellow-600 to-orange-600 rounded-2xl blur-xl opacity-75" />
+            <div className="relative bg-black/90 backdrop-blur-sm rounded-2xl p-6 border-2 border-yellow-500/50">
+              <button
+                onClick={() => setShowRankingModal(false)}
+                className="absolute top-4 right-4 p-2 hover:bg-white/10 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-white" />
+              </button>
+              <h3 className="text-2xl font-black text-white mb-4 flex items-center gap-2">
+                <Trophy className="w-6 h-6 text-yellow-400" />
+                全体ランキング
+              </h3>
+              <div className="space-y-2">
+                {rankings.map((player) => (
+                  <div key={player.user_id}
+                       className={`p-3 rounded-xl border-2 ${
+                         player.user_id === user.userId 
+                           ? 'bg-red-950/50 border-red-500/50' 
+                           : 'bg-white/5 border-white/10'
+                       }`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        {player.rank <= 3 ? (
+                          <span className="text-3xl">
+                            {player.rank === 1 ? '🥇' : player.rank === 2 ? '🥈' : '🥉'}
+                          </span>
+                        ) : (
+                          <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center">
+                            <p className="text-lg font-black text-white">{player.rank}</p>
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-black text-white">{player.player_name}</p>
+                          <p className="text-xs text-gray-400">
+                            {player.total_matches}戦 {player.total_wins}勝{player.total_losses}敗
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-black text-yellow-400">{player.current_koku}</p>
+                        <p className="text-xs text-gray-400">万石</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 履歴モーダル */}
+      {showHistoryModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+            onClick={() => setShowHistoryModal(false)}>
+          <div className="relative max-w-2xl w-full max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl blur-xl opacity-75" />
+            <div className="relative bg-black/90 backdrop-blur-sm rounded-2xl p-6 border-2 border-purple-500/50">
+              <button
+                onClick={() => setShowHistoryModal(false)}
+                className="absolute top-4 right-4 p-2 hover:bg-white/10 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-white" />
+              </button>
+              <h3 className="text-2xl font-black text-white mb-4 flex items-center gap-2">
+                <History className="w-6 h-6 text-purple-400" />
+                最近の対戦履歴
+              </h3>
+              <div className="space-y-3">
+                {recentMatches.map((match) => (
+                  <div key={match.id} className="p-4 rounded-xl bg-white/5 border border-white/10">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm text-gray-400">{formatDate(match.created_at)}</p>
+                      {match.is_tank && (
+                        <span className="text-xs bg-yellow-600/30 text-yellow-300 px-2 py-0.5 rounded flex items-center gap-1">
+                          🚗 戦車隊出撃
+                        </span>
+                      )}
+                    </div>
+                    <div className="mb-2">
+                      <p className="font-bold text-white text-lg">
+                        {match.challenger_name}が{GAME_INFO[0].name}で宣戦布告
+                      </p>
+                    </div>
+                    <div className={`p-3 rounded-lg ${
+                      match.result === 'win' 
+                        ? 'bg-green-600/20 border-2 border-green-500/50' 
+                        : 'bg-red-600/20 border-2 border-red-500/50'
+                    }`}>
+                      <p className={`font-bold text-center ${
+                        match.result === 'win' ? 'text-green-300' : 'text-red-300'
+                      }`}>
+                        {match.result === 'win' 
+                          ? `🎉 勝負に勝って ${match.koku_change > 0 ? '+' : ''}${match.koku_change}万石を手に入れた！` 
+                          : `💔 勝負に負けて ${match.koku_change}万石を失った...`
+                        }
+                      </p>
+                    </div>
+                    <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                      <div className="bg-black/30 rounded p-2 text-center">
+                        <p className="text-gray-400">攻撃側</p>
+                        <p className="text-white font-bold">{match.challenger_name}</p>
+                        <p className="text-gray-400 text-xs">{match.ally_roll}名討伐</p>
+                      </div>
+                      <div className="bg-black/30 rounded p-2 text-center">
+                        <p className="text-gray-400">防御側</p>
+                        <p className="text-white font-bold">{match.defender_name}</p>
+                        <p className="text-gray-400 text-xs">{match.enemy_roll}名討伐</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -179,10 +383,12 @@ export default function KokuTournamentDashboard() {
             <div className="relative text-8xl filter drop-shadow-2xl">🏯</div>
           </div>
           <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-200 via-orange-200 to-yellow-200 mb-2"
-              style={{ textShadow: '0 0 40px rgba(239, 68, 68, 0.9)', letterSpacing: '0.05em', fontFamily: "'Noto Serif JP', serif" }}>
+              style={{ textShadow: '0 0 40px rgba(239, 68, 68, 0.9)', letterSpacing: '0.05em' }}>
             石高トーナメント
           </h1>
-          <p className="text-lg text-red-300/80 mb-4">2025年2月</p>
+          <p className="text-lg text-red-300/80 mb-4">
+            {new Date().getFullYear()}年{new Date().getMonth() + 1}月
+          </p>
           <div className="flex items-center justify-center gap-4">
             <div className="px-4 py-2 bg-orange-600/20 border-2 border-orange-500/50 rounded-full">
               <p className="text-sm font-black text-orange-300 flex items-center gap-2">
@@ -271,6 +477,104 @@ export default function KokuTournamentDashboard() {
                 </div>
               </div>
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-black/40 rounded-xl p-3 border border-white/10">
+                <p className="text-xs text-gray-400 mb-1">総試合数</p>
+                <p className="text-2xl font-black text-white">{user.totalMatches}</p>
+              </div>
+              <div className="bg-black/40 rounded-xl p-3 border border-white/10">
+                <p className="text-xs text-gray-400 mb-1">消費P</p>
+                <p className="text-2xl font-black text-yellow-400">{user.totalPSpent || 0}P</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* トップ3ランキング */}
+        <div className="relative group mb-8">
+          <div className="absolute inset-0 bg-gradient-to-r from-yellow-600 to-orange-600 rounded-2xl blur-xl opacity-50" />
+          <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-6 border-2 border-yellow-500/50">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-black text-white flex items-center gap-2">
+                <Trophy className="w-6 h-6 text-yellow-400" />
+                トップ3
+              </h2>
+              <button
+                onClick={() => setShowRankingModal(true)}
+                className="text-sm text-yellow-300 hover:text-yellow-200 flex items-center gap-1"
+              >
+                全体を見る
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="space-y-3">
+              {rankings.slice(0, 3).map((player) => (
+                <div key={player.user_id} className="p-3 rounded-xl bg-white/5 border border-white/10">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-3xl">
+                        {player.rank === 1 ? '🥇' : player.rank === 2 ? '🥈' : '🥉'}
+                      </span>
+                      <div>
+                        <p className="font-black text-white">{player.player_name}</p>
+                        <p className="text-xs text-gray-400">
+                          {player.total_matches}戦 {player.winRate}%
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-black text-yellow-400">{player.current_koku}</p>
+                      <p className="text-xs text-gray-400">万石</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* 最近の対戦 */}
+        <div className="relative group mb-8">
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl blur-xl opacity-50" />
+          <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-6 border-2 border-purple-500/50">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-black text-white flex items-center gap-2">
+                <History className="w-6 h-6 text-purple-400" />
+                最近の対戦
+              </h2>
+              <button
+                onClick={() => setShowHistoryModal(true)}
+                className="text-sm text-purple-300 hover:text-purple-200 flex items-center gap-1"
+              >
+                もっと見る
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="space-y-2">
+              {recentMatches.slice(0, 5).map((match) => (
+                <div key={match.id} className="p-3 rounded-lg bg-white/5 border border-white/10">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <p className="text-white font-bold text-sm">
+                        {match.challenger_name}が{GAME_INFO[0].name}で宣戦布告
+                      </p>
+                      <p className={`text-xs mt-1 ${
+                        match.result === 'win' ? 'text-green-300' : 'text-red-300'
+                      }`}>
+                        {match.result === 'win' 
+                          ? `勝負に勝って${match.koku_change > 0 ? '+' : ''}${match.koku_change}万石を手に入れた` 
+                          : `勝負に負けて${match.koku_change}万石を失った`
+                        }
+                      </p>
+                    </div>
+                    {match.is_tank && (
+                      <span className="ml-2 text-xl">🚗</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">{formatDate(match.created_at)}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -293,30 +597,36 @@ export default function KokuTournamentDashboard() {
             )}
             <div className="space-y-3">
               {GAME_INFO.map((game) => (
-                <button key={game.id} onClick={() => handleGameSelect(game.id)}
-                        disabled={user.attacksToday >= user.maxAttacks}
-                        className="w-full group/card relative">
-                  <div className={`absolute inset-0 bg-gradient-to-r ${game.bgGradient} rounded-xl blur-lg opacity-50 group-hover/card:opacity-75`} />
+                <div key={game.id} className="w-full group/card relative">
+                  <div className={`absolute inset-0 bg-gradient-to-r ${game.bgGradient} rounded-xl blur-lg opacity-50 group-hover/card:opacity-75 transition-opacity`} />
                   <div className={`relative bg-black/60 backdrop-blur-sm rounded-xl p-4 border-2 ${game.borderColor}/50 hover:${game.borderColor} group-hover/card:scale-[1.02] transition-all`}>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
+                      <button 
+                        onClick={() => handleGameSelect(game.id)}
+                        disabled={user.attacksToday >= user.maxAttacks}
+                        className="flex items-center gap-4 flex-1 text-left"
+                      >
                         <div className="text-4xl">{game.icon}</div>
-                        <div className="text-left">
+                        <div>
                           <p className="text-xl font-black text-white">{game.name}</p>
                           <p className="text-sm text-gray-400">「{game.subtitle}」</p>
                         </div>
-                      </div>
+                      </button>
                       <div className="flex items-center gap-2">
-                        <button onClick={(e) => openRuleModal(game, e)}
-                                className="p-2 bg-white/10 hover:bg-white/20 rounded-full">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setShowRuleModal(game)
+                          }}
+                          className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
+                        >
                           <Info className="w-5 h-5 text-white" />
                         </button>
-                        <ChevronRight className="w-6 h-6 text-white group-hover/card:translate-x-1 transition-transform" />
                       </div>
                     </div>
                     <p className="mt-2 text-xs text-gray-500">{game.description}</p>
                   </div>
-                </button>
+                </div>
               ))}
             </div>
           </div>

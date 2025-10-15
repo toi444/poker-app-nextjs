@@ -49,7 +49,8 @@ const ENEMY_UNIT_TYPES = [
 
 export default function BattlePhase2() {
   const searchParams = useSearchParams()
-  const opponentName = searchParams.get('opponent') || 'プレイヤーA'
+  const opponentId = searchParams.get('opponentId') || ''
+  const opponentName = searchParams.get('opponentName') || 'プレイヤーA'
   
   const [count, setCount] = useState(0)
   const [isAnimating, setIsAnimating] = useState(false)
@@ -181,7 +182,7 @@ export default function BattlePhase2() {
         {showNextButton && (
           <div className="flex justify-center animate-fade-in">
             <Link 
-              href={`/koku-tournament/game/battle/phase3?opponent=${encodeURIComponent(opponentName)}&enemyValue=${finalValue}&enemyUnit=${enemyUnit.id}`}
+              href={`/koku-tournament/game/battle/phase3?opponentId=${opponentId}&opponentName=${encodeURIComponent(opponentName)}&enemyValue=${finalValue}&enemyUnit=${enemyUnit.id}`}
               className="relative group"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-orange-600 rounded-full blur-md opacity-75 group-hover:opacity-100 transition-opacity" />

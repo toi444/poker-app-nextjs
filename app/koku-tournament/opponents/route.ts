@@ -1,29 +1,27 @@
-// app/api/koku-tournament/opponents/route.ts
+// app/koku-tournament/opponents/route.ts
 
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
-export const runtime = 'nodejs'
+export const revalidate = 0
 
 export async function GET(request: Request) {
   try {
     const supabase = createRouteHandlerClient({ cookies })
     
-    // 認証チェック
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
+    const { searchParams } = new URL(request.url)
+    const userId = searchParams.get('userId')
+    
+    if (!userId) {
       return NextResponse.json(
-        { success: false, error: '認証が必要です' },
-        { status: 401 }
+        { success: false, error: 'ユーザーIDが必要です' },
+        { status: 400 }
       )
     }
 
-    const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId') || session.user.id
-
-    // 1. アクティブなトーナメントを取得
+    // アクティブなトーナメントを取得
     const { data: tournament, error: tournamentError } = await supabase
       .rpc('get_active_tournament')
     
@@ -36,116 +34,113 @@ export async function GET(request: Request) {
 
     const tournamentId = tournament
 
-    // 2. 全プレイヤーの統計を取得（自分以外）
+    // 全プレイヤーのデータを取得
     const { data: allPlayers, error: playersError } = await supabase
       .from('player_monthly_stats')
-      .select('user_id, player_name, current_koku, total_matches, total_wins, total_losses, rank_timestamp')
+      .select('user_id, player_name, current_koku, total_matches, total_wins, total_losses, starting_koku, total_attacks, total_defenses')
       .eq('tournament_id', tournamentId)
-      .neq('user_id', userId)
       .order('current_koku', { ascending: false })
       .order('rank_timestamp', { ascending: true })
-    
+
     if (playersError) {
-      console.error('Players fetch error:', playersError)
-      return NextResponse.json(
-        { success: false, error: 'プレイヤー情報の取得に失敗しました' },
-        { status: 500 }
-      )
+      throw playersError
     }
 
-    // 3. 各プレイヤーの直近5戦を取得
-    const opponentsWithHistory = await Promise.all(
-      allPlayers.map(async (player, index) => {
-        // 直近5戦を取得
-        const { data: recentMatches } = await supabase
-          .from('match_history')
-          .select('result')
-          .eq('tournament_id', tournamentId)
-          .eq('player_id', player.user_id)
-          .order('created_at', { ascending: false })
-          .limit(5)
-        
-        const recentForm = recentMatches?.map(m => m.result === 'win') || []
-        
-        // 勝率計算
-        const winRate = player.total_matches > 0 
-          ? Math.round((player.total_wins / player.total_matches) * 100)
-          : 0
+    // 各プレイヤーの直近5戦を取得
+    const playerIds = allPlayers?.map(p => p.user_id) || []
+    
+    const { data: recentMatches } = await supabase
+      .from('battle_matches')
+      .select('challenger_id, defender_id, result')
+      .eq('tournament_id', tournamentId)
+      .or(`challenger_id.in.(${playerIds.join(',')}),defender_id.in.(${playerIds.join(',')})`)
+      .order('created_at', { ascending: false })
+      .limit(500) // 直近500件から抽出
 
-        // プロフィール情報を取得（アバター用）
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('avatar_url')
-          .eq('id', player.user_id)
-          .single()
+    // プレイヤーごとの直近5戦を計算
+    const playerRecentForm: Record<string, boolean[]> = {}
+    
+    playerIds.forEach(playerId => {
+      const playerMatches = recentMatches?.filter(match => 
+        match.challenger_id === playerId || match.defender_id === playerId
+      ).slice(0, 5) || []
 
-        return {
-          id: player.user_id,
-          username: player.player_name,
-          koku: player.current_koku,
-          rank: index + 1, // 自分を除いた順位
-          winRate: winRate,
-          totalMatches: player.total_matches,
-          recentForm: recentForm,
-          avatarUrl: profile?.avatar_url || null
+      playerRecentForm[playerId] = playerMatches.map(match => {
+        if (match.challenger_id === playerId) {
+          return match.result === 'win'
+        } else {
+          return match.result === 'lose' // 防御側は逆
         }
       })
-    )
 
-    // 4. 自分の情報も取得（表示用）
-    const { data: myStats } = await supabase
-      .from('player_monthly_stats')
-      .select('player_name, current_koku, total_matches, total_wins')
-      .eq('tournament_id', tournamentId)
-      .eq('user_id', userId)
-      .single()
-
-    // 自分の順位を計算
-    const { data: allPlayersIncludingMe } = await supabase
-      .from('player_monthly_stats')
-      .select('user_id, current_koku, rank_timestamp')
-      .eq('tournament_id', tournamentId)
-      .order('current_koku', { ascending: false })
-      .order('rank_timestamp', { ascending: true })
-
-    const myRank = allPlayersIncludingMe
-      ? allPlayersIncludingMe.findIndex(p => p.user_id === userId) + 1
-      : 1
-
-    const myWinRate = myStats && myStats.total_matches > 0
-      ? Math.round((myStats.total_wins / myStats.total_matches) * 100)
-      : 0
-
-    // 自分の直近5戦
-    const { data: myRecentMatches } = await supabase
-      .from('match_history')
-      .select('result')
-      .eq('tournament_id', tournamentId)
-      .eq('player_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(5)
-
-    const myRecentForm = myRecentMatches?.map(m => m.result === 'win') || []
-
-    return NextResponse.json({
-      success: true,
-      opponents: opponentsWithHistory,
-      myInfo: {
-        id: userId,
-        username: myStats?.player_name || '自分',
-        koku: myStats?.current_koku || 100,
-        rank: myRank,
-        winRate: myWinRate,
-        totalMatches: myStats?.total_matches || 0,
-        recentForm: myRecentForm,
-        isMe: true
+      // 5戦に満たない場合は空欄で埋める
+      while (playerRecentForm[playerId].length < 5) {
+        playerRecentForm[playerId].push(false)
       }
     })
 
+    // 自分の情報
+    const myInfo = allPlayers?.find(p => p.user_id === userId)
+    const myRank = allPlayers?.findIndex(p => p.user_id === userId) + 1 || 0
+
+    // 今日の攻撃回数を取得
+    const { data: jstDate } = await supabase.rpc('get_jst_date')
+    
+    const { data: attackData } = await supabase
+      .from('daily_attack_limits')
+      .select('attack_count')
+      .eq('tournament_id', tournamentId)
+      .eq('user_id', userId)
+      .eq('date', jstDate)
+      .single()
+
+    const attacksToday = attackData?.attack_count || 0
+
+    // 対戦相手リスト（自分以外）
+    const opponents = allPlayers
+      ?.filter(p => p.user_id !== userId)
+      .map((player, index) => ({
+        id: player.user_id,
+        username: player.player_name,
+        rank: allPlayers.findIndex(p => p.user_id === player.user_id) + 1,
+        koku: player.current_koku,
+        winRate: player.total_matches > 0 
+          ? Math.round((player.total_wins / player.total_matches) * 100) 
+          : 0,
+        totalMatches: player.total_matches,
+        totalWins: player.total_wins,
+        totalLosses: player.total_losses,
+        kokuChange: player.current_koku - player.starting_koku,
+        recentForm: playerRecentForm[player.user_id] || [false, false, false, false, false]
+      })) || []
+
+    // 自分の情報を整形
+    const myInfoFormatted = myInfo ? {
+      id: myInfo.user_id,
+      username: myInfo.player_name,
+      rank: myRank,
+      koku: myInfo.current_koku,
+      winRate: myInfo.total_matches > 0 
+        ? Math.round((myInfo.total_wins / myInfo.total_matches) * 100) 
+        : 0,
+      totalMatches: myInfo.total_matches,
+      totalWins: myInfo.total_wins,
+      totalLosses: myInfo.total_losses,
+      kokuChange: myInfo.current_koku - myInfo.starting_koku,
+      recentForm: playerRecentForm[myInfo.user_id] || [false, false, false, false, false],
+      attacksToday: attacksToday
+    } : null
+
+    return NextResponse.json({
+      success: true,
+      opponents: opponents,
+      myInfo: myInfoFormatted
+    })
+
   } catch (error) {
-    console.error('Get opponents error:', error)
+    console.error('Opponents fetch error:', error)
     return NextResponse.json(
-      { success: false, error: 'サーバーエラーが発生しました' },
+      { success: false, error: '対戦相手の取得に失敗しました' },
       { status: 500 }
     )
   }
