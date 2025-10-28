@@ -1,167 +1,200 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 
-export default function BattlePhase1() {
-  const router = useRouter()
+// 敵軍の兵種データ（こちらから見た有利不利で色分け）
+const ENEMY_UNIT_TYPES = [
+  { 
+    id: 'ashigaru',
+    name: '足軽隊', 
+    icon: '🚩',
+    colorType: 'advantage',  // 敵が足軽 = こちら有利 = 青
+    min: 1, 
+    max: 60,
+    bgGradient: 'from-blue-600 to-cyan-600',
+    borderColor: 'border-blue-500',
+    glowColor: 'shadow-blue-500/50',
+    situationText: '優勢！',
+    situationColor: 'text-blue-300'
+  },
+  { 
+    id: 'cavalry',
+    name: '騎馬隊', 
+    icon: '🐴',
+    colorType: 'normal',  // 敵が騎馬 = 互角 = 緑
+    min: 30, 
+    max: 80,
+    bgGradient: 'from-green-600 to-emerald-600',
+    borderColor: 'border-green-500',
+    glowColor: 'shadow-green-500/50',
+    situationText: '互角',
+    situationColor: 'text-green-300'
+  },
+  { 
+    id: 'gunner',
+    name: '鉄砲隊', 
+    icon: '🔫',
+    colorType: 'disadvantage',  // 敵が鉄砲 = こちら不利 = 赤
+    min: 50, 
+    max: 100,
+    bgGradient: 'from-red-600 to-rose-600',
+    borderColor: 'border-red-500',
+    glowColor: 'shadow-red-500/50',
+    situationText: '劣勢！',
+    situationColor: 'text-red-300'
+  }
+]
+
+export default function BattlePhase2() {
   const searchParams = useSearchParams()
-  const [progress, setProgress] = useState(0)
-  const [showTitle, setShowTitle] = useState(false)
-  const [showOpponent, setShowOpponent] = useState(false)
-  const [showIcon, setShowIcon] = useState(false)
-  const [showMessage, setShowMessage] = useState(false)
-
   const opponentId = searchParams.get('opponentId') || ''
   const opponentName = searchParams.get('opponentName') || 'プレイヤーA'
+  
+  const [count, setCount] = useState(0)
+  const [isAnimating, setIsAnimating] = useState(false)
+  const [showNextButton, setShowNextButton] = useState(false)
+  
+  // ランダムに敵の兵種を選択（Phase 2で一度だけ決定）
+  const [enemyUnit] = useState(() => 
+    ENEMY_UNIT_TYPES[Math.floor(Math.random() * ENEMY_UNIT_TYPES.length)]
+  )
+  
+  // ランダムな最終値（Phase 2で一度だけ決定）
+  const [finalValue] = useState(() => 
+    Math.floor(Math.random() * (enemyUnit.max - enemyUnit.min + 1)) + enemyUnit.min
+  )
 
   useEffect(() => {
-    const timer1 = setTimeout(() => setShowTitle(true), 300)
-    const timer2 = setTimeout(() => setShowOpponent(true), 800)
-    const timer3 = setTimeout(() => setShowIcon(true), 1300)
-    const timer4 = setTimeout(() => setShowMessage(true), 1800)
-    
-    const progressTimer = setTimeout(() => {
-      let currentProgress = 0
-      const progressInterval = setInterval(() => {
-        currentProgress += 2
-        setProgress(currentProgress)
-        
-        if (currentProgress >= 100) {
-          clearInterval(progressInterval)
-          setTimeout(() => {
-            router.push(
-              `/koku-tournament/game/battle/phase2?` +
-              `opponentId=${opponentId}&` +
-              `opponentName=${encodeURIComponent(opponentName)}`
-            )
-          }, 500)
-        }
-      }, 40)
-      
-      return () => clearInterval(progressInterval)
-    }, 2000)
-    
-    return () => {
-      clearTimeout(timer1)
-      clearTimeout(timer2)
-      clearTimeout(timer3)
-      clearTimeout(timer4)
-      clearTimeout(progressTimer)
-    }
-  }, [router, opponentId, opponentName])
+    const startTimer = setTimeout(() => {
+      setIsAnimating(true)
+      animateCount()
+    }, 1000)
+
+    return () => clearTimeout(startTimer)
+  }, [])
+
+  // カウントアップアニメーション(後半ゆっくり)
+  const animateCount = () => {
+    const duration = 5000
+    const fps = 60
+    const totalFrames = (duration / 1000) * fps
+    let currentFrame = 0
+
+    const interval = setInterval(() => {
+      currentFrame++
+      const progress = currentFrame / totalFrames
+      const easeOutQuart = 1 - Math.pow(1 - progress, 4)
+      const currentValue = Math.floor(finalValue * easeOutQuart)
+
+      setCount(currentValue)
+
+      if (currentFrame >= totalFrames) {
+        clearInterval(interval)
+        setCount(finalValue)
+        setShowNextButton(true)
+      }
+    }, 1000 / fps)
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-red-950 to-black relative overflow-hidden flex items-center">
-      <div className="absolute inset-0 bg-[url('/brick-texture.png')] opacity-10" />
-      <div className="absolute inset-0 opacity-20">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `repeating-conic-gradient(#8B4513 0% 25%, transparent 0% 50%)`,
-          backgroundSize: '40px 40px'
-        }} />
-      </div>
-
-      <div className="absolute top-1/4 left-1/2 transform -translate-x-1/2 w-64 h-64 bg-red-600 rounded-full blur-[100px] opacity-30 animate-pulse" />
-      <div className="absolute bottom-1/4 left-1/2 transform -translate-x-1/2 w-64 h-64 bg-orange-600 rounded-full blur-[100px] opacity-30 animate-pulse" style={{ animationDelay: '1s' }} />
-
-      <div className="absolute inset-0 opacity-20">
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-red-500 to-transparent w-1" 
-             style={{ animation: 'scan-line 4s linear infinite' }} />
-      </div>
-
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black relative overflow-hidden flex items-center">
+      <div className="absolute inset-0 bg-[url('/brick-texture.png')] opacity-20" />
+      
       <div className="relative z-10 container mx-auto px-4 w-full max-w-md">
         
-        {showTitle && (
-          <div className="mb-6 animate-fade-in">
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-orange-600 rounded-xl blur-lg opacity-75" />
-              <div className="relative bg-black/60 backdrop-blur-sm border-2 border-red-500/50 rounded-xl px-6 py-3 shadow-2xl">
-                <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-200 to-orange-200 text-center"
-                    style={{ 
-                      textShadow: '0 0 25px rgba(239, 68, 68, 0.9)',
-                      letterSpacing: '0.1em',
-                      fontFamily: "'Noto Serif JP', serif"
-                    }}>
-                  壱之陣「合戦」
-                </h1>
+        {/* ヘッダー - コンパクト */}
+        <div className="text-center mb-4">
+          <div className="inline-block relative group">
+            <div className={`absolute inset-0 bg-gradient-to-r ${enemyUnit.bgGradient} rounded-lg blur-lg opacity-75`} />
+            <div className={`relative bg-black/60 backdrop-blur-sm border-2 ${enemyUnit.borderColor} rounded-lg px-4 py-2`}>
+              <h1 className="font-black text-white text-base">壱之陣「合戦」 vs {opponentName}</h1>
+            </div>
+          </div>
+        </div>
+
+        {/* フェーズタイトル - コンパクト */}
+        <div className="text-center mb-4">
+          <div className="inline-block relative group">
+            <div className="absolute inset-0 bg-cyan-600 rounded-lg blur-md opacity-50" />
+            <div className="relative bg-black/60 backdrop-blur-sm border-2 border-cyan-500/50 rounded-lg px-3 py-1.5">
+              <h2 className="font-black text-cyan-300 text-sm">敵軍の攻撃フェーズ</h2>
+            </div>
+          </div>
+        </div>
+
+        {/* 状況表示 - コンパクト */}
+        <div className="text-center mb-4">
+          <div className="inline-block px-3 py-1.5 bg-black/60 backdrop-blur-sm border-2 border-white/30 rounded-lg">
+            <p className={`text-lg font-black ${enemyUnit.situationColor}`}
+               style={{ textShadow: '0 0 12px currentColor' }}>
+              {enemyUnit.situationText}
+            </p>
+          </div>
+        </div>
+
+        {/* 敵軍の旗 - コンパクト */}
+        <div className="flex justify-center mb-4">
+          <div className={`relative group transition-all duration-1000 ${isAnimating ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0'}`}>
+            <div className={`absolute inset-0 bg-gradient-to-r ${enemyUnit.bgGradient} rounded-xl blur-xl opacity-50`} />
+            <div className={`relative bg-black/60 backdrop-blur-sm border-4 ${enemyUnit.borderColor} rounded-xl p-4 ${enemyUnit.glowColor} shadow-2xl`}>
+              <div className="text-5xl mb-1 filter drop-shadow-2xl text-center">
+                {enemyUnit.icon}
+              </div>
+              <div className="text-base font-black text-white text-center">
+                {enemyUnit.name}
               </div>
             </div>
           </div>
-        )}
+        </div>
 
-        {showOpponent && (
-          <div className="mb-6 animate-fade-in">
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg blur-lg opacity-50" />
-              <div className="relative bg-black/60 backdrop-blur-sm border-2 border-purple-500/50 rounded-lg px-5 py-2">
-                <p className="text-xl font-black text-white text-center">
-                  VS {opponentName}
-                </p>
+        {/* メッセージ - コンパクト */}
+        <div className="text-center mb-4">
+          <p className="text-base font-black text-white drop-shadow-lg">
+            敵軍の{enemyUnit.name}が現れた!
+          </p>
+        </div>
+
+        {/* カウント表示 - コンパクト */}
+        <div className="flex justify-center mb-4">
+          <div className="relative group">
+            <div className={`absolute inset-0 bg-gradient-to-r ${enemyUnit.bgGradient} rounded-2xl blur-xl ${showNextButton ? 'animate-pulse' : ''}`} 
+                 style={{ opacity: 0.8 }} />
+            <div className={`relative bg-black/80 backdrop-blur-sm border-4 ${enemyUnit.borderColor} rounded-2xl p-6 ${enemyUnit.glowColor} shadow-2xl`}>
+              <div className={`text-6xl font-black text-white text-center tracking-wider filter drop-shadow-2xl transition-all duration-300 ${showNextButton ? 'scale-110' : 'scale-100'}`}>
+                {count}
               </div>
             </div>
           </div>
-        )}
+        </div>
 
-        {showIcon && (
-          <div className="mb-6 animate-fade-in">
-            <div className="relative">
-              <div className="absolute inset-0 bg-red-600 rounded-full blur-2xl opacity-75 animate-pulse" />
-              <div className="relative text-6xl animate-spin-slow filter drop-shadow-2xl text-center">
-                ⚔️
-              </div>
-            </div>
-          </div>
-        )}
-
-        {showMessage && (
-          <div className="mb-6 animate-fade-in">
-            <p className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-orange-200 text-center"
-               style={{ 
-                 textShadow: '0 0 20px rgba(251, 191, 36, 0.8)',
-                 letterSpacing: '0.05em'
-               }}>
-              合戦開始！
+        {/* 結果メッセージ - コンパクト */}
+        {showNextButton && (
+          <div className="text-center mb-4 animate-fade-in">
+            <p className="text-lg font-black text-red-400 drop-shadow-lg">
+              自軍 {finalValue}名 討ち取られる...!
             </p>
           </div>
         )}
 
-        {progress > 0 && (
-          <div className="w-full animate-fade-in">
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-orange-600 rounded-full blur-md opacity-50" />
-              <div className="relative bg-black/60 backdrop-blur-sm rounded-full overflow-hidden border-2 border-red-500/50 h-2.5">
-                <div 
-                  className="h-full bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 transition-all duration-300 ease-out relative overflow-hidden"
-                  style={{ width: `${progress}%` }}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shine" />
-                </div>
-              </div>
-            </div>
-            
-            <p className="text-center text-gray-400 text-xs mt-2 font-bold">
-              自軍集結中... {progress}%
-            </p>
-          </div>
-        )}
-
-        {progress > 0 && progress < 100 && (
-          <div className="mt-5 text-center animate-fade-in">
-            <button
-              onClick={() => router.push(
-                `/koku-tournament/game/battle/phase2?` +
-                `opponentId=${opponentId}&` +
-                `opponentName=${encodeURIComponent(opponentName)}`
-              )}
-              className="relative group inline-block"
+        {/* 次へボタン - コンパクト */}
+        {showNextButton && (
+          <div className="flex justify-center animate-fade-in">
+            <Link 
+              href={`/koku-tournament/game/battle/phase3?opponentId=${opponentId}&opponentName=${encodeURIComponent(opponentName)}&enemyValue=${finalValue}&enemyUnit=${enemyUnit.id}`}
+              className="relative group"
             >
-              <div className="absolute inset-0 bg-gray-600 rounded-lg blur-md opacity-50 group-hover:opacity-75 transition-opacity" />
-              <div className="relative bg-black/40 backdrop-blur-sm border border-gray-500/50 rounded-lg px-4 py-1.5 hover:border-gray-400 transition-colors">
-                <span className="text-xs text-gray-400 group-hover:text-gray-300">
-                  スキップ →
+              <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-orange-600 rounded-full blur-md opacity-75 group-hover:opacity-100 transition-opacity" />
+              <div className="relative bg-black/40 backdrop-blur-sm border-2 border-red-500/50 rounded-full px-8 py-2.5 hover:border-red-500 transition-colors">
+                <span className="font-black text-white text-base flex items-center gap-2">
+                  次へ
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
                 </span>
               </div>
-            </button>
+            </Link>
           </div>
         )}
 
@@ -171,7 +204,7 @@ export default function BattlePhase1() {
         @keyframes fade-in {
           from {
             opacity: 0;
-            transform: translateY(10px);
+            transform: translateY(15px);
           }
           to {
             opacity: 1;
@@ -179,40 +212,7 @@ export default function BattlePhase1() {
           }
         }
         .animate-fade-in {
-          animation: fade-in 0.5s ease-out forwards;
-        }
-        @keyframes spin-slow {
-          from {
-            transform: rotate(0deg) scale(1);
-          }
-          50% {
-            transform: rotate(180deg) scale(1.1);
-          }
-          to {
-            transform: rotate(360deg) scale(1);
-          }
-        }
-        .animate-spin-slow {
-          animation: spin-slow 2s ease-in-out infinite;
-        }
-        @keyframes scan-line {
-          0% {
-            left: 0%;
-          }
-          100% {
-            left: 100%;
-          }
-        }
-        @keyframes shine {
-          0% {
-            transform: translateX(-100%);
-          }
-          100% {
-            transform: translateX(100%);
-          }
-        }
-        .animate-shine {
-          animation: shine 1.5s ease-in-out infinite;
+          animation: fade-in 0.5s ease-out;
         }
       `}</style>
     </div>

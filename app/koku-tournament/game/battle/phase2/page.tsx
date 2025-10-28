@@ -1,16 +1,16 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
-import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
 
-// 敵軍の兵種データ（こちらから見た有利不利で色分け）
+// 敵軍の兵種データ
 const ENEMY_UNIT_TYPES = [
   { 
     id: 'ashigaru',
     name: '足軽隊', 
     icon: '🚩',
-    colorType: 'advantage',  // 敵が足軽 = こちら有利 = 青
+    colorType: 'advantage',
     min: 1, 
     max: 60,
     bgGradient: 'from-blue-600 to-cyan-600',
@@ -23,7 +23,7 @@ const ENEMY_UNIT_TYPES = [
     id: 'cavalry',
     name: '騎馬隊', 
     icon: '🐴',
-    colorType: 'normal',  // 敵が騎馬 = 互角 = 緑
+    colorType: 'normal',
     min: 30, 
     max: 80,
     bgGradient: 'from-green-600 to-emerald-600',
@@ -36,7 +36,7 @@ const ENEMY_UNIT_TYPES = [
     id: 'gunner',
     name: '鉄砲隊', 
     icon: '🔫',
-    colorType: 'disadvantage',  // 敵が鉄砲 = こちら不利 = 赤
+    colorType: 'disadvantage',
     min: 50, 
     max: 100,
     bgGradient: 'from-red-600 to-rose-600',
@@ -48,6 +48,7 @@ const ENEMY_UNIT_TYPES = [
 ]
 
 export default function BattlePhase2() {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const opponentId = searchParams.get('opponentId') || ''
   const opponentName = searchParams.get('opponentName') || 'プレイヤーA'
@@ -55,25 +56,73 @@ export default function BattlePhase2() {
   const [count, setCount] = useState(0)
   const [isAnimating, setIsAnimating] = useState(false)
   const [showNextButton, setShowNextButton] = useState(false)
+  const [battleMatchId, setBattleMatchId] = useState<string>('')
+  const [isStarting, setIsStarting] = useState(true)
   
-  // ランダムに敵の兵種を選択（Phase 2で一度だけ決定）
+  // ランダムに敵の兵種を選択
   const [enemyUnit] = useState(() => 
     ENEMY_UNIT_TYPES[Math.floor(Math.random() * ENEMY_UNIT_TYPES.length)]
   )
   
-  // ランダムな最終値（Phase 2で一度だけ決定）
+  // ランダムな最終値
   const [finalValue] = useState(() => 
     Math.floor(Math.random() * (enemyUnit.max - enemyUnit.min + 1)) + enemyUnit.min
   )
 
+  // ゲーム開始時にP消費と記録作成
   useEffect(() => {
-    const startTimer = setTimeout(() => {
-      setIsAnimating(true)
-      animateCount()
-    }, 1000)
+    const startBattle = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
 
-    return () => clearTimeout(startTimer)
-  }, [])
+        if (!user) {
+          alert('ログインしてください')
+          router.push('/login')
+          return
+        }
+
+        const response = await fetch('/koku-tournament/start-battle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            challengerId: user.id,
+            defenderId: opponentId,
+            gameType: 'battle'
+          })
+        })
+
+        const result = await response.json()
+
+        if (!result.success) {
+          alert(result.error || '対戦開始に失敗しました')
+          router.push('/koku-tournament')
+          return
+        }
+
+        setBattleMatchId(result.battleMatchId)
+        setIsStarting(false)
+
+      } catch (error) {
+        console.error('Error starting battle:', error)
+        alert('エラーが発生しました')
+        router.push('/koku-tournament')
+      }
+    }
+
+    startBattle()
+  }, [opponentId, router])
+
+  // カウントアップアニメーション開始
+  useEffect(() => {
+    if (!isStarting && battleMatchId) {
+      const startTimer = setTimeout(() => {
+        setIsAnimating(true)
+        animateCount()
+      }, 1000)
+
+      return () => clearTimeout(startTimer)
+    }
+  }, [isStarting, battleMatchId])
 
   // カウントアップアニメーション(後半ゆっくり)
   const animateCount = () => {
@@ -96,6 +145,19 @@ export default function BattlePhase2() {
         setShowNextButton(true)
       }
     }, 1000 / fps)
+  }
+
+  // 読み込み中の表示
+  if (isStarting || !battleMatchId) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin text-6xl mb-4">⚔️</div>
+          <p className="text-white text-xl font-bold">対戦準備中...</p>
+          <p className="text-gray-400 text-sm mt-2">50P消費中</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -181,8 +243,15 @@ export default function BattlePhase2() {
         {/* 次へボタン - コンパクト */}
         {showNextButton && (
           <div className="flex justify-center animate-fade-in">
-            <Link 
-              href={`/koku-tournament/game/battle/phase3?opponentId=${opponentId}&opponentName=${encodeURIComponent(opponentName)}&enemyValue=${finalValue}&enemyUnit=${enemyUnit.id}`}
+            <button
+              onClick={() => router.push(
+                `/koku-tournament/game/battle/phase3?` +
+                `opponentId=${opponentId}&` +
+                `opponentName=${encodeURIComponent(opponentName)}&` +
+                `battleMatchId=${battleMatchId}&` +
+                `enemyValue=${finalValue}&` +
+                `enemyUnit=${enemyUnit.id}`
+              )}
               className="relative group"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-orange-600 rounded-full blur-md opacity-75 group-hover:opacity-100 transition-opacity" />
@@ -194,7 +263,7 @@ export default function BattlePhase2() {
                   </svg>
                 </span>
               </div>
-            </Link>
+            </button>
           </div>
         )}
 
