@@ -105,12 +105,14 @@ export default function GameReportPage() {
 
   // タイムゾーン対応の今日の日付取得
   function getTodayDate() {
-    const today = new Date()
-    const year = today.getFullYear()
-    const month = today.getMonth() + 1
-    const day = today.getDate()
-    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-  }
+  const today = new Date()
+  // 日本時間に変換（UTC+9）
+  const jstDate = new Date(today.getTime() + 9 * 60 * 60 * 1000)
+  const year = jstDate.getUTCFullYear()
+  const month = jstDate.getUTCMonth() + 1
+  const day = jstDate.getUTCDate()
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+}
 
   // 計算値
   const jpContribution = finalChips % 1000
@@ -722,10 +724,13 @@ export default function GameReportPage() {
               <div className="divide-y divide-pink-500/10">
                 {sessions.map((session) => {
                   const playedDate = new Date(session.played_at)
-                  const displayDate = playedDate.toLocaleDateString('ja-JP', {
+                  // 日本時間に変換
+                  const jstDate = new Date(playedDate.getTime() + 9 * 60 * 60 * 1000)
+                  const displayDate = jstDate.toLocaleDateString('ja-JP', {
                     month: 'numeric',
                     day: 'numeric',
-                    weekday: 'short'
+                    weekday: 'short',
+                    timeZone: 'Asia/Tokyo'
                   })
                   
                   return (

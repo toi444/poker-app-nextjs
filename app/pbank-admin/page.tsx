@@ -15,7 +15,10 @@ import {
   Skull,
   Calendar,
   X,
-  Save
+  Save,
+  TrendingUp,
+  TrendingDown,
+  Layers
 } from 'lucide-react'
 
 interface Profile {
@@ -37,6 +40,16 @@ interface Loan {
   borrower?: Profile
 }
 
+interface LoanSummary {
+  lender_id: string
+  lender_name: string
+  borrower_id: string
+  borrower_name: string
+  total_amount: number
+  total_remaining: number
+  loan_count: number
+}
+
 export default function PBankAdminPage() {
   const router = useRouter()
   const supabase = createClientComponentClient()
@@ -47,6 +60,15 @@ export default function PBankAdminPage() {
   const [users, setUsers] = useState<Profile[]>([])
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [editingLoan, setEditingLoan] = useState<Loan | null>(null)
+  
+  // タブ管理（新規追加）
+  const [activeView, setActiveView] = useState<'summary' | 'detail'>('summary')
+  
+  // 集計データ（新規追加）
+  const [loanSummaries, setLoanSummaries] = useState<LoanSummary[]>([])
+  
+  // ユーザーフィルター（新規追加）
+  const [selectedUserId, setSelectedUserId] = useState<string>('')
   
   // 新規作成フォーム
   const [newLoan, setNewLoan] = useState({
@@ -87,7 +109,7 @@ export default function PBankAdminPage() {
       .eq('id', authUser.id)
       .single()
     
-    // 管理者チェック
+    // 管理者チェック（最高管理者 OR 一般管理者）
     if (authUser.email !== 'toui.reigetsu@gmail.com' && profile?.role !== 'admin') {
       router.push('/dashboard')
       return
@@ -131,10 +153,68 @@ export default function PBankAdminPage() {
       console.log('Loans loaded:', loansData?.length || 0)
       setLoans(loansData || [])
       
+      // 集計データを計算（新規追加）
+      calculateLoanSummaries(loansData || [])
+      
     } catch (error) {
       console.error('データ読み込みエラー:', error)
       alert('データの読み込みに失敗しました。ページを再読み込みしてください。')
     }
+  }
+
+  // ユーザー間の貸借を集計する関数（新規追加）
+  const calculateLoanSummaries = (loansData: Loan[]) => {
+    // アクティブなローンのみ対象
+    const activeLoans = loansData.filter(loan => loan.status === 'active')
+    
+    // ユーザー間の集計用Map
+    const summaryMap = new Map<string, LoanSummary>()
+    
+    activeLoans.forEach(loan => {
+      // キー: "lender_id-borrower_id"
+      const key = `${loan.lender_id}-${loan.borrower_id}`
+      
+      if (!summaryMap.has(key)) {
+        summaryMap.set(key, {
+          lender_id: loan.lender_id,
+          lender_name: loan.lender?.username || 'Unknown',
+          borrower_id: loan.borrower_id,
+          borrower_name: loan.borrower?.username || 'Unknown',
+          total_amount: 0,
+          total_remaining: 0,
+          loan_count: 0
+        })
+      }
+      
+      const summary = summaryMap.get(key)!
+      summary.total_amount += loan.amount
+      summary.total_remaining += loan.remaining
+      summary.loan_count += 1
+    })
+    
+    // Mapを配列に変換してソート（残高の多い順）
+    const summariesArray = Array.from(summaryMap.values())
+      .sort((a, b) => b.total_remaining - a.total_remaining)
+    
+    setLoanSummaries(summariesArray)
+  }
+
+  // フィルター適用済みの集計データを取得（新規追加）
+  const getFilteredSummaries = () => {
+    if (!selectedUserId) return loanSummaries
+    
+    return loanSummaries.filter(summary => 
+      summary.lender_id === selectedUserId || summary.borrower_id === selectedUserId
+    )
+  }
+
+  // フィルター適用済みのローン一覧を取得（新規追加）
+  const getFilteredLoans = () => {
+    if (!selectedUserId) return loans
+    
+    return loans.filter(loan => 
+      loan.lender_id === selectedUserId || loan.borrower_id === selectedUserId
+    )
   }
 
   const handleCreateLoan = async () => {
@@ -324,7 +404,68 @@ export default function PBankAdminPage() {
               <h1 className="text-3xl font-black bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 bg-clip-text text-transparent animate-shimmer">
                 P-BANK 管理
               </h1>
-              <p className="text-emerald-400/60 mt-1 font-mono text-sm">SUPER ADMIN ONLY</p>
+              <p className="text-emerald-400/60 mt-1 font-mono text-sm">ADMIN CONTROL PANEL</p>
+            </div>
+          </div>
+        </div>
+
+        {/* タブ切り替え（新規追加） */}
+        <div className="relative group mb-6">
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-green-600 rounded-xl blur-lg opacity-50" />
+          <div className="relative bg-black/60 backdrop-blur-sm rounded-xl p-2 border-2 border-emerald-500/30 flex gap-2">
+            <button
+              onClick={() => setActiveView('summary')}
+              className={`flex-1 py-3 rounded-lg font-black transition-all flex items-center justify-center gap-2 ${
+                activeView === 'summary'
+                  ? 'bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Layers className="w-4 h-4" />
+              <span>集計ビュー</span>
+            </button>
+            <button
+              onClick={() => setActiveView('detail')}
+              className={`flex-1 py-3 rounded-lg font-black transition-all flex items-center justify-center gap-2 ${
+                activeView === 'detail'
+                  ? 'bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Users className="w-4 h-4" />
+              <span>詳細ビュー</span>
+            </button>
+          </div>
+        </div>
+
+        {/* ユーザーフィルター（新規追加） */}
+        <div className="relative group mb-6">
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl blur-lg opacity-30" />
+          <div className="relative bg-black/60 backdrop-blur-sm rounded-xl p-4 border-2 border-purple-500/30">
+            <div className="flex items-center gap-3 mb-2">
+              <DollarSign className="w-5 h-5 text-purple-400 drop-shadow-glow" />
+              <label className="text-sm font-black text-white">ユーザーでフィルター</label>
+            </div>
+            <div className="flex gap-2">
+              <select
+                value={selectedUserId}
+                onChange={(e) => setSelectedUserId(e.target.value)}
+                className="flex-1 px-4 py-2.5 rounded-lg bg-black/40 border-2 border-purple-500/30 text-white focus:border-purple-500 focus:outline-none transition-all backdrop-blur-sm font-mono text-sm"
+              >
+                <option value="">全員を表示</option>
+                {users.map(u => (
+                  <option key={u.id} value={u.id}>{u.username}</option>
+                ))}
+              </select>
+              {selectedUserId && (
+                <button
+                  onClick={() => setSelectedUserId('')}
+                  className="px-4 py-2.5 bg-gray-700 text-white rounded-lg font-black hover:bg-gray-600 transition-all border-2 border-gray-600 flex items-center gap-2"
+                >
+                  <X className="w-4 h-4" />
+                  クリア
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -446,173 +587,289 @@ export default function PBankAdminPage() {
           </div>
         )}
 
-        {/* ローン一覧 */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 mb-4">
-            <Users className="w-5 h-5 text-emerald-500 drop-shadow-glow" />
-            <h3 className="font-black text-white text-lg">全ローン一覧</h3>
-            <div className="relative ml-auto">
-              <div className="absolute inset-0 bg-emerald-600 blur-lg opacity-50" />
-              <span className="relative px-3 py-1 bg-black/60 border-2 border-emerald-500/50 rounded-full text-sm font-black text-emerald-400 font-mono">
-                {loans.length}件
-              </span>
+        {/* 集計ビュー（新規追加） */}
+        {activeView === 'summary' && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-4">
+              <Layers className="w-5 h-5 text-emerald-500 drop-shadow-glow" />
+              <h3 className="font-black text-white text-lg">ユーザー間貸借集計</h3>
+              <div className="relative ml-auto">
+                <div className="absolute inset-0 bg-emerald-600 blur-lg opacity-50" />
+                <span className="relative px-3 py-1 bg-black/60 border-2 border-emerald-500/50 rounded-full text-sm font-black text-emerald-400 font-mono">
+                  {getFilteredSummaries().length}組
+                </span>
+              </div>
             </div>
-          </div>
-          
-          {loans.map(loan => (
-            <div key={loan.id} className="relative group">
-              <div className={`absolute inset-0 ${
-                loan.status === 'active' ? 'bg-emerald-600' : 'bg-gray-600'
-              } rounded-2xl blur-xl opacity-30`} />
-              <div className={`relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-l-4 shadow-2xl ${
-                loan.status === 'active' ? 'border-emerald-500' : 'border-gray-500'
-              }`}>
-                {editingLoan?.id === loan.id ? (
-                  // 編集モード
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center mb-4">
-                      <div>
-                        <p className="font-black text-white text-lg font-mono">
-                          {loan.lender?.username} → {loan.borrower?.username}
-                        </p>
-                        <p className="text-xs text-gray-400 font-mono">
-                          {new Date(loan.created_at).toLocaleDateString('ja-JP')}
-                        </p>
+            
+            {getFilteredSummaries().map((summary, index) => (
+              <div key={`${summary.lender_id}-${summary.borrower_id}`} className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-green-600 rounded-2xl blur-xl opacity-30" />
+                <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-l-4 border-emerald-500 shadow-2xl">
+                  {/* ユーザー名表示 */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-cyan-600 blur-lg opacity-50" />
+                        <div className="relative w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-full flex items-center justify-center border-2 border-cyan-400">
+                          <TrendingUp className="w-5 h-5 text-white drop-shadow-glow" />
+                        </div>
                       </div>
-                      <span className={`px-3 py-1 rounded-full text-xs font-black font-mono ${
-                        loan.status === 'active' 
-                          ? 'bg-emerald-500/20 text-emerald-400 border-2 border-emerald-500/50' 
-                          : 'bg-gray-500/20 text-gray-400 border-2 border-gray-500/50'
-                      }`}>
-                        {loan.status === 'active' ? '返済中' : '完済'}
-                      </span>
+                      <div>
+                        <p className="font-black text-white text-lg font-mono">{summary.lender_name}</p>
+                        <p className="text-xs text-cyan-400 font-mono">貸し手</p>
+                      </div>
                     </div>
                     
-                    <div>
-                      <label className="block text-xs font-bold text-gray-400 mb-2 font-mono">元本 (P)</label>
-                      <input
-                        type="number"
-                        step="1"
-                        min="0"
-                        value={editForm.amount || ''}
-                        onChange={(e) => setEditForm({...editForm, amount: e.target.value === '' ? 0 : Number(e.target.value)})}
-                        placeholder="10000"
-                        className="w-full px-4 py-3 border-2 border-emerald-500/30 rounded-xl text-center font-black text-white text-lg bg-black/40 focus:outline-none focus:border-emerald-500 transition-all backdrop-blur-sm font-mono"
-                      />
-                    </div>
+                    <div className="text-2xl text-white/50">→</div>
                     
-                    <div>
-                      <label className="block text-xs font-bold text-gray-400 mb-2 font-mono">現在残高 (P)</label>
-                      <input
-                        type="number"
-                        step="1"
-                        min="0"
-                        value={editForm.remaining || ''}
-                        onChange={(e) => setEditForm({...editForm, remaining: e.target.value === '' ? 0 : Number(e.target.value)})}
-                        placeholder="10000"
-                        className="w-full px-4 py-3 border-2 border-emerald-500/30 rounded-xl text-center font-black text-white text-lg bg-black/40 focus:outline-none focus:border-emerald-500 transition-all backdrop-blur-sm font-mono"
-                      />
-                    </div>
-                    
-                    <div className="flex gap-2">
-                      <button
-                        onClick={handleUpdateLoan}
-                        className="flex-1 py-2 bg-blue-600 text-white rounded-lg font-black hover:bg-blue-700 transition-all flex items-center justify-center gap-2 border-2 border-blue-400"
-                      >
-                        <Save className="w-4 h-4" />
-                        保存
-                      </button>
-                      <button
-                        onClick={() => setEditingLoan(null)}
-                        className="flex-1 py-2 bg-gray-700 text-white rounded-lg font-black hover:bg-gray-600 transition-all border-2 border-gray-600"
-                      >
-                        キャンセル
-                      </button>
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <p className="font-black text-white text-lg font-mono text-right">{summary.borrower_name}</p>
+                        <p className="text-xs text-orange-400 font-mono text-right">借り手</p>
+                      </div>
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-orange-600 blur-lg opacity-50" />
+                        <div className="relative w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center border-2 border-orange-400">
+                          <TrendingDown className="w-5 h-5 text-white drop-shadow-glow" />
+                        </div>
+                      </div>
                     </div>
                   </div>
-                ) : (
-                  // 表示モード
-                  <>
-                    <div className="flex justify-between items-center mb-4">
+                  
+                  {/* 金額表示 */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="relative group">
+                      <div className="absolute inset-0 bg-cyan-600 rounded-xl blur-lg opacity-30" />
+                      <div className="relative bg-black/40 backdrop-blur-sm rounded-xl p-3 border-2 border-cyan-500/30">
+                        <p className="text-xs font-bold text-gray-400 font-mono text-center">元本合計</p>
+                        <p className="text-lg font-black text-white font-mono drop-shadow-glow text-center">
+                          {summary.total_amount.toLocaleString()}
+                        </p>
+                        <p className="text-xs text-cyan-400 font-mono text-center">P</p>
+                      </div>
+                    </div>
+                    
+                    <div className="relative group">
+                      <div className="absolute inset-0 bg-emerald-600 rounded-xl blur-lg opacity-30" />
+                      <div className="relative bg-black/40 backdrop-blur-sm rounded-xl p-3 border-2 border-emerald-500/30">
+                        <p className="text-xs font-bold text-gray-400 font-mono text-center">残高合計</p>
+                        <p className="text-lg font-black text-emerald-400 font-mono drop-shadow-glow text-center">
+                          {summary.total_remaining.toLocaleString()}
+                        </p>
+                        <p className="text-xs text-emerald-400 font-mono text-center">P</p>
+                      </div>
+                    </div>
+                    
+                    <div className="relative group">
+                      <div className="absolute inset-0 bg-purple-600 rounded-xl blur-lg opacity-30" />
+                      <div className="relative bg-black/40 backdrop-blur-sm rounded-xl p-3 border-2 border-purple-500/30">
+                        <p className="text-xs font-bold text-gray-400 font-mono text-center">ローン数</p>
+                        <p className="text-lg font-black text-purple-400 font-mono drop-shadow-glow text-center">
+                          {summary.loan_count}
+                        </p>
+                        <p className="text-xs text-purple-400 font-mono text-center">件</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* 利息表示 */}
+                  <div className="mt-3 relative">
+                    <div className="absolute inset-0 bg-yellow-600 rounded-lg blur-lg opacity-20" />
+                    <div className="relative bg-yellow-500/10 backdrop-blur-sm rounded-lg p-2 border border-yellow-500/30">
+                      <p className="text-xs text-yellow-400 font-mono text-center">
+                        利息: <span className="font-black">+{(summary.total_remaining - summary.total_amount).toLocaleString()} P</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+            
+            {getFilteredSummaries().length === 0 && (
+              <div className="relative group">
+                <div className="absolute inset-0 bg-gray-600 rounded-2xl blur-xl opacity-30" />
+                <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-12 text-center border-2 border-gray-500/30 shadow-2xl">
+                  <Skull className="w-12 h-12 text-gray-600 mx-auto mb-3 opacity-50" />
+                  <p className="text-gray-500 font-bold font-mono">
+                    {selectedUserId ? '選択したユーザーの貸借はありません' : 'アクティブなローンはありません'}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 詳細ビュー（既存機能） */}
+        {activeView === 'detail' && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-4">
+              <Users className="w-5 h-5 text-emerald-500 drop-shadow-glow" />
+              <h3 className="font-black text-white text-lg">全ローン一覧</h3>
+              <div className="relative ml-auto">
+                <div className="absolute inset-0 bg-emerald-600 blur-lg opacity-50" />
+                <span className="relative px-3 py-1 bg-black/60 border-2 border-emerald-500/50 rounded-full text-sm font-black text-emerald-400 font-mono">
+                  {getFilteredLoans().length}件
+                </span>
+              </div>
+            </div>
+            
+            {getFilteredLoans().map(loan => (
+              <div key={loan.id} className="relative group">
+                <div className={`absolute inset-0 ${
+                  loan.status === 'active' ? 'bg-emerald-600' : 'bg-gray-600'
+                } rounded-2xl blur-xl opacity-30`} />
+                <div className={`relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-l-4 shadow-2xl ${
+                  loan.status === 'active' ? 'border-emerald-500' : 'border-gray-500'
+                }`}>
+                  {editingLoan?.id === loan.id ? (
+                    // 編集モード
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center mb-4">
+                        <div>
+                          <p className="font-black text-white text-lg font-mono">
+                            {loan.lender?.username} → {loan.borrower?.username}
+                          </p>
+                          <p className="text-xs text-gray-400 font-mono">
+                            {new Date(loan.created_at).toLocaleDateString('ja-JP')}
+                          </p>
+                        </div>
+                        <span className={`px-3 py-1 rounded-full text-xs font-black font-mono ${
+                          loan.status === 'active' 
+                            ? 'bg-emerald-500/20 text-emerald-400 border-2 border-emerald-500/50' 
+                            : 'bg-gray-500/20 text-gray-400 border-2 border-gray-500/50'
+                        }`}>
+                          {loan.status === 'active' ? '返済中' : '完済'}
+                        </span>
+                      </div>
+                      
                       <div>
-                        <p className="font-black text-white text-lg font-mono">
-                          {loan.lender?.username} → {loan.borrower?.username}
-                        </p>
-                        <p className="text-xs text-gray-400 font-mono">
-                          {new Date(loan.created_at).toLocaleDateString('ja-JP')}
-                        </p>
+                        <label className="block text-xs font-bold text-gray-400 mb-2 font-mono">元本 (P)</label>
+                        <input
+                          type="number"
+                          step="1"
+                          min="0"
+                          value={editForm.amount || ''}
+                          onChange={(e) => setEditForm({...editForm, amount: e.target.value === '' ? 0 : Number(e.target.value)})}
+                          placeholder="10000"
+                          className="w-full px-4 py-3 border-2 border-emerald-500/30 rounded-xl text-center font-black text-white text-lg bg-black/40 focus:outline-none focus:border-emerald-500 transition-all backdrop-blur-sm font-mono"
+                        />
                       </div>
-                      <span className={`px-3 py-1 rounded-full text-xs font-black font-mono ${
-                        loan.status === 'active' 
-                          ? 'bg-emerald-500/20 text-emerald-400 border-2 border-emerald-500/50' 
-                          : 'bg-gray-500/20 text-gray-400 border-2 border-gray-500/50'
-                      }`}>
-                        {loan.status === 'active' ? '返済中' : '完済'}
-                      </span>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-3 mb-4">
-                      <div className="relative group">
-                        <div className="absolute inset-0 bg-cyan-600 rounded-xl blur-lg opacity-30" />
-                        <div className="relative bg-black/40 backdrop-blur-sm rounded-xl p-3 border-2 border-cyan-500/30">
-                          <p className="text-xs font-bold text-gray-400 font-mono">元本</p>
-                          <p className="text-xl font-black text-white font-mono drop-shadow-glow">{loan.amount.toLocaleString()} P</p>
-                        </div>
-                      </div>
-                      <div className="relative group">
-                        <div className="absolute inset-0 bg-emerald-600 rounded-xl blur-lg opacity-30" />
-                        <div className="relative bg-black/40 backdrop-blur-sm rounded-xl p-3 border-2 border-emerald-500/30">
-                          <p className="text-xs font-bold text-gray-400 font-mono">残高</p>
-                          <p className="text-xl font-black text-emerald-400 font-mono drop-shadow-glow">{loan.remaining.toLocaleString()} P</p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          setEditingLoan(loan)
-                          setEditForm({ amount: loan.amount, remaining: loan.remaining })
-                        }}
-                        className="flex-1 py-2 bg-blue-600 text-white rounded-lg font-black hover:bg-blue-700 transition-all flex items-center justify-center gap-2 border-2 border-blue-400"
-                      >
-                        <Edit className="w-4 h-4 drop-shadow-glow" />
-                        編集
-                      </button>
                       
-                      {loan.status === 'active' && (
+                      <div>
+                        <label className="block text-xs font-bold text-gray-400 mb-2 font-mono">現在残高 (P)</label>
+                        <input
+                          type="number"
+                          step="1"
+                          min="0"
+                          value={editForm.remaining || ''}
+                          onChange={(e) => setEditForm({...editForm, remaining: e.target.value === '' ? 0 : Number(e.target.value)})}
+                          placeholder="10000"
+                          className="w-full px-4 py-3 border-2 border-emerald-500/30 rounded-xl text-center font-black text-white text-lg bg-black/40 focus:outline-none focus:border-emerald-500 transition-all backdrop-blur-sm font-mono"
+                        />
+                      </div>
+                      
+                      <div className="flex gap-2">
                         <button
-                          onClick={() => handleCompleteLoan(loan.id)}
-                          className="flex-1 py-2 bg-green-600 text-white rounded-lg font-black hover:bg-green-700 transition-all flex items-center justify-center gap-2 border-2 border-green-400"
+                          onClick={handleUpdateLoan}
+                          className="flex-1 py-2 bg-blue-600 text-white rounded-lg font-black hover:bg-blue-700 transition-all flex items-center justify-center gap-2 border-2 border-blue-400"
                         >
-                          <CheckCircle className="w-4 h-4 drop-shadow-glow" />
-                          完済
+                          <Save className="w-4 h-4" />
+                          保存
                         </button>
-                      )}
-                      
-                      <button
-                        onClick={() => handleDeleteLoan(loan.id)}
-                        className="px-4 py-2 bg-red-600 text-white rounded-lg font-black hover:bg-red-700 transition-all flex items-center justify-center border-2 border-red-400"
-                      >
-                        <Trash2 className="w-4 h-4 drop-shadow-glow" />
-                      </button>
+                        <button
+                          onClick={() => setEditingLoan(null)}
+                          className="flex-1 py-2 bg-gray-700 text-white rounded-lg font-black hover:bg-gray-600 transition-all border-2 border-gray-600"
+                        >
+                          キャンセル
+                        </button>
+                      </div>
                     </div>
-                  </>
-                )}
+                  ) : (
+                    // 表示モード
+                    <>
+                      <div className="flex justify-between items-center mb-4">
+                        <div>
+                          <p className="font-black text-white text-lg font-mono">
+                            {loan.lender?.username} → {loan.borrower?.username}
+                          </p>
+                          <p className="text-xs text-gray-400 font-mono">
+                            {new Date(loan.created_at).toLocaleDateString('ja-JP')}
+                          </p>
+                        </div>
+                        <span className={`px-3 py-1 rounded-full text-xs font-black font-mono ${
+                          loan.status === 'active' 
+                            ? 'bg-emerald-500/20 text-emerald-400 border-2 border-emerald-500/50' 
+                            : 'bg-gray-500/20 text-gray-400 border-2 border-gray-500/50'
+                        }`}>
+                          {loan.status === 'active' ? '返済中' : '完済'}
+                        </span>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3 mb-4">
+                        <div className="relative group">
+                          <div className="absolute inset-0 bg-cyan-600 rounded-xl blur-lg opacity-30" />
+                          <div className="relative bg-black/40 backdrop-blur-sm rounded-xl p-3 border-2 border-cyan-500/30">
+                            <p className="text-xs font-bold text-gray-400 font-mono">元本</p>
+                            <p className="text-xl font-black text-white font-mono drop-shadow-glow">{loan.amount.toLocaleString()} P</p>
+                          </div>
+                        </div>
+                        <div className="relative group">
+                          <div className="absolute inset-0 bg-emerald-600 rounded-xl blur-lg opacity-30" />
+                          <div className="relative bg-black/40 backdrop-blur-sm rounded-xl p-3 border-2 border-emerald-500/30">
+                            <p className="text-xs font-bold text-gray-400 font-mono">残高</p>
+                            <p className="text-xl font-black text-emerald-400 font-mono drop-shadow-glow">{loan.remaining.toLocaleString()} P</p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setEditingLoan(loan)
+                            setEditForm({ amount: loan.amount, remaining: loan.remaining })
+                          }}
+                          className="flex-1 py-2 bg-blue-600 text-white rounded-lg font-black hover:bg-blue-700 transition-all flex items-center justify-center gap-2 border-2 border-blue-400"
+                        >
+                          <Edit className="w-4 h-4 drop-shadow-glow" />
+                          編集
+                        </button>
+                        
+                        {loan.status === 'active' && (
+                          <button
+                            onClick={() => handleCompleteLoan(loan.id)}
+                            className="flex-1 py-2 bg-green-600 text-white rounded-lg font-black hover:bg-green-700 transition-all flex items-center justify-center gap-2 border-2 border-green-400"
+                          >
+                            <CheckCircle className="w-4 h-4 drop-shadow-glow" />
+                            完済
+                          </button>
+                        )}
+                        
+                        <button
+                          onClick={() => handleDeleteLoan(loan.id)}
+                          className="px-4 py-2 bg-red-600 text-white rounded-lg font-black hover:bg-red-700 transition-all flex items-center justify-center border-2 border-red-400"
+                        >
+                          <Trash2 className="w-4 h-4 drop-shadow-glow" />
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
-          
-          {loans.length === 0 && (
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gray-600 rounded-2xl blur-xl opacity-30" />
-              <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-12 text-center border-2 border-gray-500/30 shadow-2xl">
-                <Skull className="w-12 h-12 text-gray-600 mx-auto mb-3 opacity-50" />
-                <p className="text-gray-500 font-bold font-mono">ローンはまだありません</p>
+            ))}
+            
+            {getFilteredLoans().length === 0 && (
+              <div className="relative group">
+                <div className="absolute inset-0 bg-gray-600 rounded-2xl blur-xl opacity-30" />
+                <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-12 text-center border-2 border-gray-500/30 shadow-2xl">
+                  <Skull className="w-12 h-12 text-gray-600 mx-auto mb-3 opacity-50" />
+                  <p className="text-gray-500 font-bold font-mono">
+                    {selectedUserId ? '選択したユーザーのローンはありません' : 'ローンはまだありません'}
+                  </p>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
 
       <style jsx global>{`

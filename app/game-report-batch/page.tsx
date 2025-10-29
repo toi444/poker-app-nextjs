@@ -21,7 +21,9 @@ import {
   Eye,
   Skull,
   Zap,
-  Shield
+  Shield,
+  ArrowRightLeft,
+  Calculator
 } from 'lucide-react'
 
 interface Profile {
@@ -48,6 +50,12 @@ interface BatchSession {
   sessions: any[]
 }
 
+interface Settlement {
+  from: string
+  to: string
+  amount: number
+}
+
 // タイムゾーン対応の今日の日付
 function getTodayDate() {
   const today = new Date()
@@ -55,6 +63,76 @@ function getTodayDate() {
   const month = today.getMonth() + 1
   const day = today.getDate()
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+}
+
+// エアー精算計算関数
+function calculateAirSettlement(playerInputs: PlayerInput[]): Settlement[] {
+  // 各プレイヤーの純収支を計算
+  const balances = playerInputs.map(p => {
+    const jpAmount = p.finalChips % 1000
+    const cashOut = p.finalChips - jpAmount
+    const profit = cashOut - p.buyIn
+    return {
+      userId: p.userId,
+      username: p.username,
+      balance: profit // 正なら受け取る側、負なら支払う側
+    }
+  })
+
+  // 支払う側と受け取る側に分ける
+  const payers = balances.filter(b => b.balance < 0).map(b => ({
+    ...b,
+    balance: -b.balance // 絶対値にする
+  })).sort((a, b) => b.balance - a.balance) // 降順
+
+  const receivers = balances.filter(b => b.balance > 0).sort((a, b) => b.balance - a.balance) // 降順
+
+  // 精算計算
+  const settlements: Settlement[] = []
+  let payerIndex = 0
+  let receiverIndex = 0
+
+  while (payerIndex < payers.length && receiverIndex < receivers.length) {
+    const payer = payers[payerIndex]
+    const receiver = receivers[receiverIndex]
+    
+    const amount = Math.min(payer.balance, receiver.balance)
+    
+    if (amount > 0) {
+      settlements.push({
+        from: payer.username,
+        to: receiver.username,
+        amount: Math.round(amount) // 整数に丸める
+      })
+    }
+
+    payer.balance -= amount
+    receiver.balance -= amount
+
+    if (payer.balance === 0) payerIndex++
+    if (receiver.balance === 0) receiverIndex++
+  }
+
+  return settlements
+}
+
+// JP負担計算関数
+function calculateJpBurden(playerInputs: PlayerInput[], totalJpContribution: number): { username: string; burden: number }[] {
+  const playerCount = playerInputs.length
+  const baseAmount = Math.floor(totalJpContribution / playerCount / 50) * 50 // 50円単位で切り捨て
+  const remainder = totalJpContribution - (baseAmount * playerCount)
+  
+  // 収支でソート（昇順 = 負け順）
+  const sorted = [...playerInputs].sort((a, b) => {
+    const profitA = (a.finalChips - (a.finalChips % 1000)) - a.buyIn
+    const profitB = (b.finalChips - (b.finalChips % 1000)) - b.buyIn
+    return profitA - profitB
+  })
+
+  return sorted.map((p, index) => ({
+    username: p.username,
+    burden: index === 0 ? baseAmount + remainder : baseAmount // 最下位が残りを負担
+  }))
 }
 
 export default function BatchGameReportPage() {
@@ -77,6 +155,9 @@ export default function BatchGameReportPage() {
   
   // 各プレイヤー入力
   const [playerInputs, setPlayerInputs] = useState<PlayerInput[]>([])
+  
+  // エアー精算オプション
+  const [isAllAir, setIsAllAir] = useState(false)
   
   // 履歴
   const [batchHistory, setBatchHistory] = useState<BatchSession[]>([])
@@ -217,6 +298,12 @@ export default function BatchGameReportPage() {
   // JP計算
   const totalJpContribution = playerInputs.reduce((sum, p) => sum + (p.finalChips % 1000), 0)
 
+  // エアー精算計算
+  const airSettlements = isAllAir && isValid ? calculateAirSettlement(playerInputs) : []
+  const jpBurdens = isAllAir && isValid && totalJpContribution > 0 
+    ? calculateJpBurden(playerInputs, totalJpContribution) 
+    : []
+
   const calculatePlayHours = () => {
     const [startH, startM] = startTime.split(':').map(Number)
     const [endH, endM] = endTime.split(':').map(Number)
@@ -293,6 +380,7 @@ export default function BatchGameReportPage() {
       // リセット
       setSelectedPlayerIds(new Set())
       setPlayerInputs([])
+      setIsAllAir(false)
       setStep(3)
       fetchBatchHistory()
     } catch (error) {
@@ -546,6 +634,28 @@ export default function BatchGameReportPage() {
                       <span className="text-sm font-bold text-white/80 font-mono">プレイ時間: </span>
                       <span className="text-2xl font-black text-white drop-shadow-glow font-mono">{calculatePlayHours()}h</span>
                     </div>
+                  </div>
+
+                  {/* エアー精算オプション */}
+                  <div className="relative group">
+                    <div className="absolute inset-0 bg-gradient-to-r from-orange-600 to-amber-600 rounded-xl blur-lg opacity-30" />
+                    <label className="relative flex items-center gap-3 p-4 rounded-xl bg-black/40 border-2 border-orange-500/30 cursor-pointer hover:bg-black/60 transition-all">
+                      <input
+                        type="checkbox"
+                        checked={isAllAir}
+                        onChange={(e) => setIsAllAir(e.target.checked)}
+                        className="w-5 h-5 rounded border-2 border-orange-500/50 bg-black/40 checked:bg-orange-600 checked:border-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all cursor-pointer"
+                      />
+                      <div className="flex items-center gap-2">
+                        <ArrowRightLeft className="w-5 h-5 text-orange-400" />
+                        <span className="font-black text-white font-mono">すべてのプレイがエアーの場合</span>
+                      </div>
+                    </label>
+                    {isAllAir && (
+                      <p className="mt-2 text-xs text-orange-400 font-mono pl-4">
+                        ✓ エアー精算とJP負担を自動計算して表示します（参考用）
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -802,6 +912,79 @@ export default function BatchGameReportPage() {
               </div>
             </div>
 
+            {/* エアー精算表示 */}
+            {isAllAir && isValid && airSettlements.length > 0 && (
+              <div className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-600 to-amber-600 rounded-2xl blur-xl opacity-50" />
+                <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-6 border-2 border-orange-500/30 shadow-2xl">
+                  <div className="flex items-center gap-2 mb-6">
+                    <Calculator className="w-6 h-6 text-orange-500 drop-shadow-glow" />
+                    <h3 className="font-black text-white font-mono">エアー精算（参考）</h3>
+                  </div>
+                  
+                  <div className="space-y-3 mb-6">
+                    {airSettlements.map((settlement, idx) => (
+                      <div key={idx} className="relative group">
+                        <div className="absolute inset-0 bg-orange-600 blur-lg opacity-20 rounded-xl" />
+                        <div className="relative bg-black/40 backdrop-blur-sm rounded-xl p-4 border-2 border-orange-500/30">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <ArrowRight className="w-5 h-5 text-orange-400" />
+                              <div>
+                                <span className="font-black text-white font-mono">{settlement.from}</span>
+                                <span className="text-gray-400 mx-2">→</span>
+                                <span className="font-black text-white font-mono">{settlement.to}</span>
+                              </div>
+                            </div>
+                            <span className="text-xl font-black text-orange-400 font-mono">
+                              {settlement.amount.toLocaleString()}P
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {jpBurdens.length > 0 && (
+                    <>
+                      <div className="relative mb-4">
+                        <div className="absolute inset-0 h-px bg-gradient-to-r from-transparent via-orange-500 to-transparent" />
+                      </div>
+                      
+                      <div className="flex items-center gap-2 mb-4">
+                        <Sparkles className="w-5 h-5 text-yellow-500 drop-shadow-glow" />
+                        <h4 className="font-black text-white text-sm font-mono">JP負担（均等割）</h4>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        {jpBurdens.map((burden, idx) => (
+                          <div key={idx} className="relative group">
+                            <div className="absolute inset-0 bg-yellow-600 blur-lg opacity-10 rounded-lg" />
+                            <div className="relative bg-black/30 backdrop-blur-sm rounded-lg p-3 border border-yellow-500/20">
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold text-gray-300 font-mono text-sm">{burden.username}</span>
+                                <span className="font-black text-yellow-400 font-mono">
+                                  {burden.burden.toLocaleString()}P
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <p className="mt-4 text-xs text-gray-400 font-mono">
+                        ※ 50円単位で割り切れない場合、順位が最下位のプレイヤーが残額を負担
+                      </p>
+                    </>
+                  )}
+                  
+                  <p className="mt-6 text-xs text-orange-400/80 font-mono border-t border-orange-500/20 pt-4">
+                    ℹ️ この精算内容は参考情報です。記録には反映されません。
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* 保存ボタン */}
             <div className="relative group">
               <div className={`absolute inset-0 rounded-xl blur-lg transition-opacity ${
@@ -944,6 +1127,7 @@ export default function BatchGameReportPage() {
                 onClick={() => {
                   setSelectedPlayerIds(new Set())
                   setPlayerInputs([])
+                  setIsAllAir(false)
                   setStep(1)
                 }}
                 className="relative w-full py-5 rounded-xl font-black bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-2xl hover:scale-105 active:scale-95 transition-all border-2 border-purple-400 flex items-center justify-center gap-3"

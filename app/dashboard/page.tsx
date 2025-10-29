@@ -212,10 +212,11 @@ export default function DashboardV2() {
   }
 
   const loadAllGamble30Days = async (userId: string) => {
-    const thirtyDaysAgo = new Date()
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+    const now = new Date()
+    const jstNow = new Date(now.getTime() + 9 * 60 * 60 * 1000)
+    const thirtyDaysAgo = new Date(jstNow.getTime() - 30 * 24 * 60 * 60 * 1000)
     const startDate = thirtyDaysAgo.toISOString().split('T')[0]
-    const endDate = new Date().toISOString().split('T')[0]
+    const endDate = jstNow.toISOString().split('T')[0]
 
     const { data: gambleData } = await supabase
       .from('gamble_records')
@@ -244,8 +245,9 @@ export default function DashboardV2() {
   }
 
   const loadAllGambleSection = async () => {
-    const sevenDaysAgo = new Date()
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+    const now = new Date()
+    const jstNow = new Date(now.getTime() + 9 * 60 * 60 * 1000)
+    const sevenDaysAgo = new Date(jstNow.getTime() - 7 * 24 * 60 * 60 * 1000)
 
     const { data: allGambleData } = await supabase
       .from('gamble_records')
@@ -321,8 +323,9 @@ export default function DashboardV2() {
       .single()
     if (jpData) setCurrentJackpot(jpData.current_amount)
 
-    const sevenDaysAgo = new Date()
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+    const now = new Date()
+    const jstNow = new Date(now.getTime() + 9 * 60 * 60 * 1000)
+    const sevenDaysAgo = new Date(jstNow.getTime() - 7 * 24 * 60 * 60 * 1000)
 
     // ホームゲームポーカーの全プレイヤーランキング
     const { data: rankData } = await supabase

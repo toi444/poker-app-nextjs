@@ -98,6 +98,13 @@ const SuccessAnimation = ({ message, show }: { message: string; show: boolean })
   )
 }
 
+// JST日付取得用のヘルパー関数
+const getJSTDate = () => {
+  const now = new Date()
+  const jstOffset = 9 * 60 * 60 * 1000 // 9時間
+  return new Date(now.getTime() + jstOffset)
+}
+
 export default function PBankPage() {
   const router = useRouter()
   const supabase = createClientComponentClient()
@@ -234,36 +241,72 @@ export default function PBankPage() {
   }
 
   const applyMonthlyInterest = async () => {
-    const today = new Date()
-    if (today.getDate() !== 1) return
+    // JST (UTC+9) で現在時刻を取得
+    const now = new Date()
+    const jstOffset = 9 * 60 * 60 * 1000 // 9時間のミリ秒
+    const jstDate = new Date(now.getTime() + jstOffset)
+    
+    // JST時刻を "YYYY-MM-DD" 形式で取得
+    const jstDateString = jstDate.toISOString().split('T')[0]
+    const currentDay = jstDate.getDate()
+    
+    // 毎月1日以外は何もしない
+    if (currentDay !== 1) return
     
     try {
-      const { data: loansData } = await supabase
+      // アクティブなローンを全て取得
+      const { data: loansData, error: loansError } = await supabase
         .from('loans')
         .select('*')
         .eq('status', 'active')
       
-      if (!loansData) return
+      if (loansError) throw loansError
+      if (!loansData || loansData.length === 0) return
       
       for (const loan of loansData) {
+        // last_interest_dateが存在するか確認
         const lastInterestDate = loan.last_interest_date ? new Date(loan.last_interest_date) : null
-        const shouldApplyInterest = !lastInterestDate || 
-          (lastInterestDate.getMonth() !== today.getMonth() || 
-           lastInterestDate.getFullYear() !== today.getFullYear())
+        
+        // JST基準で前回利息適用日をチェック
+        let shouldApplyInterest = false
+        if (!lastInterestDate) {
+          // 一度も利息が適用されていない
+          shouldApplyInterest = true
+        } else {
+          // JST基準で前回の適用日を取得
+          const lastJstDate = new Date(lastInterestDate.getTime() + jstOffset)
+          const lastJstDateString = lastJstDate.toISOString().split('T')[0]
+          
+          // 今月まだ利息が適用されていない場合
+          const lastYear = lastJstDate.getFullYear()
+          const lastMonth = lastJstDate.getMonth()
+          const currentYear = jstDate.getFullYear()
+          const currentMonth = jstDate.getMonth()
+          
+          shouldApplyInterest = (lastYear !== currentYear || lastMonth !== currentMonth)
+        }
         
         if (shouldApplyInterest) {
           const interestAmount = Math.floor(loan.remaining * 0.1)
           const newRemaining = loan.remaining + interestAmount
           
-          await supabase
+          // ローン残高を更新（楽観的ロックで重複防止)
+          const { error: updateError } = await supabase
             .from('loans')
             .update({
               remaining: newRemaining,
-              last_interest_date: today.toISOString()
+              last_interest_date: now.toISOString() // UTCで保存
             })
             .eq('id', loan.id)
+            .eq('remaining', loan.remaining) // 楽観的ロック: 残高が変わっていたら更新しない
           
-          await supabase
+          if (updateError) {
+            console.error(`ローン ${loan.id} の更新エラー:`, updateError)
+            continue
+          }
+          
+          // 利息記録を作成
+          const { error: insertError } = await supabase
             .from('interest_records')
             .insert({
               loan_id: loan.id,
@@ -271,9 +314,14 @@ export default function PBankPage() {
               from_user_id: loan.borrower_id,
               to_user_id: loan.lender_id
             })
+          
+          if (insertError) {
+            console.error(`利息記録 ${loan.id} の作成エラー:`, insertError)
+          }
         }
       }
       
+      // データを再読み込み
       loadData()
     } catch (error) {
       console.error('利息適用エラー:', error)
@@ -308,7 +356,7 @@ export default function PBankPage() {
       
       if (error) throw error
       
-      showSuccessMessage(`${lenderUser?.username}さんに${loanAmount.toLocaleString()} Pの融資を申込みました！`)
+      showSuccessMessage(`${lenderUser?.username}さんに${loanAmount.toLocaleString()} Pの融資を申込みました!`)
       setLoanAmount(1000)
       setLoanMessage('')
       setSelectedLender('')
@@ -345,7 +393,7 @@ export default function PBankPage() {
       
       if (error) throw error
       
-      showSuccessMessage(`${amount.toLocaleString()} Pの返済申請を送信しました！`)
+      showSuccessMessage(`${amount.toLocaleString()} Pの返済申請を送信しました!`)
       loadData()
       
     } catch (error) {
@@ -376,7 +424,7 @@ export default function PBankPage() {
           })
         
         if (loanError) throw loanError
-        showSuccessMessage('融資を承認しました！')
+        showSuccessMessage('融資を承認しました!')
         
       } else if (app.type === 'repayment' && app.loan_id) {
         const loan = loans.find(l => l.id === app.loan_id)
@@ -392,7 +440,7 @@ export default function PBankPage() {
             .eq('id', app.loan_id)
           
           if (loanUpdateError) throw loanUpdateError
-          showSuccessMessage('返済を承認しました！')
+          showSuccessMessage('返済を承認しました!')
         }
       }
       
@@ -536,7 +584,7 @@ export default function PBankPage() {
           <div className="relative bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-4 text-white shadow-2xl border-2 border-blue-400/50">
             <div className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 animate-pulse" />
-              <p className="text-sm font-black drop-shadow-glow">毎月1日に残高の10%が利息として自動加算されます</p>
+              <p className="text-sm font-black drop-shadow-glow">毎月1日(JST 0:00)に残高の10%が利息として自動加算されます</p>
             </div>
           </div>
         </div>
@@ -725,7 +773,7 @@ export default function PBankPage() {
                         {loan.lender?.username}さんへの借入
                       </h4>
                       <p className="text-xs font-semibold text-red-200 mt-1">
-                        借入日: {new Date(loan.created_at).toLocaleDateString('ja-JP')}
+                        借入日: {new Date(new Date(loan.created_at).getTime() + 9 * 60 * 60 * 1000).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' })}
                       </p>
                     </div>
                     <div className="text-right">
@@ -801,7 +849,7 @@ export default function PBankPage() {
                         {loan.borrower?.username}さん
                       </h4>
                       <p className="text-xs font-semibold text-green-200 mt-1">
-                        貸付日: {new Date(loan.created_at).toLocaleDateString('ja-JP')}
+                        貸付日: {new Date(new Date(loan.created_at).getTime() + 9 * 60 * 60 * 1000).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' })}
                       </p>
                       <div className="mt-3 space-y-2">
                         <div className="flex items-center gap-2">
@@ -851,7 +899,7 @@ export default function PBankPage() {
                         {app.from_user?.username}さんからの{app.type === 'loan' ? '融資' : '返済'}申請
                       </h4>
                       <p className="text-xs font-semibold text-yellow-200 mt-1">
-                        {new Date(app.created_at).toLocaleString('ja-JP')}
+                        {new Date(new Date(app.created_at).getTime() + 9 * 60 * 60 * 1000).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}
                       </p>
                       {app.message && (
                         <p className="text-sm font-medium text-white mt-3 bg-white/5 rounded-xl p-3 border border-white/10">
@@ -950,7 +998,7 @@ export default function PBankPage() {
             <div className="relative">
               <div className="absolute inset-0 bg-purple-600 blur-xl opacity-50" />
               <div className="relative bg-black/60 backdrop-blur-sm rounded-2xl p-5 border-2 border-purple-500/50">
-                <h3 className="font-black text-white mb-4">💡 次回利息予測（翌月1日）</h3>
+                <h3 className="font-black text-white mb-4">💡 次回利息予測(翌月1日 JST 0:00)</h3>
                 
                 <div className="space-y-3">
                   {loans.filter(loan => loan.lender_id === user?.id && loan.status === 'active').map(loan => (
@@ -993,7 +1041,7 @@ export default function PBankPage() {
                         )}
                       </p>
                       <p className="text-xs font-semibold text-purple-200">
-                        {new Date(item.created_at).toLocaleString('ja-JP')}
+                        {new Date(new Date(item.created_at).getTime() + 9 * 60 * 60 * 1000).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}
                       </p>
                     </div>
                     <div className="text-right">
